@@ -3,13 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Настройка сказок</title>
-    <!-- Скрипт Telegram Web App -->
+    <title>Мой профиль</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- Библиотека Supabase для фронтенда -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* Минималистичный темный дизайн с изумрудными акцентами */
         body {
             background-color: #121212;
             color: #ffffff;
@@ -19,17 +16,31 @@
             display: flex;
             flex-direction: column;
         }
-        h1 {
-            font-size: 24px;
-            margin-bottom: 24px;
+        h1, h2 {
             font-weight: 600;
+            margin-top: 0;
         }
-        label {
-            display: block;
-            font-size: 14px;
-            color: #a0a0a0;
-            margin-bottom: 8px;
+        h1 { font-size: 24px; margin-bottom: 24px; }
+        h2 { font-size: 18px; margin-bottom: 16px; color: #10B981; }
+        
+        /* Список детей */
+        .child-card {
+            background-color: #1e1e1e;
+            border: 1px solid #333333;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
+        .child-info { display: flex; flex-direction: column; gap: 4px; }
+        .child-name { font-size: 16px; font-weight: 600; }
+        .child-details { font-size: 13px; color: #a0a0a0; }
+        
+        /* Форма добавления */
+        #addFormContainer { margin-top: 24px; border-top: 1px solid #333; padding-top: 24px; }
+        label { display: block; font-size: 14px; color: #a0a0a0; margin-bottom: 8px; }
         input[type="text"], select {
             background-color: #1e1e1e;
             color: #ffffff;
@@ -43,14 +54,9 @@
             outline: none;
             transition: border-color 0.2s;
         }
-        input[type="text"]:focus, select:focus {
-            border-color: #10B981;
-        }
-        .radio-group {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 24px;
-        }
+        input[type="text"]:focus, select:focus { border-color: #10B981; }
+        
+        .radio-group { display: flex; gap: 12px; margin-bottom: 24px; }
         .radio-label {
             flex: 1;
             background-color: #1e1e1e;
@@ -66,6 +72,7 @@
             border-color: #10B981;
             color: #10B981;
         }
+        
         button {
             background-color: #10B981;
             color: #ffffff;
@@ -76,53 +83,122 @@
             font-weight: 600;
             cursor: pointer;
             width: 100%;
-            margin-top: auto;
         }
-        button:disabled {
-            background-color: #333333;
-            color: #888888;
-        }
+        button:disabled { background-color: #333333; color: #888888; }
+        .limit-msg { color: #ef4444; font-size: 14px; text-align: center; margin-top: 16px; display: none; }
     </style>
 </head>
 <body>
 
-    <h1>Профиль ребенка</h1>
+    <h1>Мой профиль</h1>
 
-    <label for="language">Язык сказок</label>
-    <select id="language">
-        <option value="ru">🇷🇺 Русский</option>
-        <option value="uz">🇺🇿 O'zbekcha</option>
-        <option value="en">🇬🇧 English</option>
-    </select>
-
-    <label for="childName">Имя</label>
-    <input type="text" id="childName" placeholder="Например: Тимур" autocomplete="off">
-
-    <label>Пол</label>
-    <div class="radio-group">
-        <div class="radio-label selected" id="btn-M" onclick="selectGender('M')">Мальчик 👦</div>
-        <div class="radio-label" id="btn-F" onclick="selectGender('F')">Девочка 👧</div>
+    <!-- Блок со списком детей -->
+    <div id="childrenList">
+        <p style="color: #a0a0a0; font-size: 14px;">Загрузка профилей...</p>
     </div>
 
-    <button id="saveBtn" onclick="saveData()">Сохранить профиль</button>
+    <!-- Блок добавления нового ребенка -->
+    <div id="addFormContainer" style="display: none;">
+        <h2>Добавить ребенка</h2>
+        
+        <label for="language">Язык сказок</label>
+        <select id="language">
+            <option value="ru">🇷🇺 Русский</option>
+            <option value="uz">🇺🇿 O'zbekcha</option>
+            <option value="en">🇬🇧 English</option>
+        </select>
+
+        <label for="childName">Имя</label>
+        <input type="text" id="childName" placeholder="Например: Тимур" autocomplete="off">
+
+        <label>Пол</label>
+        <div class="radio-group">
+            <div class="radio-label selected" id="btn-M" onclick="selectGender('M')">Мальчик 👦</div>
+            <div class="radio-label" id="btn-F" onclick="selectGender('F')">Девочка 👧</div>
+        </div>
+
+        <button id="saveBtn" onclick="saveData()">Добавить профиль</button>
+    </div>
+    
+    <div id="limitMsg" class="limit-msg">
+        Достигнут лимит (максимум 5 детей на один аккаунт).
+    </div>
 
     <script>
-        // Инициализация Telegram Web App
         const tg = window.Telegram.WebApp;
-        tg.expand(); // Разворачиваем на весь экран
+        tg.expand();
 
         // Инициализация Supabase (ВСТАВЬ СВОИ КЛЮЧИ СЮДА)
         const supabaseUrl = 'https://lmxacoleuvsbtgxbhokc.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxteGFjb2xldXZzYnRneGJob2tjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxMTg0OTEsImV4cCI6MjEwMjY5NDQ5MX0.Cy2H1qvhuX6lKSFFtrPeecmFr526WDddyakk5vIvqnc';
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        let selectedGender = 'M'; // По умолчанию мальчик
+        const telegramId = tg.initDataUnsafe?.user?.id || 123456789; // Заглушка для теста в браузере
+        let selectedGender = 'M';
+
+        // Загрузка данных при старте
+        window.onload = loadProfile;
 
         function selectGender(gender) {
             selectedGender = gender;
             document.getElementById('btn-M').classList.remove('selected');
             document.getElementById('btn-F').classList.remove('selected');
             document.getElementById(`btn-${gender}`).classList.add('selected');
+        }
+
+        async function loadProfile() {
+            try {
+                // Получаем всех детей этого родителя
+                const { data: children, error } = await _supabase
+                    .from('children')
+                    .select('*')
+                    .eq('parent_telegram_id', telegramId)
+                    .order('created_at', { ascending: true });
+
+                if (error) throw error;
+
+                renderChildren(children || []);
+                checkLimit(children ? children.length : 0);
+
+            } catch (err) {
+                console.error("Ошибка загрузки:", err);
+                document.getElementById('childrenList').innerHTML = '<p style="color: red;">Ошибка загрузки данных.</p>';
+            }
+        }
+
+        function renderChildren(children) {
+            const container = document.getElementById('childrenList');
+            if (children.length === 0) {
+                container.innerHTML = '<p style="color: #a0a0a0; font-size: 14px;">У вас пока нет добавленных детей.</p>';
+                return;
+            }
+
+            container.innerHTML = children.map(child => {
+                const genderIcon = child.gender === 'M' ? '👦' : '👧';
+                const langFlag = child.language === 'ru' ? '🇷🇺' : (child.language === 'uz' ? '🇺🇿' : '🇬🇧');
+                
+                return `
+                    <div class="child-card">
+                        <div class="child-info">
+                            <span class="child-name">${child.name} ${genderIcon}</span>
+                            <span class="child-details">Язык: ${langFlag}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function checkLimit(count) {
+            const form = document.getElementById('addFormContainer');
+            const limitMsg = document.getElementById('limitMsg');
+            
+            if (count >= 5) {
+                form.style.display = 'none';
+                limitMsg.style.display = 'block';
+            } else {
+                form.style.display = 'block';
+                limitMsg.style.display = 'none';
+            }
         }
 
         async function saveData() {
@@ -138,24 +214,21 @@
             btn.disabled = true;
             btn.innerText = "Сохранение...";
 
-            // Получаем ID пользователя из Telegram. 
-            // Если открыто в браузере (не в ТГ), ставим заглушку для тестов.
-            const telegramId = tg.initDataUnsafe?.user?.id || 123456789;
-
             try {
-                // 1. Создаем пользователя (Триал на 7 дней)
-                const trialEndDate = new Date();
-                trialEndDate.setDate(trialEndDate.getDate() + 7);
+                // Проверяем, есть ли уже этот юзер (для создания триала, если это первый ребенок)
+                const { data: user } = await _supabase.from('users').select('telegram_id').eq('telegram_id', telegramId).single();
+                
+                if (!user) {
+                    const trialEndDate = new Date();
+                    trialEndDate.setDate(trialEndDate.getDate() + 7);
+                    await _supabase.from('users').insert({ 
+                        telegram_id: telegramId, 
+                        subscription_status: 'trial',
+                        trial_end_date: trialEndDate.toISOString()
+                    });
+                }
 
-                const { error: userError } = await _supabase.from('users').upsert({ 
-                    telegram_id: telegramId, 
-                    subscription_status: 'trial',
-                    trial_end_date: trialEndDate.toISOString(),
-                    timezone: 'Asia/Tashkent'
-                });
-                if (userError) throw userError;
-
-                // 2. Сохраняем ребенка
+                // Добавляем ребенка
                 const { error: childError } = await _supabase.from('children').insert({
                     parent_telegram_id: telegramId,
                     name: childName,
@@ -164,15 +237,17 @@
                 });
                 if (childError) throw childError;
 
-                tg.showAlert(`Отлично! Первая сказка для ${childName} придет сегодня в 21:00!`, () => {
-                    tg.close(); // Закрываем Mini App
-                });
-
+                // Очищаем форму и перезагружаем список
+                document.getElementById('childName').value = '';
+                tg.showAlert("Профиль успешно добавлен!");
+                await loadProfile(); // Обновляем экран
+                
             } catch (error) {
                 console.error(error);
                 tg.showAlert("Произошла ошибка при сохранении.");
+            } finally {
                 btn.disabled = false;
-                btn.innerText = "Сохранить профиль";
+                btn.innerText = "Добавить профиль";
             }
         }
     </script>
