@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Мой профиль</title>
+    <title>Управление профилем</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -23,7 +23,7 @@
         h1 { font-size: 24px; margin-bottom: 24px; }
         h2 { font-size: 18px; margin-bottom: 16px; color: #10B981; }
         
-        /* Список детей */
+        /* Карточки детей */
         .child-card {
             background-color: #1e1e1e;
             border: 1px solid #333333;
@@ -38,8 +38,24 @@
         .child-name { font-size: 16px; font-weight: 600; }
         .child-details { font-size: 13px; color: #a0a0a0; }
         
-        /* Форма добавления */
-        #addFormContainer { margin-top: 24px; border-top: 1px solid #333; padding-top: 24px; }
+        .card-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 6px;
+            border-radius: 8px;
+            background-color: #2a2a2a;
+            transition: background-color 0.2s;
+        }
+        .icon-btn:hover { background-color: #333333; }
+
+        /* Форма добавления / редактирования */
+        #formContainer { margin-top: 24px; border-top: 1px solid #333; padding-top: 24px; }
         label { display: block; font-size: 14px; color: #a0a0a0; margin-bottom: 8px; }
         input[type="text"], select {
             background-color: #1e1e1e;
@@ -73,7 +89,7 @@
             color: #10B981;
         }
         
-        button {
+        button.primary-btn {
             background-color: #10B981;
             color: #ffffff;
             border: none;
@@ -85,6 +101,18 @@
             width: 100%;
         }
         button:disabled { background-color: #333333; color: #888888; }
+        
+        .cancel-edit {
+            background: none;
+            border: none;
+            color: #a0a0a0;
+            text-align: center;
+            width: 100%;
+            margin-top: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            display: none;
+        }
         .limit-msg { color: #ef4444; font-size: 14px; text-align: center; margin-top: 16px; display: none; }
     </style>
 </head>
@@ -92,14 +120,12 @@
 
     <h1>Мой профиль</h1>
 
-    <!-- Блок со списком детей -->
     <div id="childrenList">
         <p style="color: #a0a0a0; font-size: 14px;">Загрузка профилей...</p>
     </div>
 
-    <!-- Блок добавления нового ребенка -->
-    <div id="addFormContainer" style="display: none;">
-        <h2>Добавить ребенка</h2>
+    <div id="formContainer">
+        <h2 id="formTitle">Добавить ребенка</h2>
         
         <label for="language">Язык сказок</label>
         <select id="language">
@@ -117,7 +143,8 @@
             <div class="radio-label" id="btn-F" onclick="selectGender('F')">Девочка 👧</div>
         </div>
 
-        <button id="saveBtn" onclick="saveData()">Добавить профиль</button>
+        <button class="primary-btn" id="saveBtn" onclick="saveData()">Добавить профиль</button>
+        <button class="cancel-edit" id="cancelBtn" onclick="resetForm()">Отменить редактирование</button>
     </div>
     
     <div id="limitMsg" class="limit-msg">
@@ -133,10 +160,11 @@
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxteGFjb2xldXZzYnRneGJob2tjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxMTg0OTEsImV4cCI6MjEwMjY5NDQ5MX0.Cy2H1qvhuX6lKSFFtrPeecmFr526WDddyakk5vIvqnc';
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        const telegramId = tg.initDataUnsafe?.user?.id || 123456789; // Заглушка для теста в браузере
+        const telegramId = tg.initDataUnsafe?.user?.id || 123456789;
         let selectedGender = 'M';
+        let editingChildId = null; // Если не null, то идет процесс редактирования
+        let allChildren = [];
 
-        // Загрузка данных при старте
         window.onload = loadProfile;
 
         function selectGender(gender) {
@@ -148,7 +176,6 @@
 
         async function loadProfile() {
             try {
-                // Получаем всех детей этого родителя
                 const { data: children, error } = await _supabase
                     .from('children')
                     .select('*')
@@ -157,8 +184,9 @@
 
                 if (error) throw error;
 
-                renderChildren(children || []);
-                checkLimit(children ? children.length : 0);
+                allChildren = children || [];
+                renderChildren(allChildren);
+                checkLimitAndMode();
 
             } catch (err) {
                 console.error("Ошибка загрузки:", err);
@@ -183,21 +211,77 @@
                             <span class="child-name">${child.name} ${genderIcon}</span>
                             <span class="child-details">Язык: ${langFlag}</span>
                         </div>
+                        <div class="card-actions">
+                            <button class="icon-btn" onclick="startEdit('${child.id}')" title="Редактировать">✏️</button>
+                            <button class="icon-btn" onclick="deleteChild('${child.id}')" title="Удалить">🗑️</button>
+                        </div>
                     </div>
                 `;
             }).join('');
         }
 
-        function checkLimit(count) {
-            const form = document.getElementById('addFormContainer');
+        function checkLimitAndMode() {
+            const formContainer = document.getElementById('formContainer');
             const limitMsg = document.getElementById('limitMsg');
             
-            if (count >= 5) {
-                form.style.display = 'none';
+            // Если мы в режиме редактирования, форма всегда видна
+            if (editingChildId) {
+                formContainer.style.display = 'block';
+                limitMsg.style.display = 'none';
+                return;
+            }
+
+            // Иначе проверяем лимит 5 детей
+            if (allChildren.length >= 5) {
+                formContainer.style.display = 'none';
                 limitMsg.style.display = 'block';
             } else {
-                form.style.display = 'block';
+                formContainer.style.display = 'block';
                 limitMsg.style.display = 'none';
+            }
+        }
+
+        function startEdit(id) {
+            const child = allChildren.find(c => c.id === id);
+            if (!child) return;
+
+            editingChildId = child.id;
+            document.getElementById('childName').value = child.name;
+            document.getElementById('language').value = child.language;
+            selectGender(child.gender);
+
+            document.getElementById('formTitle').innerText = 'Редактировать профиль';
+            document.getElementById('saveBtn').innerText = 'Сохранить изменения';
+            document.getElementById('cancelBtn').style.display = 'block';
+
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }
+
+        function resetForm() {
+            editingChildId = null;
+            document.getElementById('childName').value = '';
+            document.getElementById('language').value = 'ru';
+            selectGender('M');
+
+            document.getElementById('formTitle').innerText = 'Добавить ребенка';
+            document.getElementById('saveBtn').innerText = 'Добавить профиль';
+            document.getElementById('cancelBtn').style.display = 'none';
+
+            checkLimitAndMode();
+        }
+
+        async function deleteChild(id) {
+            if (!confirm("Вы уверены, что хотите удалить этот профиль?")) return;
+
+            try {
+                const { error } = await _supabase.from('children').delete().eq('id', id);
+                if (error) throw error;
+
+                tg.showAlert("Профиль удален.");
+                await loadProfile();
+            } catch (err) {
+                console.error(err);
+                tg.showAlert("Не удалось удалить профиль.");
             }
         }
 
@@ -215,39 +299,48 @@
             btn.innerText = "Сохранение...";
 
             try {
-                // Проверяем, есть ли уже этот юзер (для создания триала, если это первый ребенок)
-                const { data: user } = await _supabase.from('users').select('telegram_id').eq('telegram_id', telegramId).single();
-                
-                if (!user) {
-                    const trialEndDate = new Date();
-                    trialEndDate.setDate(trialEndDate.getDate() + 7);
-                    await _supabase.from('users').insert({ 
-                        telegram_id: telegramId, 
-                        subscription_status: 'trial',
-                        trial_end_date: trialEndDate.toISOString()
+                if (editingChildId) {
+                    // РЕЖИМ РЕДАКТИРОВАНИЯ (UPDATE)
+                    const { error } = await _supabase
+                        .from('children')
+                        .update({ name: childName, gender: selectedGender, language: language })
+                        .eq('id', editingChildId);
+
+                    if (error) throw error;
+                    tg.showAlert("Профиль успешно обновлен!");
+                } else {
+                    // РЕЖИМ СОЗДАНИЯ (INSERT)
+                    const { data: user } = await _supabase.from('users').select('telegram_id').eq('telegram_id', telegramId).single();
+                    
+                    if (!user) {
+                        const trialEndDate = new Date();
+                        trialEndDate.setDate(trialEndDate.getDate() + 7);
+                        await _supabase.from('users').insert({ 
+                            telegram_id: telegramId, 
+                            subscription_status: 'trial',
+                            trial_end_date: trialEndDate.toISOString()
+                        });
+                    }
+
+                    const { error } = await _supabase.from('children').insert({
+                        parent_telegram_id: telegramId,
+                        name: childName,
+                        gender: selectedGender,
+                        language: language
                     });
+                    if (error) throw error;
+                    tg.showAlert("Профиль успешно добавлен!");
                 }
 
-                // Добавляем ребенка
-                const { error: childError } = await _supabase.from('children').insert({
-                    parent_telegram_id: telegramId,
-                    name: childName,
-                    gender: selectedGender,
-                    language: language
-                });
-                if (childError) throw childError;
-
-                // Очищаем форму и перезагружаем список
-                document.getElementById('childName').value = '';
-                tg.showAlert("Профиль успешно добавлен!");
-                await loadProfile(); // Обновляем экран
+                resetForm();
+                await loadProfile();
                 
             } catch (error) {
                 console.error(error);
                 tg.showAlert("Произошла ошибка при сохранении.");
             } finally {
                 btn.disabled = false;
-                btn.innerText = "Добавить профиль";
+                btn.innerText = editingChildId ? "Сохранить изменения" : "Добавить профиль";
             }
         }
     </script>
