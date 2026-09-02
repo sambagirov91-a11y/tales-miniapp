@@ -228,8 +228,21 @@
         }
 
         // Заглушка для будущего платежного шлюза
-        function initiatePayment() {
-            tg.showAlert("Здесь будет открываться форма оплаты (Payme / Click / Stars).");
+      function initiatePayment() {
+            // Здесь будет логика вызова платежного шлюза...
+            
+            const now = new Date();
+            const tashkentTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Tashkent"}));
+            const hours = tashkentTime.getHours();
+            const minutes = tashkentTime.getMinutes();
+            
+            const isLate = hours > 19 || (hours === 19 && minutes >= 55);
+
+            if (isLate) {
+                tg.showAlert("Форма оплаты.\n\nОбратите внимание: при оплате сейчас, следующая сказка придет завтра в 21:00.");
+            } else {
+                tg.showAlert("Здесь будет открываться форма оплаты (Payme / Click / Stars).");
+            }
         }
 
         function renderChildren(children) {
@@ -336,18 +349,18 @@
             btn.disabled = true;
             btn.innerText = "Сохранение...";
 
-            try {
+           try {
                 if (editingChildId) {
-                    // РЕЖИМ РЕДАКТИРОВАНИЯ (UPDATE)
+                    // РЕЖИМ РЕДАКТИРОВАНИЯ
                     const { error } = await _supabase
                         .from('children')
                         .update({ name: childName, gender: selectedGender, language: language })
                         .eq('id', editingChildId);
-
                     if (error) throw error;
+                    
                     tg.showAlert("Профиль успешно обновлен!");
                 } else {
-                    // РЕЖИМ СОЗДАНИЯ (INSERT)
+                    // РЕЖИМ СОЗДАНИЯ
                     const { data: user } = await _supabase.from('users').select('telegram_id').eq('telegram_id', telegramId).single();
                     
                     if (!user) {
@@ -359,6 +372,37 @@
                             trial_end_date: trialEndDate.toISOString()
                         });
                     }
+
+                    const { error } = await _supabase.from('children').insert({
+                        parent_telegram_id: telegramId,
+                        name: childName,
+                        gender: selectedGender,
+                        language: language
+                    });
+                    if (error) throw error;
+
+                    // Проверяем время (строго по Ташкенту, UTC+5)
+                    const now = new Date();
+                    const tashkentTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Tashkent"}));
+                    const hours = tashkentTime.getHours();
+                    const minutes = tashkentTime.getMinutes();
+                    
+                    const isLate = hours > 19 || (hours === 19 && minutes >= 55);
+
+                    if (isLate) {
+                        tg.showAlert("Профиль добавлен! ✨\n\nТак как уже вечер, алгоритмы подготовят вашу первую сказку на завтра. Ждите её ровно в 21:00!");
+                    } else {
+                        tg.showAlert("Профиль успешно добавлен!");
+                    }
+                }
+
+                resetForm();
+                await loadProfile();
+                
+            } catch (error) {
+                console.error(error);
+                tg.showAlert("Произошла ошибка при сохранении.");
+            }
 
                     const { error } = await _supabase.from('children').insert({
                         parent_telegram_id: telegramId,
