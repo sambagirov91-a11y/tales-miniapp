@@ -176,6 +176,25 @@
 
         async function loadProfile() {
             try {
+                // 1. Сначала проверяем статус подписки родителя
+                const { data: user } = await _supabase
+                    .from('users')
+                    .select('*')
+                    .eq('telegram_id', telegramId)
+                    .single();
+
+                if (user) {
+                    const now = new Date();
+                    const trialEnd = new Date(user.trial_end_date);
+                    
+                    // Если триал истек и статус не 'active', показываем Пейволл
+                    if (user.subscription_status === 'trial' && now > trialEnd) {
+                        showPaywall();
+                        return; // Останавливаем загрузку остального профиля
+                    }
+                }
+
+                // 2. Если подписка активна, загружаем детей как обычно
                 const { data: children, error } = await _supabase
                     .from('children')
                     .select('*')
@@ -192,6 +211,25 @@
                 console.error("Ошибка загрузки:", err);
                 document.getElementById('childrenList').innerHTML = '<p style="color: red;">Ошибка загрузки данных.</p>';
             }
+        }
+
+        // Функция показа экрана оплаты
+        function showPaywall() {
+            document.body.innerHTML = `
+                <div style="text-align: center; padding: 40px 20px;">
+                    <h1 style="font-size: 48px; margin-bottom: 16px;">✨</h1>
+                    <h2>Волшебное время истекло</h2>
+                    <p style="color: #a0a0a0; font-size: 15px; margin-bottom: 32px; line-height: 1.5;">
+                        Ваш 7-дневный пробный период завершен. Оформите подписку, чтобы каждый вечер радовать детей новыми персонализированными сказками.
+                    </p>
+                    <button class="primary-btn" onclick="initiatePayment()">Оформить подписку</button>
+                </div>
+            `;
+        }
+
+        // Заглушка для будущего платежного шлюза
+        function initiatePayment() {
+            tg.showAlert("Здесь будет открываться форма оплаты (Payme / Click / Stars).");
         }
 
         function renderChildren(children) {
