@@ -112,6 +112,41 @@
             display: none;
         }
         .limit-msg { color: #ef4444; font-size: 14px; text-align: center; margin-top: 16px; display: none; }
+        /* Анимация загрузки */
+        .loader-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+        
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 5px solid rgba(16, 185, 129, 0.15); /* Полупрозрачный зеленый фон */
+            border-top: 5px solid #10B981; /* Яркий зеленый акцент */
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loader-text {
+            color: #a0a0a0;
+            font-size: 15px;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
     </style>
 </head>
 <body>
@@ -119,7 +154,10 @@
     <h1>Мой профиль</h1>
 
     <div id="childrenList">
-        <p style="color: #a0a0a0; font-size: 14px;">Загрузка профилей...</p>
+        <div class="loader-container">
+            <div class="spinner"></div>
+            <div class="loader-text">Загружаем волшебство...</div>
+        </div>
     </div>
 
     <div id="formContainer">
