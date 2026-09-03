@@ -345,7 +345,7 @@
             }
         }
 
-        async function saveData() {
+       async function saveData() {
             const btn = document.getElementById('saveBtn');
             const childName = document.getElementById('childName').value.trim();
             const language = document.getElementById('language').value;
@@ -358,7 +358,7 @@
             btn.disabled = true;
             btn.innerText = "Сохранение...";
 
-           try {
+            try {
                 if (editingChildId) {
                     // РЕЖИМ РЕДАКТИРОВАНИЯ
                     const { error } = await _supabase
@@ -381,6 +381,41 @@
                             trial_end_date: trialEndDate.toISOString()
                         });
                     }
+
+                    const { error } = await _supabase.from('children').insert({
+                        parent_telegram_id: telegramId,
+                        name: childName,
+                        gender: selectedGender,
+                        language: language
+                    });
+                    if (error) throw error;
+
+                    // Проверяем время (строго по Ташкенту, UTC+5)
+                    const now = new Date();
+                    const tashkentTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Tashkent"}));
+                    const hours = tashkentTime.getHours();
+                    const minutes = tashkentTime.getMinutes();
+                    
+                    const isLate = hours > 19 || (hours === 19 && minutes >= 55);
+
+                    if (isLate) {
+                        tg.showAlert("Профиль добавлен! ✨\n\nТак как уже вечер, алгоритмы подготовят вашу первую сказку на завтра. Ждите её ровно в 21:00!");
+                    } else {
+                        tg.showAlert("Профиль успешно добавлен!");
+                    }
+                }
+
+                resetForm();
+                await loadProfile();
+                
+            } catch (error) {
+                console.error(error);
+                tg.showAlert("Произошла ошибка при сохранении.");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = editingChildId ? "Сохранить изменения" : "Добавить профиль";
+            }
+        }
 
                     const { error } = await _supabase.from('children').insert({
                         parent_telegram_id: telegramId,
