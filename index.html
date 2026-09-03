@@ -23,7 +23,6 @@
         h1 { font-size: 24px; margin-bottom: 24px; }
         h2 { font-size: 18px; margin-bottom: 16px; color: #10B981; }
         
-        /* Карточки детей */
         .child-card {
             background-color: #1e1e1e;
             border: 1px solid #333333;
@@ -54,7 +53,6 @@
         }
         .icon-btn:hover { background-color: #333333; }
 
-        /* Форма добавления / редактирования */
         #formContainer { margin-top: 24px; border-top: 1px solid #333; padding-top: 24px; }
         label { display: block; font-size: 14px; color: #a0a0a0; margin-bottom: 8px; }
         input[type="text"], select {
@@ -155,14 +153,13 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // Инициализация Supabase (ВСТАВЬ СВОИ КЛЮЧИ СЮДА)
         const supabaseUrl = 'https://lmxacoleuvsbtgxbhokc.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxteGFjb2xldXZzYnRneGJob2tjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxMTg0OTEsImV4cCI6MjEwMjY5NDQ5MX0.Cy2H1qvhuX6lKSFFtrPeecmFr526WDddyakk5vIvqnc';
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
         const telegramId = tg.initDataUnsafe?.user?.id || 123456789;
         let selectedGender = 'M';
-        let editingChildId = null; // Если не null, то идет процесс редактирования
+        let editingChildId = null;
         let allChildren = [];
 
         window.onload = loadProfile;
@@ -176,32 +173,33 @@
 
         async function loadProfile() {
             try {
-                // 1. Сначала проверяем статус подписки родителя
-                const { data: user } = await _supabase
+                // Изменено: Используем maybeSingle() вместо single(). 
+                // single() вызывает фатальную ошибку, если пользователь заходит впервые и его еще нет в таблице 'users'.
+                const { data: user, error: userError } = await _supabase
                     .from('users')
                     .select('*')
                     .eq('telegram_id', telegramId)
-                    .single();
+                    .maybeSingle(); 
+
+                if (userError) throw userError;
 
                 if (user) {
                     const now = new Date();
                     const trialEnd = new Date(user.trial_end_date);
                     
-                    // Если триал истек и статус не 'active', показываем Пейволл
                     if (user.subscription_status === 'trial' && now > trialEnd) {
                         showPaywall();
-                        return; // Останавливаем загрузку остального профиля
+                        return; 
                     }
                 }
 
-                // 2. Если подписка активна, загружаем детей как обычно
-                const { data: children, error } = await _supabase
+                const { data: children, error: childrenError } = await _supabase
                     .from('children')
                     .select('*')
                     .eq('parent_telegram_id', telegramId)
                     .order('created_at', { ascending: true });
 
-                if (error) throw error;
+                if (childrenError) throw childrenError;
 
                 allChildren = children || [];
                 renderChildren(allChildren);
@@ -213,7 +211,6 @@
             }
         }
 
-        // Функция показа экрана оплаты
         function showPaywall() {
             document.body.innerHTML = `
                 <div style="text-align: center; padding: 40px 20px;">
@@ -227,14 +224,11 @@
             `;
         }
 
-        // Заглушка для будущего платежного шлюза
-      function initiatePayment() {
-            // Данные твоего мерчанта (получишь в кабинете Payme Business)
+        function initiatePayment() {
             const merchantId = '371317599:TEST:1788436285141'; 
-            const amount = 5000000; // 50,000 сум (сумма указывается в тийинах: 50000 * 100)
-            const orderId = telegramId; // Передаем Telegram ID, чтобы бэкенд понял, кто платит
+            const amount = 5000000; 
+            const orderId = telegramId; 
 
-            // Формируем Base64 строку по стандарту Payme
             const params = `m=${merchantId};ac.order_id=${orderId};a=${amount}`;
             const encodedParams = btoa(params);
             const checkoutUrl = `https://checkout.paycom.uz/${encodedParams}`;
@@ -247,7 +241,7 @@
 
             if (isLate) {
                 tg.showAlert("Обратите внимание: при оплате сейчас, следующая сказка придет завтра в 21:00.", () => {
-                    tg.openLink(checkoutUrl); // Открываем чекаут Payme
+                    tg.openLink(checkoutUrl); 
                 });
             } else {
                 tg.openLink(checkoutUrl);
@@ -284,14 +278,12 @@
             const formContainer = document.getElementById('formContainer');
             const limitMsg = document.getElementById('limitMsg');
             
-            // Если мы в режиме редактирования, форма всегда видна
             if (editingChildId) {
                 formContainer.style.display = 'block';
                 limitMsg.style.display = 'none';
                 return;
             }
 
-            // Иначе проверяем лимит 5 детей
             if (allChildren.length >= 5) {
                 formContainer.style.display = 'none';
                 limitMsg.style.display = 'block';
@@ -345,7 +337,7 @@
             }
         }
 
-       async function saveData() {
+        async function saveData() {
             const btn = document.getElementById('saveBtn');
             const childName = document.getElementById('childName').value.trim();
             const language = document.getElementById('language').value;
@@ -360,7 +352,6 @@
 
             try {
                 if (editingChildId) {
-                    // РЕЖИМ РЕДАКТИРОВАНИЯ
                     const { error } = await _supabase
                         .from('children')
                         .update({ name: childName, gender: selectedGender, language: language })
@@ -369,8 +360,8 @@
                     
                     tg.showAlert("Профиль успешно обновлен!");
                 } else {
-                    // РЕЖИМ СОЗДАНИЯ
-                    const { data: user } = await _supabase.from('users').select('telegram_id').eq('telegram_id', telegramId).single();
+                    // Изменено: также используем maybeSingle() при проверке пользователя при создании профиля
+                    const { data: user } = await _supabase.from('users').select('telegram_id').eq('telegram_id', telegramId).maybeSingle();
                     
                     if (!user) {
                         const trialEndDate = new Date();
@@ -390,7 +381,6 @@
                     });
                     if (error) throw error;
 
-                    // Проверяем время (строго по Ташкенту, UTC+5)
                     const now = new Date();
                     const tashkentTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Tashkent"}));
                     const hours = tashkentTime.getHours();
@@ -399,63 +389,10 @@
                     const isLate = hours > 19 || (hours === 19 && minutes >= 55);
 
                     if (isLate) {
-                        tg.showAlert("Профиль добавлен! ✨\n\nТак как уже вечер, алгоритмы подготовят вашу первую сказку на завтра. Ждите её ровно в 21:00!");
+                        tg.showAlert("Профиль добавлен! ✨\n\nТак как уже вечер, наш сервис подготовит вашу первую сказку на завтра. Ждите её ровно в 21:00!");
                     } else {
                         tg.showAlert("Профиль успешно добавлен!");
                     }
-                }
-
-                resetForm();
-                await loadProfile();
-                
-            } catch (error) {
-                console.error(error);
-                tg.showAlert("Произошла ошибка при сохранении.");
-            } finally {
-                btn.disabled = false;
-                btn.innerText = editingChildId ? "Сохранить изменения" : "Добавить профиль";
-            }
-        }
-
-                    const { error } = await _supabase.from('children').insert({
-                        parent_telegram_id: telegramId,
-                        name: childName,
-                        gender: selectedGender,
-                        language: language
-                    });
-                    if (error) throw error;
-
-                    // Проверяем время (строго по Ташкенту, UTC+5)
-                    const now = new Date();
-                    const tashkentTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Tashkent"}));
-                    const hours = tashkentTime.getHours();
-                    const minutes = tashkentTime.getMinutes();
-                    
-                    const isLate = hours > 19 || (hours === 19 && minutes >= 55);
-
-                    if (isLate) {
-                        tg.showAlert("Профиль добавлен! ✨\n\nТак как уже вечер, алгоритмы подготовят вашу первую сказку на завтра. Ждите её ровно в 21:00!");
-                    } else {
-                        tg.showAlert("Профиль успешно добавлен!");
-                    }
-                }
-
-                resetForm();
-                await loadProfile();
-                
-            } catch (error) {
-                console.error(error);
-                tg.showAlert("Произошла ошибка при сохранении.");
-            }
-
-                    const { error } = await _supabase.from('children').insert({
-                        parent_telegram_id: telegramId,
-                        name: childName,
-                        gender: selectedGender,
-                        language: language
-                    });
-                    if (error) throw error;
-                    tg.showAlert("Профиль успешно добавлен!");
                 }
 
                 resetForm();
