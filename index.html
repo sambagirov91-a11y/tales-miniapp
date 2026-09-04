@@ -11,18 +11,75 @@
             background-color: #121212;
             color: #ffffff;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            padding: 24px;
+            padding: 20px;
             margin: 0;
             display: flex;
             flex-direction: column;
+            overflow-x: hidden;
         }
-        h1, h2 {
-            font-weight: 600;
-            margin-top: 0;
-        }
-        h1 { font-size: 24px; margin-bottom: 24px; }
+        h1, h2 { font-weight: 600; margin-top: 0; }
+        h1 { font-size: 22px; margin-bottom: 16px; margin-top: 16px; }
         h2 { font-size: 18px; margin-bottom: 16px; color: #10B981; }
         
+        /* 1. СЛАЙДЕР СКАЗОК */
+        .slider-container {
+            width: 100%;
+            height: 160px;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 16px;
+            background-color: #1e1e1e;
+        }
+        .slider-track {
+            display: flex;
+            height: 100%;
+            transition: transform 0.5s ease-in-out;
+        }
+        .slide {
+            min-width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: flex-end;
+        }
+        .slide-title {
+            background: linear-gradient(transparent, rgba(0,0,0,0.9));
+            color: white;
+            width: 100%;
+            padding: 20px 16px 12px 16px;
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        /* 2. КАРТОЧКА СТАТУСА ПОДПИСКИ */
+        .status-card {
+            background-color: #1e1e1e;
+            border: 1px solid #333333;
+            border-radius: 12px;
+            padding: 20px 16px;
+            margin-bottom: 24px;
+            text-align: center;
+            display: none; /* Скрыто до загрузки */
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .status-badge.trial { background: rgba(245, 158, 11, 0.15); color: #F59E0B; }
+        .status-badge.active { background: rgba(16, 185, 129, 0.15); color: #10B981; }
+        .status-badge.inactive { background: rgba(239, 68, 68, 0.15); color: #EF4444; }
+        
+        .status-text { font-size: 14px; color: #a0a0a0; margin-bottom: 20px; line-height: 1.4; }
+
+        /* Карточки детей */
         .child-card {
             background-color: #1e1e1e;
             border: 1px solid #333333;
@@ -36,122 +93,87 @@
         .child-info { display: flex; flex-direction: column; gap: 4px; }
         .child-name { font-size: 16px; font-weight: 600; }
         .child-details { font-size: 13px; color: #a0a0a0; }
+        .card-actions { display: flex; gap: 8px; }
+        .icon-btn { background: none; border: none; cursor: pointer; font-size: 16px; padding: 6px; border-radius: 8px; background-color: #2a2a2a; }
         
-        .card-actions {
-            display: flex;
-            gap: 8px;
-        }
-        .icon-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
-            padding: 6px;
-            border-radius: 8px;
-            background-color: #2a2a2a;
-            transition: background-color 0.2s;
-        }
-        .icon-btn:hover { background-color: #333333; }
-
+        /* Форма */
         #formContainer { margin-top: 24px; border-top: 1px solid #333; padding-top: 24px; }
         label { display: block; font-size: 14px; color: #a0a0a0; margin-bottom: 8px; }
         input[type="text"], select {
-            background-color: #1e1e1e;
-            color: #ffffff;
-            border: 1px solid #333333;
-            padding: 14px;
-            border-radius: 12px;
-            width: 100%;
-            box-sizing: border-box;
-            margin-bottom: 20px;
-            font-size: 16px;
-            outline: none;
-            transition: border-color 0.2s;
+            background-color: #1e1e1e; color: #ffffff; border: 1px solid #333333; padding: 14px; border-radius: 12px;
+            width: 100%; box-sizing: border-box; margin-bottom: 20px; font-size: 16px; outline: none;
         }
         input[type="text"]:focus, select:focus { border-color: #10B981; }
         
         .radio-group { display: flex; gap: 12px; margin-bottom: 24px; }
         .radio-label {
-            flex: 1;
-            background-color: #1e1e1e;
-            border: 1px solid #333333;
-            border-radius: 12px;
-            padding: 14px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
+            flex: 1; background-color: #1e1e1e; border: 1px solid #333333; border-radius: 12px; padding: 14px; text-align: center; cursor: pointer;
         }
-        .radio-label.selected {
-            background-color: rgba(16, 185, 129, 0.1);
-            border-color: #10B981;
-            color: #10B981;
-        }
+        .radio-label.selected { background-color: rgba(16, 185, 129, 0.1); border-color: #10B981; color: #10B981; }
         
         button.primary-btn {
-            background-color: #10B981;
-            color: #ffffff;
-            border: none;
-            padding: 16px;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
+            background-color: #10B981; color: #ffffff; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%;
         }
         button:disabled { background-color: #333333; color: #888888; }
+        .cancel-edit { background: none; border: none; color: #a0a0a0; width: 100%; margin-top: 12px; font-size: 14px; display: none; }
         
-        .cancel-edit {
-            background: none;
-            border: none;
-            color: #a0a0a0;
-            text-align: center;
-            width: 100%;
-            margin-top: 12px;
-            cursor: pointer;
-            font-size: 14px;
-            display: none;
+        /* Юридические чекбоксы */
+        .legal-check {
+            display: flex; align-items: flex-start; gap: 10px; margin-bottom: 20px; text-align: left;
         }
-        .limit-msg { color: #ef4444; font-size: 14px; text-align: center; margin-top: 16px; display: none; }
+        .legal-check input[type="checkbox"] { margin-top: 4px; accent-color: #10B981; width: 18px; height: 18px; }
+        .legal-check label { font-size: 12px; color: #a0a0a0; line-height: 1.4; margin: 0; }
+        .legal-check a { color: #10B981; text-decoration: none; }
+
+        /* Подвал */
+        .footer-links {
+            margin-top: 32px; border-top: 1px solid #333; padding-top: 24px; padding-bottom: 40px; text-align: center; display: flex; flex-direction: column; gap: 16px;
+        }
+        .footer-links a { color: #888888; text-decoration: none; font-size: 13px; }
+        .footer-links a:hover { color: #ffffff; }
+
         /* Анимация загрузки */
-        .loader-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 40px 20px;
-        }
-        
-        .spinner {
-            width: 48px;
-            height: 48px;
-            border: 5px solid rgba(16, 185, 129, 0.15); /* Полупрозрачный зеленый фон */
-            border-top: 5px solid #10B981; /* Яркий зеленый акцент */
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 16px;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .loader-text {
-            color: #a0a0a0;
-            font-size: 15px;
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-        
-        @keyframes pulse {
-            0% { opacity: 0.6; }
-            50% { opacity: 1; }
-            100% { opacity: 0.6; }
-        }
+        .loader-container { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; }
+        .spinner { width: 40px; height: 40px; border: 4px solid rgba(16, 185, 129, 0.15); border-top: 4px solid #10B981; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loader-text { color: #a0a0a0; font-size: 14px; animation: pulse 1.5s ease-in-out infinite; }
+        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
     </style>
 </head>
 <body>
 
-    <h1>Мой профиль</h1>
+    <!-- СЛАЙДЕР СКАЗОК -->
+    <div class="slider-container">
+        <div class="slider-track" id="sliderTrack">
+            <div class="slide" style="background-image: url('https://lmxacoleuvsbtgxbhokc.supabase.co/storage/v1/object/public/Scheherazade/Girl2.jpg');">
+                <div class="slide-title">Путешествие на волшебной радуге</div>
+            </div>
+            <div class="slide" style="background-image: url('https://lmxacoleuvsbtgxbhokc.supabase.co/storage/v1/object/public/Scheherazade/mir_snov.jfif');">
+                <div class="slide-title">Секретный сад цветущих снов!</div>
+            </div>
+            <div class="slide" style="background-image: url('https://lmxacoleuvsbtgxbhokc.supabase.co/storage/v1/object/public/Scheherazade/golden_osen.jfif');">
+                <div class="slide-title">Наступила золотая осень!</div>    
+            </div>
+            <div class="slide" style="background-image: url('https://lmxacoleuvsbtgxbhokc.supabase.co/storage/v1/object/public/Scheherazade/Rolf_and_frnds.jfif');">
+                <div class="slide-title">Зайчик Рольф и его друзья!</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- КАРТОЧКА СТАТУСА -->
+    <div id="statusSection" class="status-card">
+        <div id="statusBadge" class="status-badge">Загрузка...</div>
+        <div id="statusText" class="status-text"></div>
+        
+        <div id="paymentConsentContainer" class="legal-check" style="display: none;">
+            <input type="checkbox" id="paymentConsent">
+            <label for="paymentConsent">Я принимаю условия <a href="#" onclick="openLink('https://telegra.ph/Public-Offer')">Публичной оферты</a> и <a href="#" onclick="openLink('https://telegra.ph/Privacy')">Политики конфиденциальности</a></label>
+        </div>
+        
+        <button id="renewBtn" class="primary-btn" style="display: none;" onclick="initiatePayment()">Оплатить подписку (24 500 сум)</button>
+    </div>
+
+    <h1>Профили детей</h1>
 
     <div id="childrenList">
         <div class="loader-container">
@@ -160,7 +182,7 @@
         </div>
     </div>
 
-    <div id="formContainer">
+    <div id="formContainer" style="display: none;">
         <h2 id="formTitle">Добавить ребенка</h2>
         
         <label for="language">Язык сказок</label>
@@ -179,17 +201,40 @@
             <div class="radio-label" id="btn-F" onclick="selectGender('F')">Девочка 👧</div>
         </div>
 
+        <!-- Чекбокс при первичной регистрации -->
+        <div id="regConsentContainer" class="legal-check" style="display: none;">
+            <input type="checkbox" id="regConsent">
+            <label for="regConsent">Я принимаю условия <a href="#" onclick="openLink('https://telegra.ph/Public-Offer')">Публичной оферты</a> и <a href="#" onclick="openLink('https://telegra.ph/Privacy')">Политики конфиденциальности</a></label>
+        </div>
+
         <button class="primary-btn" id="saveBtn" onclick="saveData()">Добавить профиль</button>
         <button class="cancel-edit" id="cancelBtn" onclick="resetForm()">Отменить редактирование</button>
     </div>
-    
-    <div id="limitMsg" class="limit-msg">
-        Достигнут лимит (максимум 5 детей на один аккаунт).
+
+    <!-- ПОДВАЛ С ДОКУМЕНТАМИ -->
+    <div class="footer-links">
+        <a href="#" onclick="openLink('https://telegra.ph/Privacy')">Политика конфиденциальности</a>
+        <a href="#" onclick="openLink('https://telegra.ph/Public-Offer')">Публичная оферта</a>
+        <a href="#" onclick="openLink('https://telegra.ph/About')">О проекте</a>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+
+        // Открытие ссылок (заглушка на Telegraph, потом заменишь на свой сайт)
+        function openLink(url) {
+            tg.openLink(url);
+        }
+
+        // Логика слайдера
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const track = document.getElementById('sliderTrack');
+        setInterval(() => {
+            currentSlide = (currentSlide + 1) % slides.length;
+            track.style.transform = `translateX(-${currentSlide * 100}%)`;
+        }, 5000);
 
         const supabaseUrl = 'https://lmxacoleuvsbtgxbhokc.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxteGFjb2xldXZzYnRneGJob2tjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxMTg0OTEsImV4cCI6MjEwMjY5NDQ5MX0.Cy2H1qvhuX6lKSFFtrPeecmFr526WDddyakk5vIvqnc';
@@ -199,6 +244,7 @@
         let selectedGender = 'M';
         let editingChildId = null;
         let allChildren = [];
+        let userExists = false;
 
         window.onload = loadProfile;
 
@@ -211,8 +257,6 @@
 
         async function loadProfile() {
             try {
-                // Изменено: Используем maybeSingle() вместо single(). 
-                // single() вызывает фатальную ошибку, если пользователь заходит впервые и его еще нет в таблице 'users'.
                 const { data: user, error: userError } = await _supabase
                     .from('users')
                     .select('*')
@@ -220,16 +264,9 @@
                     .maybeSingle(); 
 
                 if (userError) throw userError;
-
-                if (user) {
-                    const now = new Date();
-                    const trialEnd = new Date(user.trial_end_date);
-                    
-                    if (user.subscription_status === 'trial' && now > trialEnd) {
-                        showPaywall();
-                        return; 
-                    }
-                }
+                
+                userExists = !!user;
+                updateStatusUI(user);
 
                 const { data: children, error: childrenError } = await _supabase
                     .from('children')
@@ -245,26 +282,65 @@
 
             } catch (err) {
                 console.error("Ошибка загрузки:", err);
-                document.getElementById('childrenList').innerHTML = '<p style="color: red;">Ошибка загрузки данных.</p>';
+                document.getElementById('childrenList').innerHTML = '<p style="color: #ef4444; font-size: 14px;">Ошибка загрузки данных.</p>';
             }
         }
 
-        function showPaywall() {
-            document.body.innerHTML = `
-                <div style="text-align: center; padding: 40px 20px;">
-                    <h1 style="font-size: 48px; margin-bottom: 16px;">✨</h1>
-                    <h2>Волшебное время истекло</h2>
-                    <p style="color: #a0a0a0; font-size: 15px; margin-bottom: 32px; line-height: 1.5;">
-                        Ваш 7-дневный пробный период завершен. Оформите подписку, чтобы каждый вечер радовать детей новыми персонализированными сказками.
-                    </p>
-                    <button class="primary-btn" onclick="initiatePayment()">Оформить подписку</button>
-                </div>
-            `;
+        function updateStatusUI(user) {
+            const section = document.getElementById('statusSection');
+            const badge = document.getElementById('statusBadge');
+            const text = document.getElementById('statusText');
+            const renewBtn = document.getElementById('renewBtn');
+            const paymentConsent = document.getElementById('paymentConsentContainer');
+            
+            section.style.display = 'block';
+
+            if (!user) {
+                section.style.display = 'none'; // Скрываем блок подписки для совсем новых пользователей
+                return;
+            }
+
+            const now = new Date();
+            const trialEnd = new Date(user.trial_end_date);
+            const subEnd = user.subscription_end_date ? new Date(user.subscription_end_date) : null;
+            
+            // Форматируем дату красиво
+            const options = { day: 'numeric', month: 'long' };
+
+            if (user.subscription_status === 'active' && subEnd && subEnd > now) {
+                badge.className = 'status-badge active';
+                badge.innerText = '✅ Активная подписка';
+                text.innerText = `Доступ открыт до ${subEnd.toLocaleDateString('ru-RU', options)}. Сказки приходят каждый день!`;
+                renewBtn.style.display = 'block';
+                renewBtn.innerText = 'Продлить на месяц (24 500 сум)';
+                paymentConsent.style.display = 'flex';
+            } else if (user.subscription_status === 'trial' && trialEnd > now) {
+                badge.className = 'status-badge trial';
+                badge.innerText = '⏳ Пробный период';
+                text.innerText = `Бесплатный доступ до ${trialEnd.toLocaleDateString('ru-RU', options)}. Оформите подписку заранее, чтобы сказки не прерывались.`;
+                renewBtn.style.display = 'block';
+                renewBtn.innerText = 'Оформить подписку (24 500 сум)';
+                paymentConsent.style.display = 'flex';
+            } else {
+                badge.className = 'status-badge inactive';
+                badge.innerText = '❌ Неактивная';
+                text.innerText = 'Волшебное время истекло. Продлите доступ, чтобы дети снова получали уникальные сказки.';
+                renewBtn.style.display = 'block';
+                renewBtn.innerText = 'Возобновить подписку (24 500 сум)';
+                paymentConsent.style.display = 'flex';
+            }
         }
 
         function initiatePayment() {
+            // Проверка галочки согласия
+            const consent = document.getElementById('paymentConsent').checked;
+            if (!consent) {
+                tg.showAlert("Пожалуйста, подтвердите согласие с Офертой и Политикой конфиденциальности.");
+                return;
+            }
+
             const merchantId = '67fc349fca95ffea6667f140'; 
-            const amount = 2450000; 
+            const amount = 2450000; // 24 500 сум в тийинах
             const orderId = telegramId; 
 
             const params = `m=${merchantId};ac.order_id=${orderId};a=${amount}`;
@@ -289,7 +365,7 @@
         function renderChildren(children) {
             const container = document.getElementById('childrenList');
             if (children.length === 0) {
-                container.innerHTML = '<p style="color: #a0a0a0; font-size: 14px;">У вас пока нет добавленных детей.</p>';
+                container.innerHTML = '<p style="color: #a0a0a0; font-size: 14px;">Профили еще не добавлены.</p>';
                 return;
             }
 
@@ -314,20 +390,19 @@
 
         function checkLimitAndMode() {
             const formContainer = document.getElementById('formContainer');
-            const limitMsg = document.getElementById('limitMsg');
+            const regConsent = document.getElementById('regConsentContainer');
             
-            if (editingChildId) {
-                formContainer.style.display = 'block';
-                limitMsg.style.display = 'none';
-                return;
+            formContainer.style.display = 'block';
+            
+            // Показываем галочку регистрации только если пользователя еще нет в БД
+            if (!userExists && !editingChildId) {
+                regConsent.style.display = 'flex';
+            } else {
+                regConsent.style.display = 'none';
             }
 
-            if (allChildren.length >= 5) {
-                formContainer.style.display = 'none';
-                limitMsg.style.display = 'block';
-            } else {
-                formContainer.style.display = 'block';
-                limitMsg.style.display = 'none';
+            if (allChildren.length >= 5 && !editingChildId) {
+                formContainer.style.display = 'none'; // Скрываем форму если лимит 5 детей
             }
         }
 
@@ -343,7 +418,8 @@
             document.getElementById('formTitle').innerText = 'Редактировать профиль';
             document.getElementById('saveBtn').innerText = 'Сохранить изменения';
             document.getElementById('cancelBtn').style.display = 'block';
-
+            
+            checkLimitAndMode();
             window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
         }
 
@@ -362,12 +438,9 @@
 
         async function deleteChild(id) {
             if (!confirm("Вы уверены, что хотите удалить этот профиль?")) return;
-
             try {
                 const { error } = await _supabase.from('children').delete().eq('id', id);
                 if (error) throw error;
-
-                tg.showAlert("Профиль удален.");
                 await loadProfile();
             } catch (err) {
                 console.error(err);
@@ -385,23 +458,24 @@
                 return;
             }
 
+            // Проверка юридической галочки при регистрации
+            if (!userExists && !editingChildId) {
+                const consent = document.getElementById('regConsent').checked;
+                if (!consent) {
+                    tg.showAlert("Для продолжения необходимо принять условия Оферты и Политики конфиденциальности.");
+                    return;
+                }
+            }
+
             btn.disabled = true;
             btn.innerText = "Сохранение...";
 
             try {
                 if (editingChildId) {
-                    const { error } = await _supabase
-                        .from('children')
-                        .update({ name: childName, gender: selectedGender, language: language })
-                        .eq('id', editingChildId);
+                    const { error } = await _supabase.from('children').update({ name: childName, gender: selectedGender, language: language }).eq('id', editingChildId);
                     if (error) throw error;
-                    
-                    tg.showAlert("Профиль успешно обновлен!");
                 } else {
-                    // Изменено: также используем maybeSingle() при проверке пользователя при создании профиля
-                    const { data: user } = await _supabase.from('users').select('telegram_id').eq('telegram_id', telegramId).maybeSingle();
-                    
-                    if (!user) {
+                    if (!userExists) {
                         const trialEndDate = new Date();
                         trialEndDate.setDate(trialEndDate.getDate() + 7);
                         await _supabase.from('users').insert({ 
@@ -409,6 +483,7 @@
                             subscription_status: 'trial',
                             trial_end_date: trialEndDate.toISOString()
                         });
+                        userExists = true;
                     }
 
                     const { error } = await _supabase.from('children').insert({
@@ -423,11 +498,10 @@
                     const tashkentTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Tashkent"}));
                     const hours = tashkentTime.getHours();
                     const minutes = tashkentTime.getMinutes();
-                    
                     const isLate = hours > 19 || (hours === 19 && minutes >= 55);
 
                     if (isLate) {
-                        tg.showAlert("Профиль добавлен! ✨\n\nТак как уже вечер, наш сервис подготовит вашу первую сказку на завтра. Ждите её ровно в 21:00!");
+                        tg.showAlert("Профиль добавлен! ✨\n\nТак как уже вечер, первая сказка придет завтра в 21:00.");
                     } else {
                         tg.showAlert("Профиль успешно добавлен!");
                     }
