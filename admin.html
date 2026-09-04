@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Samba | Панель управления</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* Кастомный скроллбар для красоты */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1f2937; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- ЭКРАН ЛОГИНА -->
+    <div id="loginScreen" class="flex-1 flex items-center justify-center p-4">
+        <div class="bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-md border border-gray-700">
+            <h2 class="text-2xl font-bold mb-6 text-center text-emerald-400">Вход в систему</h2>
+            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Email</label>
+                    <input type="email" id="email" required class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Пароль</label>
+                    <input type="password" id="password" required class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emerald-500">
+                </div>
+                <button type="submit" id="loginBtn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-4 rounded-lg transition duration-200">
+                    Войти
+                </button>
+                <p id="loginError" class="text-red-400 text-sm text-center hidden mt-2"></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- ОСНОВНОЙ ДАШБОРД (скрыт до авторизации) -->
+    <div id="dashboardScreen" class="hidden flex-1 flex flex-col h-screen overflow-hidden">
+        
+        <!-- Навигация -->
+        <header class="bg-gray-800 border-b border-gray-700 p-4 flex justify-between items-center shrink-0">
+            <div class="flex items-center gap-6">
+                <h1 class="text-xl font-bold text-emerald-400">Admin Dashboard</h1>
+                <nav class="hidden md:flex gap-4">
+                    <button onclick="switchTab('stats')" id="tab-stats" class="tab-btn px-3 py-1 rounded-md bg-gray-700 text-white">Аналитика</button>
+                    <button onclick="switchTab('banners')" id="tab-banners" class="tab-btn px-3 py-1 rounded-md text-gray-400 hover:text-white">Баннеры</button>
+                    <button onclick="switchTab('settings')" id="tab-settings" class="tab-btn px-3 py-1 rounded-md text-gray-400 hover:text-white">Настройки</button>
+                </nav>
+            </div>
+            <button onclick="handleLogout()" class="text-sm text-gray-400 hover:text-white px-3 py-1 border border-gray-600 rounded-md">Выйти</button>
+        </header>
+
+        <!-- Контентная часть -->
+        <main class="flex-1 overflow-y-auto p-6">
+            
+            <!-- Вкладка: Аналитика -->
+            <div id="section-stats" class="tab-content max-w-6xl mx-auto space-y-6">
+                <h2 class="text-2xl font-bold mb-4">Сводка</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+                        <div class="text-gray-400 text-sm mb-1">Всего пользователей (Родителей)</div>
+                        <div class="text-4xl font-bold text-white" id="stat-users">-</div>
+                    </div>
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+                        <div class="text-gray-400 text-sm mb-1">Всего профилей (Детей)</div>
+                        <div class="text-4xl font-bold text-blue-400" id="stat-children">-</div>
+                    </div>
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+                        <div class="text-gray-400 text-sm mb-1">Активные подписки (Платные)</div>
+                        <div class="text-4xl font-bold text-emerald-400" id="stat-active-subs">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Вкладка: Баннеры -->
+            <div id="section-banners" class="tab-content hidden max-w-6xl mx-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold">Управление баннерами</h2>
+                    <button onclick="showBannerModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-medium">+ Добавить баннер</button>
+                </div>
+                <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden shadow-lg">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-900 border-b border-gray-700 text-gray-400 text-sm">
+                                <th class="p-4">Картинка</th>
+                                <th class="p-4">Название</th>
+                                <th class="p-4">Порядок</th>
+                                <th class="p-4">Статус</th>
+                                <th class="p-4 text-right">Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bannersTableBody" class="divide-y divide-gray-700">
+                            <!-- Рендер баннеров -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Вкладка: Настройки (Ссылки) -->
+            <div id="section-settings" class="tab-content hidden max-w-2xl mx-auto">
+                <h2 class="text-2xl font-bold mb-6">Юридические документы и ссылки</h2>
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1">Политика конфиденциальности (URL)</label>
+                        <input type="text" id="cfg-privacy" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1">Публичная оферта (URL)</label>
+                        <input type="text" id="cfg-offer" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1">О проекте (URL)</label>
+                        <input type="text" id="cfg-about" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <button onclick="saveSettings()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-4 rounded-lg mt-4">
+                        Сохранить ссылки
+                    </button>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Модалка: Добавление баннера -->
+    <div id="bannerModal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+        <div class="bg-gray-800 p-6 rounded-xl w-full max-w-md border border-gray-700 shadow-2xl">
+            <h3 class="text-xl font-bold mb-4">Новый баннер</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Название сказки</label>
+                    <input type="text" id="newBannerTitle" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">URL картинки</label>
+                    <input type="text" id="newBannerImage" placeholder="https://..." class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Порядок сортировки (цифра)</label>
+                    <input type="number" id="newBannerOrder" value="10" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white">
+                </div>
+                <div class="flex gap-3 mt-6">
+                    <button onclick="closeBannerModal()" class="flex-1 bg-gray-700 hover:bg-gray-600 py-2 rounded-lg">Отмена</button>
+                    <button onclick="saveNewBanner()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 font-bold py-2 rounded-lg">Сохранить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Инициализация Supabase
+        const supabaseUrl = 'https://lmxacoleuvsbtgxbhokc.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxteGFjb2xldXZzYnRneGJob2tjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxMTg0OTEsImV4cCI6MjEwMjY5NDQ5MX0.Cy2H1qvhuX6lKSFFtrPeecmFr526WDddyakk5vIvqnc';
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+        // Проверка сессии при загрузке
+        window.onload = async () => {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+                showDashboard();
+            }
+        };
+
+        // Логин
+        async function handleLogin(e) {
+            e.preventDefault();
+            const btn = document.getElementById('loginBtn');
+            const errorEl = document.getElementById('loginError');
+            btn.innerText = 'Загрузка...';
+            btn.disabled = true;
+            errorEl.classList.add('hidden');
+
+            const { error } = await supabaseClient.auth.signInWithPassword({
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value,
+            });
+
+            if (error) {
+                errorEl.innerText = error.message;
+                errorEl.classList.remove('hidden');
+                btn.innerText = 'Войти';
+                btn.disabled = false;
+            } else {
+                showDashboard();
+            }
+        }
+
+        // Выход
+        async function handleLogout() {
+            await supabaseClient.auth.signOut();
+            document.getElementById('dashboardScreen').classList.add('hidden');
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('loginForm').reset();
+            document.getElementById('loginBtn').innerText = 'Войти';
+            document.getElementById('loginBtn').disabled = false;
+        }
+
+        // Показ дашборда и загрузка данных
+        function showDashboard() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('dashboardScreen').classList.remove('hidden');
+            loadStats();
+            loadBanners();
+            loadSettings();
+        }
+
+        // Переключение вкладок
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('bg-gray-700', 'text-white');
+                el.classList.add('text-gray-400');
+            });
+            
+            document.getElementById(`section-${tabId}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabId}`).classList.add('bg-gray-700', 'text-white');
+            document.getElementById(`tab-${tabId}`).classList.remove('text-gray-400');
+        }
+
+        // Загрузка статистики
+        async function loadStats() {
+            // Считаем юзеров
+            const { count: usersCount } = await supabaseClient.from('users').select('*', { count: 'exact', head: true });
+            document.getElementById('stat-users').innerText = usersCount || 0;
+
+            // Считаем детей
+            const { count: childrenCount } = await supabaseClient.from('children').select('*', { count: 'exact', head: true });
+            document.getElementById('stat-children').innerText = childrenCount || 0;
+
+            // Считаем активные подписки
+            const { count: activeCount } = await supabaseClient.from('users').select('*', { count: 'exact', head: true }).eq('subscription_status', 'active');
+            document.getElementById('stat-active-subs').innerText = activeCount || 0;
+        }
+
+        // Загрузка баннеров
+        async function loadBanners() {
+            const { data, error } = await supabaseClient.from('banners').select('*').order('sort_order', { ascending: true });
+            if (error) return console.error(error);
+            
+            const tbody = document.getElementById('bannersTableBody');
+            tbody.innerHTML = data.map(b => `
+                <tr class="border-b border-gray-700 hover:bg-gray-800">
+                    <td class="p-4">
+                        <img src="${b.image_url}" class="h-12 w-20 object-cover rounded-md border border-gray-600">
+                    </td>
+                    <td class="p-4 font-medium">${b.title}</td>
+                    <td class="p-4">${b.sort_order}</td>
+                    <td class="p-4">
+                        <span class="px-2 py-1 text-xs rounded-full ${b.is_active ? 'bg-emerald-900 text-emerald-300' : 'bg-red-900 text-red-300'}">
+                            ${b.is_active ? 'Активен' : 'Скрыт'}
+                        </span>
+                    </td>
+                    <td class="p-4 text-right">
+                        <button onclick="toggleBanner(${b.id}, ${!b.is_active})" class="text-sm text-gray-400 hover:text-white mr-3">Вкл/Выкл</button>
+                        <button onclick="deleteBanner(${b.id})" class="text-sm text-red-400 hover:text-red-300">Удалить</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Управление модалкой баннеров
+        function showBannerModal() { document.getElementById('bannerModal').classList.remove('hidden'); }
+        function closeBannerModal() { 
+            document.getElementById('bannerModal').classList.add('hidden');
+            document.getElementById('newBannerTitle').value = '';
+            document.getElementById('newBannerImage').value = '';
+        }
+
+        // Добавление баннера
+        async function saveNewBanner() {
+            const title = document.getElementById('newBannerTitle').value;
+            const image_url = document.getElementById('newBannerImage').value;
+            const sort_order = document.getElementById('newBannerOrder').value;
+
+            if(!title || !image_url) return alert('Заполните все поля');
+
+            await supabaseClient.from('banners').insert({ title, image_url, sort_order });
+            closeBannerModal();
+            loadBanners();
+        }
+
+        // Переключение статуса баннера
+        async function toggleBanner(id, newStatus) {
+            await supabaseClient.from('banners').update({ is_active: newStatus }).eq('id', id);
+            loadBanners();
+        }
+
+        // Удаление баннера
+        async function deleteBanner(id) {
+            if(!confirm('Удалить этот баннер навсегда?')) return;
+            await supabaseClient.from('banners').delete().eq('id', id);
+            loadBanners();
+        }
+
+        // Загрузка настроек
+        async function loadSettings() {
+            const { data } = await supabaseClient.from('app_settings').select('*');
+            if (data) {
+                data.forEach(item => {
+                    if(item.key === 'privacy_url') document.getElementById('cfg-privacy').value = item.value;
+                    if(item.key === 'offer_url') document.getElementById('cfg-offer').value = item.value;
+                    if(item.key === 'about_url') document.getElementById('cfg-about').value = item.value;
+                });
+            }
+        }
+
+        // Сохранение настроек
+        async function saveSettings() {
+            const privacy = document.getElementById('cfg-privacy').value;
+            const offer = document.getElementById('cfg-offer').value;
+            const about = document.getElementById('cfg-about').value;
+
+            await supabaseClient.from('app_settings').upsert([
+                { key: 'privacy_url', value: privacy },
+                { key: 'offer_url', value: offer },
+                { key: 'about_url', value: about }
+            ]);
+            
+            alert('Ссылки успешно обновлены! Они сразу изменятся в Mini App.');
+        }
+    </script>
+</body>
+</html>
