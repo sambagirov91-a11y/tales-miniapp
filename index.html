@@ -21,7 +21,7 @@
         h1 { font-size: 22px; margin-bottom: 16px; margin-top: 16px; }
         h2 { font-size: 18px; margin-bottom: 16px; color: #10B981; }
         
-        /* 1. СЛАЙДЕР СКАЗОК */
+        /* СЛАЙДЕР СКАЗОК */
         .slider-container {
             width: 100%;
             height: 160px;
@@ -30,6 +30,7 @@
             position: relative;
             margin-bottom: 16px;
             background-color: #1e1e1e;
+            display: none; /* Скрыто до загрузки из базы */
         }
         .slider-track {
             display: flex;
@@ -53,44 +54,19 @@
             font-size: 15px;
         }
 
-        /* 2. КАРТОЧКА СТАТУСА ПОДПИСКИ */
+        /* КАРТОЧКА СТАТУСА ПОДПИСКИ */
         .status-card {
-            background-color: #1e1e1e;
-            border: 1px solid #333333;
-            border-radius: 12px;
-            padding: 20px 16px;
-            margin-top: 24px;
-            margin-bottom: 0px;
-            text-align: center;
-            display: none; /* Скрыто до загрузки */
+            background-color: #1e1e1e; border: 1px solid #333333; border-radius: 12px;
+            padding: 20px 16px; margin-top: 24px; margin-bottom: 0px; text-align: center; display: none;
         }
-        .status-badge {
-            display: inline-block;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 700;
-            margin-bottom: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
+        .status-badge { display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 700; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
         .status-badge.trial { background: rgba(245, 158, 11, 0.15); color: #F59E0B; }
         .status-badge.active { background: rgba(16, 185, 129, 0.15); color: #10B981; }
         .status-badge.inactive { background: rgba(239, 68, 68, 0.15); color: #EF4444; }
-        
         .status-text { font-size: 14px; color: #a0a0a0; margin-bottom: 20px; line-height: 1.4; }
 
         /* Карточки детей */
-        .child-card {
-            background-color: #1e1e1e;
-            border: 1px solid #333333;
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+        .child-card { background-color: #1e1e1e; border: 1px solid #333333; border-radius: 12px; padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
         .child-info { display: flex; flex-direction: column; gap: 4px; }
         .child-name { font-size: 16px; font-weight: 600; }
         .child-details { font-size: 13px; color: #a0a0a0; }
@@ -100,36 +76,25 @@
         /* Форма */
         #formContainer { margin-top: 24px; border-top: 1px solid #333; padding-top: 24px; }
         label { display: block; font-size: 14px; color: #a0a0a0; margin-bottom: 8px; }
-        input[type="text"], select {
-            background-color: #1e1e1e; color: #ffffff; border: 1px solid #333333; padding: 14px; border-radius: 12px;
-            width: 100%; box-sizing: border-box; margin-bottom: 20px; font-size: 16px; outline: none;
-        }
+        input[type="text"], select { background-color: #1e1e1e; color: #ffffff; border: 1px solid #333333; padding: 14px; border-radius: 12px; width: 100%; box-sizing: border-box; margin-bottom: 20px; font-size: 16px; outline: none; }
         input[type="text"]:focus, select:focus { border-color: #10B981; }
         
         .radio-group { display: flex; gap: 12px; margin-bottom: 24px; }
-        .radio-label {
-            flex: 1; background-color: #1e1e1e; border: 1px solid #333333; border-radius: 12px; padding: 14px; text-align: center; cursor: pointer;
-        }
+        .radio-label { flex: 1; background-color: #1e1e1e; border: 1px solid #333333; border-radius: 12px; padding: 14px; text-align: center; cursor: pointer; }
         .radio-label.selected { background-color: rgba(16, 185, 129, 0.1); border-color: #10B981; color: #10B981; }
         
-        button.primary-btn {
-            background-color: #10B981; color: #ffffff; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%;
-        }
+        button.primary-btn { background-color: #10B981; color: #ffffff; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; }
         button:disabled { background-color: #333333; color: #888888; }
         .cancel-edit { background: none; border: none; color: #a0a0a0; width: 100%; margin-top: 12px; font-size: 14px; display: none; }
         
         /* Юридические чекбоксы */
-        .legal-check {
-            display: flex; align-items: flex-start; gap: 10px; margin-bottom: 20px; text-align: left;
-        }
+        .legal-check { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 20px; text-align: left; }
         .legal-check input[type="checkbox"] { margin-top: 4px; accent-color: #10B981; width: 18px; height: 18px; }
         .legal-check label { font-size: 12px; color: #a0a0a0; line-height: 1.4; margin: 0; }
         .legal-check a { color: #10B981; text-decoration: none; }
 
         /* Подвал */
-        .footer-links {
-            margin-top: 32px; border-top: 1px solid #333; padding-top: 24px; padding-bottom: 40px; text-align: center; display: flex; flex-direction: column; gap: 16px;
-        }
+        .footer-links { margin-top: 32px; border-top: 1px solid #333; padding-top: 24px; padding-bottom: 40px; text-align: center; display: flex; flex-direction: column; gap: 16px; }
         .footer-links a { color: #888888; text-decoration: none; font-size: 13px; }
         .footer-links a:hover { color: #ffffff; }
 
@@ -143,19 +108,9 @@
 </head>
 <body>
 
-    <!-- СЛАЙДЕР СКАЗОК -->
-    <div class="slider-container">
-        <div class="slider-track" id="sliderTrack">
-            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1519074069444-1ba4fff66d16?w=600&h=300&fit=crop');">
-                <div class="slide-title">Тайна космического кристалла</div>
-            </div>
-            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1531259683007-016a7b628fc3?w=600&h=300&fit=crop');">
-                <div class="slide-title">Волшебный лес чудес</div>
-            </div>
-            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&h=300&fit=crop');">
-                <div class="slide-title">Легенда старого замка</div>
-            </div>
-        </div>
+    <!-- СЛАЙДЕР СКАЗОК (заполняется динамически) -->
+    <div class="slider-container" id="sliderContainer">
+        <div class="slider-track" id="sliderTrack"></div>
     </div>
 
     <h1>Профили детей</h1>
@@ -186,53 +141,38 @@
             <div class="radio-label" id="btn-F" onclick="selectGender('F')">Девочка 👧</div>
         </div>
 
-        <!-- Чекбокс при первичной регистрации -->
         <div id="regConsentContainer" class="legal-check" style="display: none;">
             <input type="checkbox" id="regConsent">
-            <label for="regConsent">Я принимаю условия <a href="#" onclick="openLink('https://telegra.ph/Public-Offer')">Публичной оферты</a> и <a href="#" onclick="openLink('https://telegra.ph/Privacy')">Политики конфиденциальности</a></label>
+            <label for="regConsent" id="regConsentLabel"></label>
         </div>
 
         <button class="primary-btn" id="saveBtn" onclick="saveData()">Добавить профиль</button>
         <button class="cancel-edit" id="cancelBtn" onclick="resetForm()">Отменить редактирование</button>
     </div>
 
-    <!-- КАРТОЧКА СТАТУСА ПОДПИСКИ (ТЕПЕРЬ СНИЗУ) -->
+    <!-- КАРТОЧКА СТАТУСА ПОДПИСКИ -->
     <div id="statusSection" class="status-card">
         <div id="statusBadge" class="status-badge">Загрузка...</div>
         <div id="statusText" class="status-text"></div>
         
         <div id="paymentConsentContainer" class="legal-check" style="display: none;">
             <input type="checkbox" id="paymentConsent">
-            <label for="paymentConsent">Я принимаю условия <a href="#" onclick="openLink('https://telegra.ph/Public-Offer')">Публичной оферты</a> и <a href="#" onclick="openLink('https://telegra.ph/Privacy')">Политики конфиденциальности</a></label>
+            <label for="paymentConsent" id="paymentConsentLabel"></label>
         </div>
         
         <button id="renewBtn" class="primary-btn" style="display: none;" onclick="initiatePayment()">Оплатить подписку (24 500 сум)</button>
     </div>
 
-    <!-- ПОДВАЛ С ДОКУМЕНТАМИ -->
-    <div class="footer-links">
-        <a href="#" onclick="openLink('https://telegra.ph/Privacy')">Политика конфиденциальности</a>
-        <a href="#" onclick="openLink('https://telegra.ph/Public-Offer')">Публичная оферта</a>
-        <a href="#" onclick="openLink('https://telegra.ph/About')">О проекте</a>
-    </div>
+    <!-- ПОДВАЛ С ДОКУМЕНТАМИ (заполняется динамически) -->
+    <div class="footer-links" id="footerLinks"></div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // Открытие ссылок (заглушка на Telegraph)
         function openLink(url) {
             tg.openLink(url);
         }
-
-        // Логика слайдера
-        let currentSlide = 0;
-        const slides = document.querySelectorAll('.slide');
-        const track = document.getElementById('sliderTrack');
-        setInterval(() => {
-            currentSlide = (currentSlide + 1) % slides.length;
-            track.style.transform = `translateX(-${currentSlide * 100}%)`;
-        }, 5000);
 
         const supabaseUrl = 'https://lmxacoleuvsbtgxbhokc.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxteGFjb2xldXZzYnRneGJob2tjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxMTg0OTEsImV4cCI6MjEwMjY5NDQ5MX0.Cy2H1qvhuX6lKSFFtrPeecmFr526WDddyakk5vIvqnc';
@@ -243,8 +183,65 @@
         let editingChildId = null;
         let allChildren = [];
         let userExists = false;
+        
+        // Значения по умолчанию (перезапишутся из базы)
+        let configUrls = {
+            privacy_url: 'https://telegra.ph/Privacy',
+            offer_url: 'https://telegra.ph/Public-Offer',
+            about_url: 'https://telegra.ph/About'
+        };
+        let sliderInterval;
 
-        window.onload = loadProfile;
+        window.onload = async () => {
+            await loadAppConfig();
+            await loadProfile();
+        };
+
+        // НОВАЯ ФУНКЦИЯ: Загрузка конфигурации из базы
+        async function loadAppConfig() {
+            try {
+                // 1. Загружаем баннеры
+                const { data: banners } = await _supabase.from('banners').select('*').eq('is_active', true).order('sort_order', { ascending: true });
+                if (banners && banners.length > 0) {
+                    const track = document.getElementById('sliderTrack');
+                    document.getElementById('sliderContainer').style.display = 'block';
+                    track.innerHTML = banners.map(b => `
+                        <div class="slide" style="background-image: url('${b.image_url}');">
+                            <div class="slide-title">${b.title}</div>
+                        </div>
+                    `).join('');
+                    
+                    // Запускаем прокрутку, только если слайдов больше 1
+                    if (banners.length > 1) {
+                        let currentSlide = 0;
+                        sliderInterval = setInterval(() => {
+                            currentSlide = (currentSlide + 1) % banners.length;
+                            track.style.transform = `translateX(-${currentSlide * 100}%)`;
+                        }, 5000);
+                    }
+                }
+
+                // 2. Загружаем ссылки
+                const { data: settings } = await _supabase.from('app_settings').select('*');
+                if (settings) {
+                    settings.forEach(s => configUrls[s.key] = s.value);
+                }
+
+                // 3. Отрисовываем футер и чекбоксы
+                document.getElementById('footerLinks').innerHTML = `
+                    <a href="#" onclick="openLink('${configUrls.privacy_url}')">Политика конфиденциальности</a>
+                    <a href="#" onclick="openLink('${configUrls.offer_url}')">Публичная оферта</a>
+                    <a href="#" onclick="openLink('${configUrls.about_url}')">О проекте</a>
+                `;
+
+                const consentHtml = `Я принимаю условия <a href="#" onclick="openLink('${configUrls.offer_url}')">Публичной оферты</a> и <a href="#" onclick="openLink('${configUrls.privacy_url}')">Политики конфиденциальности</a>`;
+                document.getElementById('paymentConsentLabel').innerHTML = consentHtml;
+                document.getElementById('regConsentLabel').innerHTML = consentHtml;
+
+            } catch (e) {
+                console.error("Ошибка загрузки конфига:", e);
+            }
+        }
 
         function selectGender(gender) {
             selectedGender = gender;
@@ -255,23 +252,13 @@
 
         async function loadProfile() {
             try {
-                const { data: user, error: userError } = await _supabase
-                    .from('users')
-                    .select('*')
-                    .eq('telegram_id', telegramId)
-                    .maybeSingle(); 
-
+                const { data: user, error: userError } = await _supabase.from('users').select('*').eq('telegram_id', telegramId).maybeSingle(); 
                 if (userError) throw userError;
                 
                 userExists = !!user;
                 updateStatusUI(user);
 
-                const { data: children, error: childrenError } = await _supabase
-                    .from('children')
-                    .select('*')
-                    .eq('parent_telegram_id', telegramId)
-                    .order('created_at', { ascending: true });
-
+                const { data: children, error: childrenError } = await _supabase.from('children').select('*').eq('parent_telegram_id', telegramId).order('created_at', { ascending: true });
                 if (childrenError) throw childrenError;
 
                 allChildren = children || [];
@@ -294,14 +281,13 @@
             section.style.display = 'block';
 
             if (!user) {
-                section.style.display = 'none'; // Скрываем блок подписки для совсем новых пользователей
+                section.style.display = 'none';
                 return;
             }
 
             const now = new Date();
             const trialEnd = new Date(user.trial_end_date);
             const subEnd = user.subscription_end_date ? new Date(user.subscription_end_date) : null;
-            
             const options = { day: 'numeric', month: 'long' };
 
             if (user.subscription_status === 'active' && subEnd && subEnd > now) {
@@ -309,10 +295,7 @@
                 badge.innerText = '✅ Активная подписка';
                 text.innerText = `Доступ открыт до ${subEnd.toLocaleDateString('ru-RU', options)}. Сказки приходят каждый день!`;
                 
-                // Вычисляем, сколько дней осталось до конца подписки
                 const diffDays = Math.ceil((subEnd - now) / (1000 * 60 * 60 * 24));
-                
-                // Если осталось 3 дня или меньше - показываем кнопку продления
                 if (diffDays <= 3) {
                     renewBtn.style.display = 'block';
                     renewBtn.innerText = 'Продлить на месяц (24 500 сум)';
@@ -321,7 +304,6 @@
                     renewBtn.style.display = 'none';
                     paymentConsent.style.display = 'none';
                 }
-
             } else if (user.subscription_status === 'trial' && trialEnd > now) {
                 badge.className = 'status-badge trial';
                 badge.innerText = '⏳ Пробный период';
@@ -346,7 +328,7 @@
                 return;
             }
 
-            const merchantId = '67fc349fca95ffea6667f140'; 
+            const merchantId = '371317599:TEST:1788436285141'; 
             const amount = 2450000; 
             const orderId = telegramId; 
 
