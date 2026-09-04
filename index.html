@@ -59,7 +59,8 @@
             border: 1px solid #333333;
             border-radius: 12px;
             padding: 20px 16px;
-            margin-bottom: 24px;
+            margin-top: 24px;
+            margin-bottom: 0px;
             text-align: center;
             display: none; /* Скрыто до загрузки */
         }
@@ -145,32 +146,16 @@
     <!-- СЛАЙДЕР СКАЗОК -->
     <div class="slider-container">
         <div class="slider-track" id="sliderTrack">
-            <div class="slide" style="background-image: url('https://lmxacoleuvsbtgxbhokc.supabase.co/storage/v1/object/public/Scheherazade/Girl2.jpg');">
-                <div class="slide-title">Путешествие на волшебной радуге</div>
+            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1519074069444-1ba4fff66d16?w=600&h=300&fit=crop');">
+                <div class="slide-title">Тайна космического кристалла</div>
             </div>
-            <div class="slide" style="background-image: url('https://lmxacoleuvsbtgxbhokc.supabase.co/storage/v1/object/public/Scheherazade/mir_snov.jfif');">
-                <div class="slide-title">Секретный сад цветущих снов!</div>
+            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1531259683007-016a7b628fc3?w=600&h=300&fit=crop');">
+                <div class="slide-title">Волшебный лес чудес</div>
             </div>
-            <div class="slide" style="background-image: url('https://lmxacoleuvsbtgxbhokc.supabase.co/storage/v1/object/public/Scheherazade/golden_osen.jfif');">
-                <div class="slide-title">Наступила золотая осень!</div>    
-            </div>
-            <div class="slide" style="background-image: url('https://lmxacoleuvsbtgxbhokc.supabase.co/storage/v1/object/public/Scheherazade/Rolf_and_frnds.jfif');">
-                <div class="slide-title">Зайчик Рольф и его друзья!</div>
+            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&h=300&fit=crop');">
+                <div class="slide-title">Легенда старого замка</div>
             </div>
         </div>
-    </div>
-
-    <!-- КАРТОЧКА СТАТУСА -->
-    <div id="statusSection" class="status-card">
-        <div id="statusBadge" class="status-badge">Загрузка...</div>
-        <div id="statusText" class="status-text"></div>
-        
-        <div id="paymentConsentContainer" class="legal-check" style="display: none;">
-            <input type="checkbox" id="paymentConsent">
-            <label for="paymentConsent">Я принимаю условия <a href="#" onclick="openLink('https://telegra.ph/Public-Offer')">Публичной оферты</a> и <a href="#" onclick="openLink('https://telegra.ph/Privacy')">Политики конфиденциальности</a></label>
-        </div>
-        
-        <button id="renewBtn" class="primary-btn" style="display: none;" onclick="initiatePayment()">Оплатить подписку (24 500 сум)</button>
     </div>
 
     <h1>Профили детей</h1>
@@ -211,6 +196,19 @@
         <button class="cancel-edit" id="cancelBtn" onclick="resetForm()">Отменить редактирование</button>
     </div>
 
+    <!-- КАРТОЧКА СТАТУСА ПОДПИСКИ (ТЕПЕРЬ СНИЗУ) -->
+    <div id="statusSection" class="status-card">
+        <div id="statusBadge" class="status-badge">Загрузка...</div>
+        <div id="statusText" class="status-text"></div>
+        
+        <div id="paymentConsentContainer" class="legal-check" style="display: none;">
+            <input type="checkbox" id="paymentConsent">
+            <label for="paymentConsent">Я принимаю условия <a href="#" onclick="openLink('https://telegra.ph/Public-Offer')">Публичной оферты</a> и <a href="#" onclick="openLink('https://telegra.ph/Privacy')">Политики конфиденциальности</a></label>
+        </div>
+        
+        <button id="renewBtn" class="primary-btn" style="display: none;" onclick="initiatePayment()">Оплатить подписку (24 500 сум)</button>
+    </div>
+
     <!-- ПОДВАЛ С ДОКУМЕНТАМИ -->
     <div class="footer-links">
         <a href="#" onclick="openLink('https://telegra.ph/Privacy')">Политика конфиденциальности</a>
@@ -222,7 +220,7 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // Открытие ссылок (заглушка на Telegraph, потом заменишь на свой сайт)
+        // Открытие ссылок (заглушка на Telegraph)
         function openLink(url) {
             tg.openLink(url);
         }
@@ -304,16 +302,26 @@
             const trialEnd = new Date(user.trial_end_date);
             const subEnd = user.subscription_end_date ? new Date(user.subscription_end_date) : null;
             
-            // Форматируем дату красиво
             const options = { day: 'numeric', month: 'long' };
 
             if (user.subscription_status === 'active' && subEnd && subEnd > now) {
                 badge.className = 'status-badge active';
                 badge.innerText = '✅ Активная подписка';
                 text.innerText = `Доступ открыт до ${subEnd.toLocaleDateString('ru-RU', options)}. Сказки приходят каждый день!`;
-                renewBtn.style.display = 'block';
-                renewBtn.innerText = 'Продлить на месяц (24 500 сум)';
-                paymentConsent.style.display = 'flex';
+                
+                // Вычисляем, сколько дней осталось до конца подписки
+                const diffDays = Math.ceil((subEnd - now) / (1000 * 60 * 60 * 24));
+                
+                // Если осталось 3 дня или меньше - показываем кнопку продления
+                if (diffDays <= 3) {
+                    renewBtn.style.display = 'block';
+                    renewBtn.innerText = 'Продлить на месяц (24 500 сум)';
+                    paymentConsent.style.display = 'flex';
+                } else {
+                    renewBtn.style.display = 'none';
+                    paymentConsent.style.display = 'none';
+                }
+
             } else if (user.subscription_status === 'trial' && trialEnd > now) {
                 badge.className = 'status-badge trial';
                 badge.innerText = '⏳ Пробный период';
@@ -332,7 +340,6 @@
         }
 
         function initiatePayment() {
-            // Проверка галочки согласия
             const consent = document.getElementById('paymentConsent').checked;
             if (!consent) {
                 tg.showAlert("Пожалуйста, подтвердите согласие с Офертой и Политикой конфиденциальности.");
@@ -340,7 +347,7 @@
             }
 
             const merchantId = '67fc349fca95ffea6667f140'; 
-            const amount = 2450000; // 24 500 сум в тийинах
+            const amount = 2450000; 
             const orderId = telegramId; 
 
             const params = `m=${merchantId};ac.order_id=${orderId};a=${amount}`;
@@ -394,7 +401,6 @@
             
             formContainer.style.display = 'block';
             
-            // Показываем галочку регистрации только если пользователя еще нет в БД
             if (!userExists && !editingChildId) {
                 regConsent.style.display = 'flex';
             } else {
@@ -402,7 +408,7 @@
             }
 
             if (allChildren.length >= 5 && !editingChildId) {
-                formContainer.style.display = 'none'; // Скрываем форму если лимит 5 детей
+                formContainer.style.display = 'none'; 
             }
         }
 
@@ -458,7 +464,6 @@
                 return;
             }
 
-            // Проверка юридической галочки при регистрации
             if (!userExists && !editingChildId) {
                 const consent = document.getElementById('regConsent').checked;
                 if (!consent) {
