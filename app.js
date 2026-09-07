@@ -181,21 +181,38 @@ function applyLanguage() {
     document.getElementById('cancelBtn').innerText = t.btn_cancel;
 }
 
+// === ОБНОВЛЕННАЯ ФУНКЦИЯ (БЕСКОНЕЧНЫЙ СЛАЙДЕР) ===
 async function loadAppConfig() {
     try {
         const { data: banners } = await _supabase.from('banners').select('*').eq('is_active', true).order('sort_order', { ascending: true });
         if (banners && banners.length > 0) {
             const track = document.getElementById('sliderTrack');
             document.getElementById('sliderContainer').style.display = 'block';
-            track.innerHTML = banners.map(b => `
-                <div class="slide" style="background-image: url('${b.image_url}');"><div class="slide-title">${b.title}</div></div>
-            `).join('');
-            if (banners.length > 1 && !sliderInterval) {
-                let currentSlide = 0;
-                sliderInterval = setInterval(() => {
-                    currentSlide = (currentSlide + 1) % banners.length;
-                    track.style.transform = `translateX(-${currentSlide * 100}%)`;
-                }, 5000);
+            
+            // Если мы загружаем первый раз
+            if (track.children.length === 0) {
+                track.innerHTML = banners.map(b => `
+                    <div class="slide" style="background-image: url('${b.image_url}');"><div class="slide-title">${b.title}</div></div>
+                `).join('');
+                
+                if (banners.length > 1 && !sliderInterval) {
+                    sliderInterval = setInterval(() => {
+                        // Включаем анимацию
+                        track.style.transition = 'transform 0.5s ease-in-out';
+                        // Сдвигаем влево
+                        track.style.transform = 'translateX(-100%)';
+                        
+                        // Ждем завершения сдвига
+                        setTimeout(() => {
+                            // Отключаем анимацию для перестановки элементов
+                            track.style.transition = 'none';
+                            // Перемещаем первый (теперь уже скрытый) слайд в конец DOM-дерева
+                            track.appendChild(track.firstElementChild);
+                            // Возвращаем трек на 0% мгновенно (пользователь этого не заметит)
+                            track.style.transform = 'translateX(0)';
+                        }, 500); // 500мс = время transition
+                    }, 5000);
+                }
             }
         }
 
