@@ -52,3 +52,24 @@ button:disabled { background-color: #333333; color: #888888; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 .loader-text { color: #a0a0a0; font-size: 14px; animation: pulse 1.5s ease-in-out infinite; }
 @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+/* Стили для модального окна анкеты родителя */
+.parent-modal {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.85);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000; padding: 20px; box-sizing: border-box;
+}
+.modal-content {
+    background-color: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 16px;
+    padding: 24px;
+    width: 100%; max-width: 400px;
+}
+.modal-content input, .modal-content select {
+    background-color: #121212; color: #fff;
+    border: 1px solid #333; padding: 12px;
+    border-radius: 10px; width: 100%; box-sizing: border-box;
+    margin-bottom: 16px; font-size: 15px; outline: none;
+}
