@@ -292,7 +292,9 @@ async function loadAppConfig() {
             // Устанавливаем картинку как фон, что исключает ее растягивание на весь экран
             promoContainer.style.backgroundImage = `url('${promoImgUrl}')`;
             promoContainer.style.display = 'block';
-
+// ДОБАВЬ СТРОЧКУ СЮДА ДЛЯ ОТЛАДКИ:
+        console.log("Адрес картинки баннера из базы:", promoImgUrl);
+            
             // Трекаем просмотр (view) ровно один раз за сессию
             if (!window._promoViewTracked) {
                 window._promoViewTracked = true;
