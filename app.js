@@ -239,7 +239,6 @@ function applyLanguage() {
     document.getElementById('saveBtn').innerText = editingChildId ? t.btn_save_edit : t.btn_save_add;
     document.getElementById('cancelBtn').innerText = t.btn_cancel;
 
-    // Перевод модалки
     document.getElementById('modalTitle').innerText = t.modal_title;
     document.getElementById('modalSub').innerText = t.modal_sub;
     document.getElementById('labelParentRole').innerText = t.label_role;
@@ -283,16 +282,6 @@ async function loadAppConfig() {
         document.getElementById('paymentConsentLabel').innerHTML = consentHtml;
         document.getElementById('regConsentLabel').innerHTML = consentHtml;
 
-       // Рекламный баннер + трекинг показов
-        const promoImgUrl = configUrls['promo_image_url'];
-        const promoLinkUrl = configUrls['promo_link_url'];
-        const promoContainer = document.getElementById('promoBannerContainer');
-
-        if (promoImgUrl && promoImgUrl.trim() !== '') {
-            // Устанавливаем картинку как фон, что исключает ее растягивание на весь экран
-            promoContainer.style.backgroundImage = `url('${promoImgUrl}')`;
-            promoContainer.style.display = 'block';
-            
         // Рекламный баннер + накопительный трекинг
         const promoImgUrl = configUrls['promo_image_url'];
         const promoLinkUrl = configUrls['promo_link_url'];
@@ -355,7 +344,6 @@ async function loadProfile() {
         userExists = !!user;
         currentUserData = user; 
 
-        // Если у юзера нет данных о себе (роль или возраст) — показываем модалку
         if (!user || !user.parent_role || !user.parent_age) {
             document.getElementById('parentModal').style.display = 'flex';
         } else {
