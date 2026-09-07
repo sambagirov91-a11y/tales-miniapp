@@ -59,7 +59,12 @@ const i18n_app = {
         alert_delete_confirm: "Вы уверены, что хотите удалить этот профиль?",
         alert_delete_err: "Не удалось удалить профиль.",
         alert_save_err: "Произошла ошибка при сохранении.",
-        btn_saving: "Сохранение..."
+        btn_saving: "Сохранение...",
+        modal_title: "Расскажите о себе",
+        modal_sub: "Это поможет нам сделать сказки еще лучше:",
+        label_role: "Кто вы для ребенка?",
+        label_age: "Ваш возраст",
+        btn_save_parent: "Продолжить"
     },
     uz: {
         page_title: "Bolalar profillari",
@@ -98,7 +103,12 @@ const i18n_app = {
         alert_delete_confirm: "Haqiqatan ham bu profilni o'chirmoqchimisiz?",
         alert_delete_err: "Profilni o'chirib bo'lmadi.",
         alert_save_err: "Saqlashda xatolik yuz berdi.",
-        btn_saving: "Saqlanmoqda..."
+        btn_saving: "Saqlanmoqda...",
+        modal_title: "O'zingiz haqingizda",
+        modal_sub: "Iltimos, o'zingiz haqingizda ma'lumot kiriting:",
+        label_role: "Farzandga kimsiz?",
+        label_age: "Yoshingiz",
+        btn_save_parent: "Davom etish"
     },
     en: {
         page_title: "Children's profiles",
@@ -137,7 +147,12 @@ const i18n_app = {
         alert_delete_confirm: "Are you sure you want to delete this profile?",
         alert_delete_err: "Failed to delete the profile.",
         alert_save_err: "An error occurred while saving.",
-        btn_saving: "Saving..."
+        btn_saving: "Saving...",
+        modal_title: "About you",
+        modal_sub: "Please provide information about yourself:",
+        label_role: "Who are you to the child?",
+        label_age: "Your age",
+        btn_save_parent: "Continue"
     }
 };
 
@@ -146,22 +161,66 @@ window.onload = async () => {
     await loadAppConfig();
 };
 
+function checkCustomRole(val) {
+    const customInput = document.getElementById('customParentRole');
+    if (val === 'Другое') {
+        customInput.style.display = 'block';
+    } else {
+        customInput.style.display = 'none';
+    }
+}
+
+async function saveParentInfo() {
+    let role = document.getElementById('parentRoleSelect').value;
+    if (role === 'Другое') {
+        role = document.getElementById('customParentRole').value.trim();
+    }
+    const age = parseInt(document.getElementById('parentAgeInput').value);
+
+    if (!role || isNaN(age) || age < 10 || age > 100) {
+        alert('Пожалуйста, корректно заполните все поля.');
+        return;
+    }
+
+    try {
+        if (!userExists) {
+            const trialEndDate = new Date();
+            trialEndDate.setDate(trialEndDate.getDate() + 7);
+            await _supabase.from('users').insert({ 
+                telegram_id: telegramId, 
+                subscription_status: 'trial',
+                trial_end_date: trialEndDate.toISOString(),
+                bot_language: currentLang,
+                parent_role: role,
+                parent_age: age
+            });
+            userExists = true;
+        } else {
+            await _supabase.from('users').update({
+                parent_role: role,
+                parent_age: age
+            }).eq('telegram_id', telegramId);
+        }
+
+        document.getElementById('parentModal').style.display = 'none';
+        await loadProfile();
+    } catch (err) {
+        console.error(err);
+        alert('Ошибка сохранения');
+    }
+}
+
 async function changeAppLanguage(newLang) {
     currentLang = newLang;
     applyLanguage();
     renderChildren(allChildren);
-    
-    if (currentUserData) {
-        updateStatusUI(currentUserData);
-    }
+    if (currentUserData) updateStatusUI(currentUserData);
     loadAppConfig();
 
     if (userExists) {
         try {
             await _supabase.from('users').update({ bot_language: newLang }).eq('telegram_id', telegramId);
-        } catch (e) {
-            console.error("Failed to update language in DB", e);
-        }
+        } catch (e) { console.error(e); }
     }
 }
 
@@ -179,47 +238,39 @@ function applyLanguage() {
     document.getElementById('txtGirl').innerText = t.btn_girl;
     document.getElementById('saveBtn').innerText = editingChildId ? t.btn_save_edit : t.btn_save_add;
     document.getElementById('cancelBtn').innerText = t.btn_cancel;
+
+    // Перевод модалки
+    document.getElementById('modalTitle').innerText = t.modal_title;
+    document.getElementById('modalSub').innerText = t.modal_sub;
+    document.getElementById('labelParentRole').innerText = t.label_role;
+    document.getElementById('labelParentAge').innerText = t.label_age;
+    document.getElementById('saveParentBtn').innerText = t.btn_save_parent;
 }
 
-// === ОБНОВЛЕННАЯ ФУНКЦИЯ (БЕСКОНЕЧНЫЙ СЛАЙДЕР) ===
 async function loadAppConfig() {
     try {
         const { data: banners } = await _supabase.from('banners').select('*').eq('is_active', true).order('sort_order', { ascending: true });
         if (banners && banners.length > 0) {
             const track = document.getElementById('sliderTrack');
             document.getElementById('sliderContainer').style.display = 'block';
-            
-            // Если мы загружаем первый раз
             if (track.children.length === 0) {
-                track.innerHTML = banners.map(b => `
-                    <div class="slide" style="background-image: url('${b.image_url}');"><div class="slide-title">${b.title}</div></div>
-                `).join('');
-                
+                track.innerHTML = banners.map(b => `<div class="slide" style="background-image: url('${b.image_url}');"><div class="slide-title">${b.title}</div></div>`).join('');
                 if (banners.length > 1 && !sliderInterval) {
                     sliderInterval = setInterval(() => {
-                        // Включаем анимацию
                         track.style.transition = 'transform 0.5s ease-in-out';
-                        // Сдвигаем влево
                         track.style.transform = 'translateX(-100%)';
-                        
-                        // Ждем завершения сдвига
                         setTimeout(() => {
-                            // Отключаем анимацию для перестановки элементов
                             track.style.transition = 'none';
-                            // Перемещаем первый (теперь уже скрытый) слайд в конец DOM-дерева
                             track.appendChild(track.firstElementChild);
-                            // Возвращаем трек на 0% мгновенно (пользователь этого не заметит)
                             track.style.transform = 'translateX(0)';
-                        }, 500); // 500мс = время transition
+                        }, 500);
                     }, 5000);
                 }
             }
         }
 
         const { data: settings } = await _supabase.from('app_settings').select('*');
-        if (settings) {
-            settings.forEach(s => configUrls[s.key] = s.value);
-        }
+        if (settings) settings.forEach(s => configUrls[s.key] = s.value);
 
         const t = i18n_app[currentLang];
         document.getElementById('footerLinks').innerHTML = `
@@ -232,7 +283,43 @@ async function loadAppConfig() {
         document.getElementById('paymentConsentLabel').innerHTML = consentHtml;
         document.getElementById('regConsentLabel').innerHTML = consentHtml;
 
-    } catch (e) { console.error("Ошибка загрузки конфига:", e); }
+        // Рекламный баннер + трекинг показов
+        const promoImgUrl = configUrls['promo_image_url'];
+        const promoLinkUrl = configUrls['promo_link_url'];
+        const promoContainer = document.getElementById('promoBannerContainer');
+        const promoImg = document.getElementById('promoBannerImg');
+
+        if (promoImgUrl && promoImgUrl.trim() !== '') {
+            promoImg.src = promoImgUrl;
+            promoContainer.style.display = 'block';
+
+            // Трекаем просмотр (view) ровно один раз за сессию открытия аппа
+            if (!window._promoViewTracked) {
+                window._promoViewTracked = true;
+                _supabase.from('promo_stats').insert({
+                    telegram_id: telegramId,
+                    action_type: 'view',
+                    parent_role: currentUserData?.parent_role || 'Не указано',
+                    parent_age: currentUserData?.parent_age || null
+                }).then();
+            }
+
+            // Трекаем клик (click)
+            promoContainer.onclick = () => {
+                _supabase.from('promo_stats').insert({
+                    telegram_id: telegramId,
+                    action_type: 'click',
+                    parent_role: currentUserData?.parent_role || 'Не указано',
+                    parent_age: currentUserData?.parent_age || null
+                }).then(() => {
+                    openLink(promoLinkUrl || '#');
+                });
+            };
+        } else {
+            promoContainer.style.display = 'none';
+        }
+
+    } catch (e) { console.error(e); }
 }
 
 function selectGender(gender) {
@@ -250,10 +337,14 @@ async function loadProfile() {
         userExists = !!user;
         currentUserData = user; 
 
-        if (userExists && user.bot_language) {
-            currentLang = user.bot_language;
+        // Если у юзера нет данных о себе (роль или возраст) — показываем модалку
+        if (!user || !user.parent_role || !user.parent_age) {
+            document.getElementById('parentModal').style.display = 'flex';
+        } else {
+            document.getElementById('parentModal').style.display = 'none';
         }
-        
+
+        if (userExists && user.bot_language) currentLang = user.bot_language;
         document.getElementById('appLangSelector').value = currentLang;
         
         applyLanguage(); 
@@ -266,10 +357,7 @@ async function loadProfile() {
         renderChildren(allChildren);
         checkLimitAndMode();
 
-    } catch (err) {
-        console.error("Ошибка загрузки:", err);
-        document.getElementById('childrenList').innerHTML = '<p style="color: #ef4444; font-size: 14px;">Ошибка загрузки данных / Xatolik / Loading error.</p>';
-    }
+    } catch (err) { console.error(err); }
 }
 
 function updateStatusUI(user) {
@@ -281,152 +369,85 @@ function updateStatusUI(user) {
     const t = i18n_app[currentLang];
     
     section.style.display = 'block';
-
-    if (!user) {
-        section.style.display = 'none';
-        return;
-    }
+    if (!user) { section.style.display = 'none'; return; }
 
     const now = new Date();
     const trialEnd = new Date(user.trial_end_date);
     const subEnd = user.subscription_end_date ? new Date(user.subscription_end_date) : null;
-    
     const locale = currentLang === 'ru' ? 'ru-RU' : (currentLang === 'uz' ? 'uz-UZ' : 'en-US');
     const options = { day: 'numeric', month: 'long' };
 
     if (user.subscription_status === 'active' && subEnd && subEnd > now) {
-        badge.className = 'status-badge active';
-        badge.innerText = t.status_active;
+        badge.className = 'status-badge active'; badge.innerText = t.status_active;
         text.innerText = t.status_active_text.replace('{date}', subEnd.toLocaleDateString(locale, options));
-        
-        const diffDays = Math.ceil((subEnd - now) / (1000 * 60 * 60 * 24));
-        if (diffDays <= 3) {
-            renewBtn.style.display = 'block';
-            renewBtn.innerText = t.btn_renew_active;
-            paymentConsent.style.display = 'flex';
-        } else {
-            renewBtn.style.display = 'none';
-            paymentConsent.style.display = 'none';
-        }
+        renewBtn.style.display = Math.ceil((subEnd - now) / (1000 * 60 * 60 * 24)) <= 3 ? 'block' : 'none';
     } else if (user.subscription_status === 'trial' && trialEnd > now) {
-        badge.className = 'status-badge trial';
-        badge.innerText = t.status_trial;
+        badge.className = 'status-badge trial'; badge.innerText = t.status_trial;
         text.innerText = t.status_trial_text.replace('{date}', trialEnd.toLocaleDateString(locale, options));
-        renewBtn.style.display = 'block';
-        renewBtn.innerText = t.btn_renew_trial;
-        paymentConsent.style.display = 'flex';
+        renewBtn.style.display = 'block'; renewBtn.innerText = t.btn_renew_trial; paymentConsent.style.display = 'flex';
     } else {
-        badge.className = 'status-badge inactive';
-        badge.innerText = t.status_inactive;
-        text.innerText = t.status_inactive_text;
-        renewBtn.style.display = 'block';
-        renewBtn.innerText = t.btn_renew_inactive;
-        paymentConsent.style.display = 'flex';
+        badge.className = 'status-badge inactive'; badge.innerText = t.status_inactive;
+        text.innerText = t.status_inactive_text; renewBtn.style.display = 'block'; renewBtn.innerText = t.btn_renew_inactive; paymentConsent.style.display = 'flex';
     }
 }
 
 function initiatePayment() {
     const t = i18n_app[currentLang];
-    const consent = document.getElementById('paymentConsent').checked;
-    if (!consent) {
-        tg.showAlert(t.alert_consent);
-        return;
-    }
-
-    const merchantId = '67fc349fca95ffea6667f140'; 
-    const amount = 2450000; 
-    const orderId = telegramId; 
-
-    const params = `m=${merchantId};ac.order_id=${orderId};a=${amount}`;
-    const encodedParams = btoa(params);
-    const checkoutUrl = `https://checkout.paycom.uz/${encodedParams}`;
-
+    if (!document.getElementById('paymentConsent').checked) { tg.showAlert(t.alert_consent); return; }
+    const checkoutUrl = `https://checkout.paycom.uz/${btoa(`m=67fc349fca95ffea6667f140;ac.order_id=${telegramId};a=2450000`)}`;
     const now = new Date();
-    const tashkentTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Tashkent"}));
-    const hours = tashkentTime.getHours();
-    const minutes = tashkentTime.getMinutes();
-    const isLate = hours >= 21;
-
-    if (isLate) {
-        tg.showAlert(t.alert_late, () => { tg.openLink(checkoutUrl); });
-    } else {
-        tg.openLink(checkoutUrl);
-    }
+    const hours = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Tashkent"})).getHours();
+    if (hours >= 21) tg.showAlert(t.alert_late, () => { tg.openLink(checkoutUrl); });
+    else tg.openLink(checkoutUrl);
 }
 
 function renderChildren(children) {
     const container = document.getElementById('childrenList');
     const t = i18n_app[currentLang];
-
-    if (children.length === 0) {
-        container.innerHTML = `<p style="color: #a0a0a0; font-size: 14px;">${t.no_profiles}</p>`;
-        return;
-    }
-
-    container.innerHTML = children.map(child => {
-        const genderIcon = child.gender === 'M' ? '👦' : '👧';
-        const langFlag = child.language === 'ru' ? '🇷🇺' : (child.language === 'uz' ? '🇺🇿' : '🇬🇧');
-        return `
-            <div class="child-card">
-                <div class="child-info">
-                    <span class="child-name">${child.name} ${genderIcon}</span>
-                    <span class="child-details">${t.label_lang}: ${langFlag}</span>
-                </div>
-                <div class="card-actions">
-                    <button class="icon-btn" onclick="startEdit('${child.id}')">✏️</button>
-                    <button class="icon-btn" onclick="deleteChild('${child.id}')">🗑️</button>
-                </div>
+    if (children.length === 0) { container.innerHTML = `<p style="color: #a0a0a0; font-size: 14px;">${t.no_profiles}</p>`; return; }
+    container.innerHTML = children.map(child => `
+        <div class="child-card">
+            <div class="child-info">
+                <span class="child-name">${child.name} ${child.gender === 'M' ? '👦' : '👧'}</span>
+                <span class="child-details">${t.label_lang}: ${child.language === 'ru' ? '🇷🇺' : (child.language === 'uz' ? '🇺🇿' : '🇬🇧')}</span>
             </div>
-        `;
-    }).join('');
+            <div class="card-actions">
+                <button class="icon-btn" onclick="startEdit('${child.id}')">✏️</button>
+                <button class="icon-btn" onclick="deleteChild('${child.id}')">🗑️</button>
+            </div>
+        </div>
+    `).join('');
 }
 
 function checkLimitAndMode() {
     const formContainer = document.getElementById('formContainer');
-    const regConsent = document.getElementById('regConsentContainer');
     formContainer.style.display = 'block';
-    
-    if (!userExists && !editingChildId) regConsent.style.display = 'flex';
-    else regConsent.style.display = 'none';
-
+    if (!userExists && !editingChildId) document.getElementById('regConsentContainer').style.display = 'flex';
+    else document.getElementById('regConsentContainer').style.display = 'none';
     if (allChildren.length >= 5 && !editingChildId) formContainer.style.display = 'none'; 
 }
 
 function startEdit(id) {
     const child = allChildren.find(c => c.id === id);
     if (!child) return;
-
     editingChildId = child.id;
     document.getElementById('childName').value = child.name;
     document.getElementById('language').value = child.language;
     selectGender(child.gender);
-    
-    applyLanguage();
-    checkLimitAndMode();
+    applyLanguage(); checkLimitAndMode();
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
 }
 
 function resetForm() {
-    editingChildId = null;
-    document.getElementById('childName').value = '';
-    document.getElementById('language').value = 'ru';
-    selectGender('M');
-    
-    applyLanguage();
-    checkLimitAndMode();
+    editingChildId = null; document.getElementById('childName').value = '';
+    document.getElementById('language').value = 'ru'; selectGender('M');
+    applyLanguage(); checkLimitAndMode();
 }
 
 async function deleteChild(id) {
-    const t = i18n_app[currentLang];
-    if (!confirm(t.alert_delete_confirm)) return;
-    try {
-        const { error } = await _supabase.from('children').delete().eq('id', id);
-        if (error) throw error;
-        await loadProfile();
-    } catch (err) {
-        console.error(err);
-        tg.showAlert(t.alert_delete_err);
-    }
+    if (!confirm(i18n_app[currentLang].alert_delete_confirm)) return;
+    await _supabase.from('children').delete().eq('id', id);
+    loadProfile();
 }
 
 async function saveData() {
@@ -435,61 +456,20 @@ async function saveData() {
     const language = document.getElementById('language').value;
     const t = i18n_app[currentLang];
 
-    if (!childName) {
-        tg.showAlert(t.alert_name);
-        return;
-    }
+    if (!childName) { tg.showAlert(t.alert_name); return; }
+    if (!userExists && !editingChildId && !document.getElementById('regConsent').checked) { tg.showAlert(t.alert_reg_consent); return; }
 
-    if (!userExists && !editingChildId) {
-        const consent = document.getElementById('regConsent').checked;
-        if (!consent) {
-            tg.showAlert(t.alert_reg_consent);
-            return;
-        }
-    }
-
-    btn.disabled = true;
-    btn.innerText = t.btn_saving;
-
+    btn.disabled = true; btn.innerText = t.btn_saving;
     try {
         if (editingChildId) {
-            const { error } = await _supabase.from('children').update({ name: childName, gender: selectedGender, language: language }).eq('id', editingChildId);
-            if (error) throw error;
+            await _supabase.from('children').update({ name: childName, gender: selectedGender, language }).eq('id', editingChildId);
         } else {
-            if (!userExists) {
-                const trialEndDate = new Date();
-                trialEndDate.setDate(trialEndDate.getDate() + 7);
-                await _supabase.from('users').insert({ 
-                    telegram_id: telegramId, 
-                    subscription_status: 'trial',
-                    trial_end_date: trialEndDate.toISOString(),
-                    bot_language: currentLang
-                });
-                userExists = true;
-            }
-
-            const { error } = await _supabase.from('children').insert({
-                parent_telegram_id: telegramId, name: childName, gender: selectedGender, language: language
-            });
-            if (error) throw error;
-
-            const now = new Date();
-            const tashkentTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Tashkent"}));
-            const hours = tashkentTime.getHours();
-            const minutes = tashkentTime.getMinutes();
-            const isLate = hours >= 21;
-
-            if (isLate) tg.showAlert(t.alert_added_late);
+            await _supabase.from('children').insert({ parent_telegram_id: telegramId, name: childName, gender: selectedGender, language });
+            const hours = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Tashkent"})).getHours();
+            if (hours >= 21) tg.showAlert(t.alert_added_late);
             else tg.showAlert(t.alert_added);
         }
-
-        resetForm();
-        await loadProfile();
-    } catch (error) {
-        console.error(error);
-        tg.showAlert(t.alert_save_err);
-    } finally {
-        btn.disabled = false;
-        applyLanguage(); 
-    }
+        resetForm(); loadProfile();
+    } catch (error) { tg.showAlert(t.alert_save_err); }
+    finally { btn.disabled = false; applyLanguage(); }
 }
