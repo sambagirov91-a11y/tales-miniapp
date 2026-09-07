@@ -345,7 +345,7 @@ function initiatePayment() {
     const tashkentTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Tashkent"}));
     const hours = tashkentTime.getHours();
     const minutes = tashkentTime.getMinutes();
-    const isLate = hours > 19 || (hours === 19 && minutes >= 55);
+    const isLate = hours >= 21;
 
     if (isLate) {
         tg.showAlert(t.alert_late, () => { tg.openLink(checkoutUrl); });
@@ -477,7 +477,7 @@ async function saveData() {
             const tashkentTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Tashkent"}));
             const hours = tashkentTime.getHours();
             const minutes = tashkentTime.getMinutes();
-            const isLate = hours > 19 || (hours === 19 && minutes >= 55);
+            const isLate = hours >= 21;
 
             if (isLate) tg.showAlert(t.alert_added_late);
             else tg.showAlert(t.alert_added);
