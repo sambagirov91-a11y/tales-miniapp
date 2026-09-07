@@ -283,17 +283,17 @@ async function loadAppConfig() {
         document.getElementById('paymentConsentLabel').innerHTML = consentHtml;
         document.getElementById('regConsentLabel').innerHTML = consentHtml;
 
-        // Рекламный баннер + трекинг показов
+       // Рекламный баннер + трекинг показов
         const promoImgUrl = configUrls['promo_image_url'];
         const promoLinkUrl = configUrls['promo_link_url'];
         const promoContainer = document.getElementById('promoBannerContainer');
-        const promoImg = document.getElementById('promoBannerImg');
 
         if (promoImgUrl && promoImgUrl.trim() !== '') {
-            promoImg.src = promoImgUrl;
+            // Устанавливаем картинку как фон, что исключает ее растягивание на весь экран
+            promoContainer.style.backgroundImage = `url('${promoImgUrl}')`;
             promoContainer.style.display = 'block';
 
-            // Трекаем просмотр (view) ровно один раз за сессию открытия аппа
+            // Трекаем просмотр (view) ровно один раз за сессию
             if (!window._promoViewTracked) {
                 window._promoViewTracked = true;
                 _supabase.from('promo_stats').insert({
