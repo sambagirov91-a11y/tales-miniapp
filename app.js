@@ -292,29 +292,45 @@ async function loadAppConfig() {
             // Устанавливаем картинку как фон, что исключает ее растягивание на весь экран
             promoContainer.style.backgroundImage = `url('${promoImgUrl}')`;
             promoContainer.style.display = 'block';
-// ДОБАВЬ СТРОЧКУ СЮДА ДЛЯ ОТЛАДКИ:
-        console.log("Адрес картинки баннера из базы:", promoImgUrl);
             
-            // Трекаем просмотр (view) ровно один раз за сессию
+        // Рекламный баннер + накопительный трекинг
+        const promoImgUrl = configUrls['promo_image_url'];
+        const promoLinkUrl = configUrls['promo_link_url'];
+        const promoContainer = document.getElementById('promoBannerContainer');
+
+        if (promoImgUrl && promoImgUrl.trim() !== '') {
+            promoContainer.style.backgroundImage = `url('${promoImgUrl}')`;
+            promoContainer.style.display = 'block';
+
+            // Трекаем просмотр (увеличиваем views_count на 1)
             if (!window._promoViewTracked) {
                 window._promoViewTracked = true;
-                _supabase.from('promo_stats').insert({
-                    telegram_id: telegramId,
-                    action_type: 'view',
-                    parent_role: currentUserData?.parent_role || 'Не указано',
-                    parent_age: currentUserData?.parent_age || null
-                }).then();
+                
+                _supabase.from('promo_stats').select('views_count').eq('telegram_id', telegramId).maybeSingle().then(({ data }) => {
+                    const currentViews = data ? (data.views_count || 0) + 1 : 1;
+                    _supabase.from('promo_stats').upsert({
+                        telegram_id: telegramId,
+                        views_count: currentViews,
+                        parent_role: currentUserData?.parent_role || 'Не указано',
+                        parent_age: currentUserData?.parent_age || null,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'telegram_id' }).then();
+                });
             }
 
-            // Трекаем клик (click)
+            // Трекаем клик (увеличиваем clicks_count на 1)
             promoContainer.onclick = () => {
-                _supabase.from('promo_stats').insert({
-                    telegram_id: telegramId,
-                    action_type: 'click',
-                    parent_role: currentUserData?.parent_role || 'Не указано',
-                    parent_age: currentUserData?.parent_age || null
-                }).then(() => {
-                    openLink(promoLinkUrl || '#');
+                _supabase.from('promo_stats').select('clicks_count').eq('telegram_id', telegramId).maybeSingle().then(({ data }) => {
+                    const currentClicks = data ? (data.clicks_count || 0) + 1 : 1;
+                    _supabase.from('promo_stats').upsert({
+                        telegram_id: telegramId,
+                        clicks_count: currentClicks,
+                        parent_role: currentUserData?.parent_role || 'Не указано',
+                        parent_age: currentUserData?.parent_age || null,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'telegram_id' }).then(() => {
+                        openLink(promoLinkUrl || '#');
+                    });
                 });
             };
         } else {
