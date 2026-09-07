@@ -52,6 +52,7 @@ button:disabled { background-color: #333333; color: #888888; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 .loader-text { color: #a0a0a0; font-size: 14px; animation: pulse 1.5s ease-in-out infinite; }
 @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+
 /* Стили для модального окна анкеты родителя */
 .parent-modal {
     position: fixed;
@@ -73,11 +74,12 @@ button:disabled { background-color: #333333; color: #888888; }
     border-radius: 10px; width: 100%; box-sizing: border-box;
     margin-bottom: 16px; font-size: 15px; outline: none;
 }
+
 /* Стили для статичного рекламного баннера */
 .promo-banner {
     margin-top: 32px;
     width: 100%;
-    max-height: 80px; /* Жестко ограничиваем высоту контейнера */
+    max-height: 80px;
     border-radius: 12px;
     overflow: hidden;
     cursor: pointer;
@@ -90,7 +92,7 @@ button:disabled { background-color: #333333; color: #888888; }
 }
 .promo-banner img {
     width: 100%;
-    height: 80px; /* Жестко фиксируем высоту картинки */
+    height: 80px;
     display: block;
-    object-fit: cover; /* Обрезает лишнее по бокам, сохраняя пропорции */
+    object-fit: cover;
 }
