@@ -4,20 +4,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Управление профилем</title>
-    <!-- Подключаем внешние скрипты -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <!-- Подключаем наш вынесенный файл стилей -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+    <!-- МОДАЛКА АНКЕТЫ РОДИТЕЛЯ (Появляется, если данных нет) -->
+    <div id="parentModal" class="parent-modal" style="display: none;">
+        <div class="modal-content">
+            <h2 id="modalTitle" style="color: #10B981; margin-bottom: 8px;">Добро пожаловать!</h2>
+            <p id="modalSub" style="font-size: 13px; color: #a0a0a0; margin-bottom: 20px;">Пожалуйста, укажите информацию о себе для продолжения:</p>
+            
+            <label id="labelParentRole">Кто вы для ребенка?</label>
+            <select id="parentRoleSelect" onchange="checkCustomRole(this.value)">
+                <option value="Мать">Мать</option>
+                <option value="Отец">Отец</option>
+                <option value="Бабушка">Бабушка</option>
+                <option value="Дедушка">Дедушка</option>
+                <option value="Няня">Няня</option>
+                <option value="Другое">Другое</option>
+            </select>
+            
+            <input type="text" id="customParentRole" placeholder="Укажите кто вы..." style="display: none; margin-top: -10px;">
+
+            <label id="labelParentAge" style="margin-top: 15px;">Ваш возраст</label>
+            <input type="number" id="parentAgeInput" placeholder="Например: 32" min="12" max="100">
+
+            <button class="primary-btn" id="saveParentBtn" onclick="saveParentInfo()" style="margin-top: 10px;">Сохранить и продолжить</button>
+        </div>
+    </div>
 
     <div class="slider-container" id="sliderContainer">
         <div class="slider-track" id="sliderTrack"></div>
     </div>
 
-    <!-- Обновленный заголовок с переключателем языка -->
     <div class="header-container">
         <h1 id="pageTitle">Профили детей</h1>
         <select id="appLangSelector" onchange="changeAppLanguage(this.value)">
@@ -74,9 +95,13 @@
         <button id="renewBtn" class="primary-btn" style="display: none;" onclick="initiatePayment()"></button>
     </div>
 
+    <!-- Рекламный баннер с трекингом -->
+    <div id="promoBannerContainer" class="promo-banner" style="display: none;">
+        <img id="promoBannerImg" src="" alt="Реклама">
+    </div>
+
     <div class="footer-links" id="footerLinks"></div>
 
-    <!-- Подключаем нашу вынесенную логику -->
     <script src="app.js" defer></script>
 </body>
 </html>
