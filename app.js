@@ -325,23 +325,54 @@ function updateStatusUI(user) {
     const section = document.getElementById('statusSection');
     if (!user) { section.style.display = 'none'; return; }
     
-    // (Логика бейджей и текстов осталась прежней)
     section.style.display = 'block';
     const now = new Date();
     const trialEnd = new Date(user.trial_end_date);
     const subEnd = user.subscription_end_date ? new Date(user.subscription_end_date) : null;
     
     let hasAccess = false;
-    if (user.subscription_status === 'active' && subEnd && subEnd > now) hasAccess = true;
-    if (user.subscription_status === 'trial' && trialEnd > now) hasAccess = true;
+    let isTrial = false;
+    let endDate = null;
 
-    document.getElementById('statusBadge').innerText = hasAccess ? (user.subscription_status === 'active' ? '✅ Активная подписка' : '⏳ Пробный период') : '❌ Неактивная';
-    document.getElementById('statusBadge').className = `status-badge ${hasAccess ? (user.subscription_status === 'active' ? 'active' : 'trial') : 'inactive'}`;
+    // Определяем статус и дату окончания
+    if (user.subscription_status === 'active' && subEnd && subEnd > now) {
+        hasAccess = true;
+        endDate = subEnd;
+    } else if (user.subscription_status === 'trial' && trialEnd > now) {
+        hasAccess = true;
+        isTrial = true;
+        endDate = trialEnd;
+    }
+
+    const t = i18n_app[currentLang] || i18n_app['ru'];
     
-    document.getElementById('renewBtn').style.display = 'block';
-    document.getElementById('renewBtn').innerText = hasAccess ? 'Продлить доступ' : 'Возобновить подписку';
-}
+    // 1. Устанавливаем бейдж
+    document.getElementById('statusBadge').className = `status-badge ${hasAccess ? (isTrial ? 'trial' : 'active') : 'inactive'}`;
+    document.getElementById('statusBadge').innerText = hasAccess ? (isTrial ? t.status_trial : t.status_active) : t.status_inactive;
+    
+    // 2. Устанавливаем пояснительный текст с датой
+    const textEl = document.getElementById('statusText');
+    if (hasAccess && endDate) {
+        // Красиво форматируем дату (например: 15 сентября 2026 г.)
+        const locale = currentLang === 'en' ? 'en-GB' : (currentLang === 'uz' ? 'uz-UZ' : 'ru-RU');
+        const dateStr = endDate.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
+        
+        textEl.innerText = isTrial 
+            ? t.status_trial_text.replace('{date}', dateStr) 
+            : t.status_active_text.replace('{date}', dateStr);
+    } else {
+        textEl.innerText = t.status_inactive_text;
+    }
 
+    // 3. Устанавливаем текст кнопки оплаты
+    const btnEl = document.getElementById('renewBtn');
+    btnEl.style.display = 'block';
+    if (hasAccess) {
+        btnEl.innerText = isTrial ? t.btn_renew_trial : t.btn_renew_active;
+    } else {
+        btnEl.innerText = t.btn_renew_inactive;
+    }
+}
 function initiatePayment() {
     const checkoutUrl = `https://checkout.paycom.uz/${btoa(`m=67fc349fca95ffea6667f140;ac.order_id=${telegramId};a=2450000`)}`;
     tg.openLink(checkoutUrl);
