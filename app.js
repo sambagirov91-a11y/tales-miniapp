@@ -75,6 +75,14 @@ const i18n_app = {
 
 window.onload = async () => {
     await Promise.all([loadProfile(), loadAppConfig()]);
+    
+    // ПРОВЕРКА DEEP LINK: Если в URL есть id сказки — сразу открываем архив и сказку
+    const urlParams = new URLSearchParams(window.location.search);
+    const storyId = urlParams.get('story_id');
+    
+    if (storyId) {
+        switchAppTab('profile'); // Эта функция автоматически вызовет loadUserStories()
+    }
 };
 
 function checkCustomRole(val) {
@@ -267,9 +275,23 @@ async function loadUserStories() {
         if (error) throw error;
         userStories = data || [];
         renderStoriesList();
+
+        // ЛОГИКА АВТОМАТИЧЕСКОГО ОТКРЫТИЯ СКАЗКИ
+        const urlParams = new URLSearchParams(window.location.search);
+        const storyId = urlParams.get('story_id');
+        
+        // Переменная window.deepLinkOpened защищает от повторного открытия при ручном клике на вкладки
+        if (storyId && !window.deepLinkOpened) {
+            window.deepLinkOpened = true; 
+            
+            // Небольшая задержка, чтобы UI успел переключиться на нужную вкладку
+            setTimeout(() => {
+                openReader(storyId);
+            }, 300); 
+        }
+
     } catch (err) { console.error("Error loading stories:", err); }
 }
-
 function renderStoriesList() {
     const todayContainer = document.getElementById('todayStoriesList');
     const archiveContainer = document.getElementById('archiveStoriesList');
