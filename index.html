@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Управление профилем</title>
+    <title>Scheherezade</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- МОДАЛКА АНКЕТЫ РОДИТЕЛЯ (Появляется, если данных нет) -->
+    <!-- МОДАЛКА АНКЕТЫ РОДИТЕЛЯ -->
     <div id="parentModal" class="parent-modal" style="display: none;">
         <div class="modal-content">
-            <h2 id="modalTitle" style="color: #10B981; margin-bottom: 8px;">Добро пожаловать!</h2>
-            <p id="modalSub" style="font-size: 13px; color: #a0a0a0; margin-bottom: 20px;">Пожалуйста, укажите информацию о себе для продолжения:</p>
+            <h2 id="modalTitle">Добро пожаловать!</h2>
+            <p id="modalSub" style="font-size: 13px; color: #a0a0a0; margin-bottom: 20px;">Расскажите о себе:</p>
             
             <label id="labelParentRole">Кто вы для ребенка?</label>
             <select id="parentRoleSelect" onchange="checkCustomRole(this.value)">
@@ -25,80 +25,153 @@
                 <option value="Няня">Няня</option>
                 <option value="Другое">Другое</option>
             </select>
-            
             <input type="text" id="customParentRole" placeholder="Укажите кто вы..." style="display: none; margin-top: -10px;">
 
             <label id="labelParentAge" style="margin-top: 15px;">Ваш возраст</label>
             <input type="number" id="parentAgeInput" placeholder="Например: 32" min="12" max="100">
 
-            <button class="primary-btn" id="saveParentBtn" onclick="saveParentInfo()" style="margin-top: 10px;">Сохранить и продолжить</button>
+            <button class="primary-btn" id="saveParentBtn" onclick="saveParentInfo()" style="margin-top: 10px;">Продолжить</button>
         </div>
     </div>
 
-    <div class="slider-container" id="sliderContainer">
-        <div class="slider-track" id="sliderTrack"></div>
-    </div>
-
-    <div class="header-container">
-        <h1 id="pageTitle">Профили детей</h1>
-        <select id="appLangSelector" onchange="changeAppLanguage(this.value)">
-            <option value="ru">🇷🇺 RU</option>
-            <option value="uz">🇺🇿 UZ</option>
-            <option value="en">🇬🇧 EN</option>
-        </select>
-    </div>
-
-    <div id="childrenList">
-        <div class="loader-container">
-            <div class="spinner"></div>
-            <div class="loader-text" id="loaderText">Загружаем...</div>
-        </div>
-    </div>
-
-    <div id="formContainer" style="display: none;">
-        <h2 id="formTitle">Добавить ребенка</h2>
+    <!-- ОСНОВНОЙ КОНТЕЙНЕР (С отступом для нижнего меню) -->
+    <div id="mainContent" class="main-content">
         
-        <label for="language" id="labelLang">Язык сказок</label>
-        <select id="language">
-            <option value="ru">🇷🇺 Русский</option>
-            <option value="uz">🇺🇿 O'zbekcha</option>
-            <option value="en">🇬🇧 English</option>
-        </select>
+        <!-- Вкладка: ГЛАВНАЯ -->
+        <div id="tabHome" class="tab-page active">
+            <h1 id="pageTitle" class="top-title">Профили детей</h1>
+            
+            <div class="slider-container" id="sliderContainer">
+                <div class="slider-track" id="sliderTrack"></div>
+            </div>
 
-        <label for="childName" id="labelName">Имя</label>
-        <input type="text" id="childName" placeholder="Например: Тимур" autocomplete="off">
+            <div id="childrenList">
+                <div class="loader-container">
+                    <div class="spinner"></div>
+                    <div class="loader-text" id="loaderText">Загружаем магию...</div>
+                </div>
+            </div>
 
-        <label id="labelGender">Пол</label>
-        <div class="radio-group">
-            <div class="radio-label selected" id="btn-M" onclick="selectGender('M')"><span id="txtBoy">Мальчик 👦</span></div>
-            <div class="radio-label" id="btn-F" onclick="selectGender('F')"><span id="txtGirl">Девочка 👧</span></div>
+            <div id="formContainer" style="display: none;">
+                <h2 id="formTitle">Добавить ребенка</h2>
+                
+                <label id="labelLang">Язык сказок</label>
+                <select id="language">
+                    <option value="ru">🇷🇺 Русский</option>
+                    <option value="uz">🇺🇿 O'zbekcha</option>
+                    <option value="en">🇬🇧 English</option>
+                </select>
+
+                <label id="labelName">Имя</label>
+                <input type="text" id="childName" placeholder="Например: Тимур" autocomplete="off">
+
+                <label id="labelGender">Пол</label>
+                <div class="radio-group">
+                    <div class="radio-label selected" id="btn-M" onclick="selectGender('M')"><span id="txtBoy">Мальчик 👦</span></div>
+                    <div class="radio-label" id="btn-F" onclick="selectGender('F')"><span id="txtGirl">Девочка 👧</span></div>
+                </div>
+
+                <div id="regConsentContainer" class="legal-check" style="display: none;">
+                    <input type="checkbox" id="regConsent">
+                    <label for="regConsent" id="regConsentLabel"></label>
+                </div>
+
+                <button class="primary-btn" id="saveBtn" onclick="saveData()">Добавить профиль</button>
+                <button class="cancel-edit" id="cancelBtn" onclick="resetForm()">Отменить</button>
+            </div>
         </div>
 
-        <div id="regConsentContainer" class="legal-check" style="display: none;">
-            <input type="checkbox" id="regConsent">
-            <label for="regConsent" id="regConsentLabel"></label>
+        <!-- Вкладка: ПРОФИЛЬ -->
+        <div id="tabProfile" class="tab-page">
+            <h1 class="top-title">Мой профиль</h1>
+            
+            <!-- Настройки (Язык и Тема) -->
+            <div class="settings-card glass-panel">
+                <div class="settings-row">
+                    <span>Язык приложения</span>
+                    <select id="appLangSelector" onchange="changeAppLanguage(this.value)">
+                        <option value="ru">🇷🇺 RU</option>
+                        <option value="uz">🇺🇿 UZ</option>
+                        <option value="en">🇬🇧 EN</option>
+                    </select>
+                </div>
+                <div class="settings-row border-top">
+                    <span>Тема оформления</span>
+                    <button id="themeToggleBtn" onclick="toggleMiniAppTheme()" class="theme-btn">🌙 Ночь</button>
+                </div>
+            </div>
+
+            <!-- Статус подписки -->
+            <div id="statusSection" class="status-card">
+                <div id="statusBadge" class="status-badge">...</div>
+                <div id="statusText" class="status-text"></div>
+                
+                <div id="paymentConsentContainer" class="legal-check" style="display: none;">
+                    <input type="checkbox" id="paymentConsent">
+                    <label for="paymentConsent" id="paymentConsentLabel"></label>
+                </div>
+                <button id="renewBtn" class="primary-btn" style="display: none;" onclick="initiatePayment()"></button>
+            </div>
+
+            <!-- Новые сказки -->
+            <h2 class="section-title">✨ Новые сказки (Сегодня)</h2>
+            <div id="todayStoriesList" class="stories-list">
+                <!-- Сюда JS будет вставлять новые сказки -->
+                <p style="color: #a0a0a0; font-size: 13px; text-align: center; padding: 10px;">Новая сказка появится сегодня в 21:00!</p>
+            </div>
+
+            <!-- Архив сказок (Пейвол) -->
+            <h2 class="section-title" style="margin-top: 24px;">📚 Мои сказки (Архив)</h2>
+            <div id="archiveContainer" class="archive-container">
+                <!-- Обертка блокировки -->
+                <div id="paywallOverlay" class="paywall-overlay" style="display: none;">
+                    <div class="paywall-content">
+                        <span class="paywall-icon">🔒</span>
+                        <p class="paywall-text">Доступ к архиву прошлых сказок возможен только в платном тарифе.</p>
+                        <button class="primary-btn paywall-btn" onclick="initiatePayment()">Открыть доступ (24 500 сум)</button>
+                    </div>
+                </div>
+                
+                <div id="archiveStoriesList" class="stories-list">
+                    <!-- Сюда JS будет вставлять архив -->
+                </div>
+            </div>
+            
+            <div class="footer-links" id="footerLinks"></div>
         </div>
 
-        <button class="primary-btn" id="saveBtn" onclick="saveData()">Добавить профиль</button>
-        <button class="cancel-edit" id="cancelBtn" onclick="resetForm()">Отменить редактирование</button>
     </div>
 
-    <div id="statusSection" class="status-card">
-        <div id="statusBadge" class="status-badge">...</div>
-        <div id="statusText" class="status-text"></div>
-        
-        <div id="paymentConsentContainer" class="legal-check" style="display: none;">
-            <input type="checkbox" id="paymentConsent">
-            <label for="paymentConsent" id="paymentConsentLabel"></label>
+    <!-- ЭКРАН ЧИТАЛКИ (Открывается поверх всего) -->
+    <div id="readerScreen" class="reader-screen" style="display: none;">
+        <div class="reader-header glass-panel">
+            <button onclick="closeReader()" class="back-btn">⬅ Назад</button>
+            <span class="reader-header-title">Сказка</span>
         </div>
-        
-        <button id="renewBtn" class="primary-btn" style="display: none;" onclick="initiatePayment()"></button>
+        <div class="reader-content" id="readerContentArea">
+            <h1 id="readerTitle" class="reader-title"></h1>
+            <img id="readerImg" class="reader-img" src="" alt="">
+            <div id="readerText" class="reader-text"></div>
+            
+            <!-- Место для кликабельного баннера внутри сказки -->
+            <a id="readerPromoLink" href="#" target="_blank" style="display: none;">
+                <img id="readerPromoImg" class="reader-promo-img" src="" alt="Реклама">
+                <p class="reader-promo-cta">👉 Нажмите здесь, чтобы узнать подробности 👈</p>
+            </a>
+        </div>
     </div>
 
-   <!-- Рекламный баннер (надежный фоновый вариант) -->
-    <div id="promoBannerContainer" class="promo-banner" style="display: none;"></div>
-
-    <div class="footer-links" id="footerLinks"></div>
+    <!-- НИЖНЯЯ ПАНЕЛЬ НАВИГАЦИИ (TAB BAR) -->
+    <nav class="bottom-tab-bar glass-panel">
+        <div class="tab-item active" id="btnTabHome" onclick="switchAppTab('home')">
+            <span class="tab-icon">🏠</span>
+            <span class="tab-label">Главная</span>
+        </div>
+        <div class="tab-item" id="btnTabProfile" onclick="switchAppTab('profile')">
+            <span class="tab-icon">👤</span>
+            <span class="tab-label">Мой профиль</span>
+        </div>
+    </nav>
 
     <script src="app.js" defer></script>
 </body>
