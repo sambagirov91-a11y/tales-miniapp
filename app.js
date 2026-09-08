@@ -1,4 +1,4 @@
-const tg = window.Telegram.WebApp;
+аconst tg = window.Telegram.WebApp;
 tg.expand();
 
 function openLink(url) { tg.openLink(url); }
@@ -248,12 +248,24 @@ function applyLanguage() {
 
 async function loadAppConfig() {
     try {
-        const { data: banners } = await _supabase.from('banners').select('*').eq('is_active', true).order('sort_order', { ascending: true });
+        // Параллельная загрузка баннеров и настроек (в 2 раза быстрее)
+        const [ { data: banners }, { data: settings } ] = await Promise.all([
+            _supabase.from('banners').select('*').eq('is_active', true).order('sort_order', { ascending: true }),
+            _supabase.from('app_settings').select('*')
+        ]);
+
         if (banners && banners.length > 0) {
             const track = document.getElementById('sliderTrack');
             document.getElementById('sliderContainer').style.display = 'block';
             if (track.children.length === 0) {
-                track.innerHTML = banners.map(b => `<div class="slide" style="background-image: url('${b.image_url}');"><div class="slide-title">${b.title}</div></div>`).join('');
+                // ИСПОЛЬЗУЕМ ТЕГ <img> ВМЕСТО ФОНА ДЛЯ ЗАЩИТЫ ОТ ВЫГРУЗКИ ИЗ ПАМЯТИ
+                track.innerHTML = banners.map(b => `
+                    <div class="slide">
+                        <img src="${b.image_url}" class="slide-bg" loading="lazy">
+                        <div class="slide-title">${b.title}</div>
+                    </div>
+                `).join('');
+                
                 if (banners.length > 1 && !sliderInterval) {
                     sliderInterval = setInterval(() => {
                         track.style.transition = 'transform 0.5s ease-in-out';
@@ -268,7 +280,6 @@ async function loadAppConfig() {
             }
         }
 
-        const { data: settings } = await _supabase.from('app_settings').select('*');
         if (settings) settings.forEach(s => configUrls[s.key] = s.value);
 
         const t = i18n_app[currentLang];
@@ -282,7 +293,7 @@ async function loadAppConfig() {
         document.getElementById('paymentConsentLabel').innerHTML = consentHtml;
         document.getElementById('regConsentLabel').innerHTML = consentHtml;
 
-        // Рекламный баннер + накопительный трекинг
+        // Рекламный баннер + безопасный трекинг
         const promoImgUrl = configUrls['promo_image_url'];
         const promoLinkUrl = configUrls['promo_link_url'];
         const promoContainer = document.getElementById('promoBannerContainer');
@@ -291,44 +302,33 @@ async function loadAppConfig() {
             promoContainer.style.backgroundImage = `url('${promoImgUrl}')`;
             promoContainer.style.display = 'block';
 
-            // Трекаем просмотр (увеличиваем views_count на 1)
             if (!window._promoViewTracked) {
                 window._promoViewTracked = true;
-                
                 _supabase.from('promo_stats').select('views_count').eq('telegram_id', telegramId).maybeSingle().then(({ data }) => {
                     const currentViews = data ? (data.views_count || 0) + 1 : 1;
                     _supabase.from('promo_stats').upsert({
-                        telegram_id: telegramId,
-                        views_count: currentViews,
-                        parent_role: currentUserData?.parent_role || 'Не указано',
-                        parent_age: currentUserData?.parent_age || null,
+                        telegram_id: telegramId, views_count: currentViews,
+                        parent_role: currentUserData?.parent_role || 'Не указано', parent_age: currentUserData?.parent_age || null,
                         updated_at: new Date().toISOString()
-                    }, { onConflict: 'telegram_id' }).then();
-                });
+                    }).then().catch(err => console.error(err));
+                }).catch(err => console.error(err));
             }
 
-            // Трекаем клик (увеличиваем clicks_count на 1)
             promoContainer.onclick = () => {
                 _supabase.from('promo_stats').select('clicks_count').eq('telegram_id', telegramId).maybeSingle().then(({ data }) => {
                     const currentClicks = data ? (data.clicks_count || 0) + 1 : 1;
                     _supabase.from('promo_stats').upsert({
-                        telegram_id: telegramId,
-                        clicks_count: currentClicks,
-                        parent_role: currentUserData?.parent_role || 'Не указано',
-                        parent_age: currentUserData?.parent_age || null,
+                        telegram_id: telegramId, clicks_count: currentClicks,
+                        parent_role: currentUserData?.parent_role || 'Не указано', parent_age: currentUserData?.parent_age || null,
                         updated_at: new Date().toISOString()
-                    }, { onConflict: 'telegram_id' }).then(() => {
-                        openLink(promoLinkUrl || '#');
-                    });
-                });
+                    }).then(() => openLink(promoLinkUrl || '#')).catch(() => openLink(promoLinkUrl || '#'));
+                }).catch(() => openLink(promoLinkUrl || '#'));
             };
         } else {
             promoContainer.style.display = 'none';
         }
-
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error("Config load error:", e); }
 }
-
 function selectGender(gender) {
     selectedGender = gender;
     document.getElementById('btn-M').classList.remove('selected');
@@ -338,7 +338,12 @@ function selectGender(gender) {
 
 async function loadProfile() {
     try {
-        const { data: user, error: userError } = await _supabase.from('users').select('*').eq('telegram_id', telegramId).maybeSingle(); 
+        // Параллельная загрузка пользователя и детей
+        const [ { data: user, error: userError }, { data: children, error: childrenError } ] = await Promise.all([
+            _supabase.from('users').select('*').eq('telegram_id', telegramId).maybeSingle(),
+            _supabase.from('children').select('*').eq('parent_telegram_id', telegramId).order('created_at', { ascending: true })
+        ]);
+        
         if (userError) throw userError;
         
         userExists = !!user;
@@ -356,14 +361,12 @@ async function loadProfile() {
         applyLanguage(); 
         updateStatusUI(user);
 
-        const { data: children, error: childrenError } = await _supabase.from('children').select('*').eq('parent_telegram_id', telegramId).order('created_at', { ascending: true });
         if (childrenError) throw childrenError;
-
         allChildren = children || [];
         renderChildren(allChildren);
         checkLimitAndMode();
 
-    } catch (err) { console.error(err); }
+    } catch (err) { console.error("Profile load error:", err); }
 }
 
 function updateStatusUI(user) {
