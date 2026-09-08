@@ -1,4 +1,4 @@
-аconst tg = window.Telegram.WebApp;
+const tg = window.Telegram.WebApp;
 tg.expand();
 
 function openLink(url) { tg.openLink(url); }
@@ -157,8 +157,8 @@ const i18n_app = {
 };
 
 window.onload = async () => {
-    await loadProfile();
-    await loadAppConfig();
+    // Параллельный запуск значительно ускоряет первую загрузку Mini App
+    await Promise.all([loadProfile(), loadAppConfig()]);
 };
 
 function checkCustomRole(val) {
@@ -248,21 +248,16 @@ function applyLanguage() {
 
 async function loadAppConfig() {
     try {
-        // Параллельная загрузка баннеров и настроек (в 2 раза быстрее)
-        const [ { data: banners }, { data: settings } ] = await Promise.all([
-            _supabase.from('banners').select('*').eq('is_active', true).order('sort_order', { ascending: true }),
-            _supabase.from('app_settings').select('*')
-        ]);
-
+        const { data: banners } = await _supabase.from('banners').select('*').eq('is_active', true).order('sort_order', { ascending: true });
         if (banners && banners.length > 0) {
             const track = document.getElementById('sliderTrack');
             document.getElementById('sliderContainer').style.display = 'block';
             if (track.children.length === 0) {
-                // ИСПОЛЬЗУЕМ ТЕГ <img> ВМЕСТО ФОНА ДЛЯ ЗАЩИТЫ ОТ ВЫГРУЗКИ ИЗ ПАМЯТИ
+                // АППАРАТНЫЙ ФИКС СЛАЙДЕРА: Использование тега <img> вместо фона исключает тормоза и пропадание картинок
                 track.innerHTML = banners.map(b => `
-                    <div class="slide">
-                        <img src="${b.image_url}" class="slide-bg" loading="lazy">
-                        <div class="slide-title">${b.title}</div>
+                    <div class="slide" style="position:relative; overflow:hidden;">
+                        <img src="${b.image_url}" style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; z-index:0; pointer-events:none;" loading="lazy">
+                        <div class="slide-title" style="position:relative; z-index:1; background: linear-gradient(transparent, rgba(0,0,0,0.9));">${b.title}</div>
                     </div>
                 `).join('');
                 
@@ -280,6 +275,7 @@ async function loadAppConfig() {
             }
         }
 
+        const { data: settings } = await _supabase.from('app_settings').select('*');
         if (settings) settings.forEach(s => configUrls[s.key] = s.value);
 
         const t = i18n_app[currentLang];
@@ -293,7 +289,7 @@ async function loadAppConfig() {
         document.getElementById('paymentConsentLabel').innerHTML = consentHtml;
         document.getElementById('regConsentLabel').innerHTML = consentHtml;
 
-        // Рекламный баннер + безопасный трекинг
+        // Защищенный код рекламного баннера
         const promoImgUrl = configUrls['promo_image_url'];
         const promoLinkUrl = configUrls['promo_link_url'];
         const promoContainer = document.getElementById('promoBannerContainer');
@@ -304,19 +300,19 @@ async function loadAppConfig() {
 
             if (!window._promoViewTracked) {
                 window._promoViewTracked = true;
-                _supabase.from('promo_stats').select('views_count').eq('telegram_id', telegramId).maybeSingle().then(({ data }) => {
-                    const currentViews = data ? (data.views_count || 0) + 1 : 1;
+                _supabase.from('promo_stats').select('views_count').eq('telegram_id', telegramId).limit(1).then(({ data }) => {
+                    const currentViews = (data && data.length > 0) ? (data[0].views_count || 0) + 1 : 1;
                     _supabase.from('promo_stats').upsert({
                         telegram_id: telegramId, views_count: currentViews,
                         parent_role: currentUserData?.parent_role || 'Не указано', parent_age: currentUserData?.parent_age || null,
                         updated_at: new Date().toISOString()
-                    }).then().catch(err => console.error(err));
-                }).catch(err => console.error(err));
+                    }).then().catch(()=>{});
+                }).catch(()=>{});
             }
 
             promoContainer.onclick = () => {
-                _supabase.from('promo_stats').select('clicks_count').eq('telegram_id', telegramId).maybeSingle().then(({ data }) => {
-                    const currentClicks = data ? (data.clicks_count || 0) + 1 : 1;
+                _supabase.from('promo_stats').select('clicks_count').eq('telegram_id', telegramId).limit(1).then(({ data }) => {
+                    const currentClicks = (data && data.length > 0) ? (data[0].clicks_count || 0) + 1 : 1;
                     _supabase.from('promo_stats').upsert({
                         telegram_id: telegramId, clicks_count: currentClicks,
                         parent_role: currentUserData?.parent_role || 'Не указано', parent_age: currentUserData?.parent_age || null,
@@ -329,6 +325,7 @@ async function loadAppConfig() {
         }
     } catch (e) { console.error("Config load error:", e); }
 }
+
 function selectGender(gender) {
     selectedGender = gender;
     document.getElementById('btn-M').classList.remove('selected');
@@ -338,14 +335,11 @@ function selectGender(gender) {
 
 async function loadProfile() {
     try {
-        // Параллельная загрузка пользователя и детей
-        const [ { data: user, error: userError }, { data: children, error: childrenError } ] = await Promise.all([
-            _supabase.from('users').select('*').eq('telegram_id', telegramId).maybeSingle(),
-            _supabase.from('children').select('*').eq('parent_telegram_id', telegramId).order('created_at', { ascending: true })
-        ]);
-        
+        // ЗАМЕНА maybeSingle() на limit(1) — предотвращает зависание при наличии дублей в базе данных
+        const { data: users, error: userError } = await _supabase.from('users').select('*').eq('telegram_id', telegramId).limit(1); 
         if (userError) throw userError;
         
+        const user = (users && users.length > 0) ? users[0] : null;
         userExists = !!user;
         currentUserData = user; 
 
@@ -361,12 +355,19 @@ async function loadProfile() {
         applyLanguage(); 
         updateStatusUI(user);
 
+        const { data: children, error: childrenError } = await _supabase.from('children').select('*').eq('parent_telegram_id', telegramId).order('created_at', { ascending: true });
         if (childrenError) throw childrenError;
+
         allChildren = children || [];
+
+    } catch (err) { 
+        console.error("Profile load error:", err);
+        allChildren = []; // Предотвращаем сбой приложения
+    } finally {
+        // БЛОК FINALLY: Гарантирует, что лоадер уберется при ЛЮБОМ исходе (даже при отсутствии интернета)
         renderChildren(allChildren);
         checkLimitAndMode();
-
-    } catch (err) { console.error("Profile load error:", err); }
+    }
 }
 
 function updateStatusUI(user) {
