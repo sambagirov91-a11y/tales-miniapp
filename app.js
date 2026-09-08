@@ -122,9 +122,60 @@ async function changeAppLanguage(newLang) {
 function applyLanguage() {
     const t = i18n_app[currentLang] || i18n_app['ru'];
     document.documentElement.lang = currentLang;
-    document.getElementById('pageTitle').innerText = t.page_title;
-    document.getElementById('formTitle').innerText = editingChildId ? t.form_title_edit : t.form_title_add;
-    // (Остальные биндинги текста оставлены как были для совместимости)
+    
+    // Заголовки и текстовые элементы
+    if (document.getElementById('pageTitle')) document.getElementById('pageTitle').innerText = t.page_title;
+    if (document.getElementById('formTitle')) document.getElementById('formTitle').innerText = editingChildId ? t.form_title_edit : t.form_title_add;
+    if (document.getElementById('labelLang')) document.getElementById('labelLang').innerText = t.label_lang;
+    if (document.getElementById('labelName')) document.getElementById('labelName').innerText = t.label_name;
+    if (document.getElementById('childName')) document.getElementById('childName').placeholder = t.placeholder_name;
+    if (document.getElementById('labelGender')) document.getElementById('labelGender').innerText = t.label_gender;
+    if (document.getElementById('txtBoy')) document.getElementById('txtBoy').innerText = t.btn_boy;
+    if (document.getElementById('txtGirl')) document.getElementById('txtGirl').innerText = t.btn_girl;
+    if (document.getElementById('saveBtn')) document.getElementById('saveBtn').innerText = editingChildId ? t.btn_save_edit : t.btn_save_add;
+    if (document.getElementById('cancelBtn')) document.getElementById('cancelBtn').innerText = t.btn_cancel;
+    
+    // Модалка родителя
+    if (document.getElementById('modalTitle')) document.getElementById('modalTitle').innerText = t.modal_title;
+    if (document.getElementById('modalSub')) document.getElementById('modalSub').innerText = t.modal_sub;
+    if (document.getElementById('labelParentRole')) document.getElementById('labelParentRole').innerText = t.label_role;
+    if (document.getElementById('labelParentAge')) document.getElementById('labelParentAge').innerText = t.label_age;
+    if (document.getElementById('saveParentBtn')) document.getElementById('saveParentBtn').innerText = t.btn_save_parent;
+
+    // Ссылки в чекбоксах
+    const consentText = t.consent_text.replace('{offer}', configUrls.offer_url || '#').replace('{privacy}', configUrls.privacy_url || '#');
+    if (document.getElementById('regConsentLabel')) document.getElementById('regConsentLabel').innerHTML = consentText;
+    if (document.getElementById('paymentConsentLabel')) document.getElementById('paymentConsentLabel').innerHTML = consentText;
+
+    // Отрисовка футера и баннера
+    renderFooterAndPromo();
+}
+
+// НОВАЯ ФУНКЦИЯ: Отрисовка футера и глобального рекламного баннера
+function renderFooterAndPromo() {
+    const t = i18n_app[currentLang] || i18n_app['ru'];
+    const footer = document.getElementById('footerLinks');
+    if (!footer) return;
+
+    let html = '';
+    
+    // Глобальный рекламный баннер (из настроек админки)
+    if (configUrls.promo_image_url && configUrls.promo_link_url) {
+        html += `
+            <a href="#" onclick="openLink('${configUrls.promo_link_url}')" style="display:block; margin-bottom: 24px; text-decoration: none; cursor: pointer; transition: transform 0.2s;" onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'">
+                <img src="${configUrls.promo_image_url}" style="width:100%; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);" alt="Promo">
+            </a>
+        `;
+    }
+    
+    // Юридические ссылки
+    html += `
+        <a href="#" onclick="openLink('${configUrls.privacy_url}')">${t.footer_privacy}</a>
+        <a href="#" onclick="openLink('${configUrls.offer_url}')">${t.footer_offer}</a>
+        <a href="#" onclick="openLink('${configUrls.about_url}')">${t.footer_about}</a>
+    `;
+    
+    footer.innerHTML = html;
 }
 
 async function loadAppConfig() {
@@ -153,7 +204,12 @@ async function loadAppConfig() {
                 }
             }
         }
-        if (settings) settings.forEach(s => configUrls[s.key] = s.value);
+        
+        if (settings) {
+            settings.forEach(s => configUrls[s.key] = s.value);
+            // Применяем язык и рендерим футер только ПОСЛЕ загрузки ссылок из базы
+            applyLanguage(); 
+        }
     } catch (e) { console.error(e); }
 }
 
