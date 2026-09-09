@@ -8,17 +8,22 @@ const savedTheme = localStorage.getItem('samba_theme');
 if (savedTheme === 'light') {
     document.body.classList.add('light-theme');
 }
+
 function toggleMiniAppTheme() {
     document.body.classList.toggle('light-theme');
     const isLight = document.body.classList.contains('light-theme');
     localStorage.setItem('samba_theme', isLight ? 'light' : 'dark');
+    
+    // Мгновенное обновление текста кнопки темы
+    const t = i18n_app[currentLang] || i18n_app['ru'];
     const btn = document.getElementById('themeToggleBtn');
-    if (btn) btn.innerText = isLight ? '☀️ День' : '🌙 Ночь';
+    if (btn) btn.innerText = isLight ? t.theme_day : t.theme_night;
 }
-// Установка текста кнопки при загрузке
+
 document.addEventListener('DOMContentLoaded', () => {
+    const t = i18n_app[currentLang] || i18n_app['ru'];
     const btn = document.getElementById('themeToggleBtn');
-    if (btn) btn.innerText = document.body.classList.contains('light-theme') ? '☀️ День' : '🌙 Ночь';
+    if (btn) btn.innerText = document.body.classList.contains('light-theme') ? t.theme_day : t.theme_night;
 });
 
 // === НАВИГАЦИЯ (TAB BAR) ===
@@ -32,11 +37,12 @@ function switchAppTab(tabId) {
     } else {
         document.getElementById('tabProfile').classList.add('active');
         document.getElementById('btnTabProfile').classList.add('active');
-        loadUserStories(); // Подгружаем сказки при открытии профиля
+        loadUserStories(); 
     }
     window.scrollTo(0, 0);
 }
 
+// === SUPABASE ===
 const supabaseUrl = 'https://lmxacoleuvsbtgxbhokc.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxteGFjb2xldXZzYnRneGJob2tjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxMTg0OTEsImV4cCI6MjEwMjY5NDQ5MX0.Cy2H1qvhuX6lKSFFtrPeecmFr526WDddyakk5vIvqnc';
 const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
@@ -49,123 +55,29 @@ let userStories = [];
 let userExists = false;
 let currentLang = 'ru'; 
 let currentUserData = null; 
-let configUrls = { privacy_url: '', offer_url: '', about_url: '' };
-let sliderInterval;
+let configUrls = { privacy_url: '', offer_url: '', about_url: '', promo_image_url: '', promo_link_url: '' };
+let sliderIntervalId;
 
+// === СЛОВАРЬ (Собран из внешних файлов) ===
 const i18n_app = {
-    ru: {
-        page_title: "Профили детей", 
-        no_profiles: "Профили еще не добавлены.",
-        form_title_add: "Добавить ребенка", 
-        form_title_edit: "Редактировать профиль",
-        label_lang: "Язык сказок", 
-        label_name: "Имя", 
-        placeholder_name: "Например: Тимур",
-        label_gender: "Пол", 
-        btn_boy: "Мальчик 👦", 
-        btn_girl: "Девочка 👧",
-        btn_save_add: "Добавить профиль", 
-        btn_save_edit: "Сохранить изменения", 
-        btn_cancel: "Отменить",
-        status_active: "✅ Активная подписка", 
-        status_trial: "⏳ Пробный период", 
-        status_inactive: "❌ Неактивная",
-        status_active_text: "Доступ открыт до {date}. Сказки приходят каждый день!",
-        status_trial_text: "Бесплатный доступ до {date}.",
-        status_inactive_text: "Волшебное время истекло. Продлите доступ.",
-        btn_renew_active: "Продлить на месяц (24 500 сум)", 
-        btn_renew_trial: "Оформить подписку (24 500 сум)", 
-        btn_renew_inactive: "Возобновить подписку (24 500 сум)",
-        consent_text: "Я принимаю условия <a href='#' onclick='openLink(\"{offer}\")'>Оферты</a> и <a href='#' onclick='openLink(\"{privacy}\")'>Политики</a>",
-        footer_privacy: "Политика конфиденциальности", 
-        footer_offer: "Публичная оферта", 
-        footer_about: "О проекте",
-        modal_title: "Расскажите о себе", 
-        modal_sub: "Это поможет нам сделать сказки еще лучше:",
-        label_role: "Кто вы для ребенка?", 
-        label_age: "Ваш возраст", 
-        btn_save_parent: "Продолжить"
-    },
-    uz: {
-        page_title: "Bolalar profillari", 
-        no_profiles: "Profillar hali qo'shilmagan.",
-        form_title_add: "Bola qo'shish", 
-        form_title_edit: "Profilni tahrirlash",
-        label_lang: "Ertaklar tili", 
-        label_name: "Ism", 
-        placeholder_name: "Masalan: Temur",
-        label_gender: "Jinsi", 
-        btn_boy: "O'g'il bola 👦", 
-        btn_girl: "Qiz bola 👧",
-        btn_save_add: "Profilni qo'shish", 
-        btn_save_edit: "O'zgarishlarni saqlash", 
-        btn_cancel: "Bekor qilish",
-        status_active: "✅ Faol obuna", 
-        status_trial: "⏳ Sinov muddati", 
-        status_inactive: "❌ Faol emas",
-        status_active_text: "Kirish {date} gacha ochiq. Ertaklar har kuni keladi!",
-        status_trial_text: "Bepul kirish {date} gacha.",
-        status_inactive_text: "Sehrli vaqt tugadi. Kirishni uzaytiring.",
-        btn_renew_active: "Bir oyga uzaytirish (24 500 so'm)", 
-        btn_renew_trial: "Obunani rasmiylashtirish (24 500 so'm)", 
-        btn_renew_inactive: "Obunani tiklash (24 500 so'm)",
-        consent_text: "Men <a href='#' onclick='openLink(\"{offer}\")'>Ommaviy oferta</a> va <a href='#' onclick='openLink(\"{privacy}\")'>Maxfiylik siyosati</a> shartlarini qabul qilaman",
-        footer_privacy: "Maxfiylik siyosati", 
-        footer_offer: "Ommaviy oferta", 
-        footer_about: "Loyiha haqida",
-        modal_title: "O'zingiz haqingizda so'zlab bering", 
-        modal_sub: "Bu bizga ertaklarni yanada yaxshiroq qilishga yordam beradi:",
-        label_role: "Bola uchun kimsiz?", 
-        label_age: "Yoshingiz", 
-        btn_save_parent: "Davom etish"
-    },
-    en: {
-        page_title: "Children's Profiles", 
-        no_profiles: "Profiles not added yet.",
-        form_title_add: "Add Child", 
-        form_title_edit: "Edit Profile",
-        label_lang: "Fairy Tales Language", 
-        label_name: "Name", 
-        placeholder_name: "Example: Timur",
-        label_gender: "Gender", 
-        btn_boy: "Boy 👦", 
-        btn_girl: "Girl 👧",
-        btn_save_add: "Add Profile", 
-        btn_save_edit: "Save Changes", 
-        btn_cancel: "Cancel",
-        status_active: "✅ Active Subscription", 
-        status_trial: "⏳ Trial Period", 
-        status_inactive: "❌ Inactive",
-        status_active_text: "Access open until {date}. Tales arrive every day!",
-        status_trial_text: "Free access until {date}.",
-        status_inactive_text: "Magic time is over. Renew your access.",
-        btn_renew_active: "Renew for a month (24,500 sum)", 
-        btn_renew_trial: "Subscribe (24,500 sum)", 
-        btn_renew_inactive: "Renew subscription (24,500 sum)",
-        consent_text: "I accept the <a href='#' onclick='openLink(\"{offer}\")'>Terms of Service</a> and <a href='#' onclick='openLink(\"{privacy}\")'>Privacy Policy</a>",
-        footer_privacy: "Privacy Policy", 
-        footer_offer: "Terms of Service", 
-        footer_about: "About the project",
-        modal_title: "Tell us about yourself", 
-        modal_sub: "This will help us make the tales even better:",
-        label_role: "Who are you to the child?", 
-        label_age: "Your age", 
-        btn_save_parent: "Continue"
-    }
+    ru: window.langRU,
+    uz: window.langUZ,
+    en: window.langEN
 };
 
 window.onload = async () => {
     await Promise.all([loadProfile(), loadAppConfig()]);
     
-    // ПРОВЕРКА DEEP LINK: Если в URL есть id сказки — сразу открываем архив и сказку
+    // ПРОВЕРКА DEEP LINK: Если в URL есть id сказки
     const urlParams = new URLSearchParams(window.location.search);
     const storyId = urlParams.get('story_id');
     
     if (storyId) {
-        switchAppTab('profile'); // Эта функция автоматически вызовет loadUserStories()
+        switchAppTab('profile'); 
     }
 };
 
+// === РОДИТЕЛЬСКАЯ АНКЕТА ===
 function checkCustomRole(val) {
     document.getElementById('customParentRole').style.display = val === 'Другое' ? 'block' : 'none';
 }
@@ -193,19 +105,32 @@ async function saveParentInfo() {
     } catch (err) { console.error(err); alert('Ошибка сохранения'); }
 }
 
+// === ЯЗЫК И ИНТЕРФЕЙС ===
 async function changeAppLanguage(newLang) {
-    currentLang = newLang; applyLanguage(); renderChildren(allChildren);
+    currentLang = newLang; 
+    applyLanguage(); 
+    renderChildren(allChildren);
     if (currentUserData) updateStatusUI(currentUserData);
+    
+    // Перезапускаем слайдер, чтобы обновить языки баннеров
     loadAppConfig();
-    if (userExists) await _supabase.from('users').update({ bot_language: newLang }).eq('telegram_id', telegramId).catch(e => console.error(e));
+    
+    if (userExists) {
+        await _supabase.from('users').update({ bot_language: newLang }).eq('telegram_id', telegramId).catch(e => console.error(e));
+    }
 }
 
 function applyLanguage() {
     const t = i18n_app[currentLang] || i18n_app['ru'];
     document.documentElement.lang = currentLang;
     
-    // Заголовки и текстовые элементы
-    if (document.getElementById('pageTitle')) document.getElementById('pageTitle').innerText = t.page_title;
+    // Вкладки и заголовки
+    if (document.getElementById('lblTabHome')) document.getElementById('lblTabHome').innerText = t.tab_home;
+    if (document.getElementById('lblTabProfile')) document.getElementById('lblTabProfile').innerText = t.tab_profile;
+    if (document.getElementById('pageTitleHome')) document.getElementById('pageTitleHome').innerText = t.page_title_home;
+    if (document.getElementById('pageTitleProfile')) document.getElementById('pageTitleProfile').innerText = t.page_title_profile;
+    
+    // Форма профиля
     if (document.getElementById('formTitle')) document.getElementById('formTitle').innerText = editingChildId ? t.form_title_edit : t.form_title_add;
     if (document.getElementById('labelLang')) document.getElementById('labelLang').innerText = t.label_lang;
     if (document.getElementById('labelName')) document.getElementById('labelName').innerText = t.label_name;
@@ -216,23 +141,47 @@ function applyLanguage() {
     if (document.getElementById('saveBtn')) document.getElementById('saveBtn').innerText = editingChildId ? t.btn_save_edit : t.btn_save_add;
     if (document.getElementById('cancelBtn')) document.getElementById('cancelBtn').innerText = t.btn_cancel;
     
+    // Настройки
+    if (document.getElementById('lblAppLang')) document.getElementById('lblAppLang').innerText = t.lbl_app_lang;
+    if (document.getElementById('lblAppTheme')) document.getElementById('lblAppTheme').innerText = t.lbl_app_theme;
+    
+    // Перевод кнопки темы
+    const themeBtn = document.getElementById('themeToggleBtn');
+    if (themeBtn) themeBtn.innerText = document.body.classList.contains('light-theme') ? t.theme_day : t.theme_night;
+    
+    // Сюжеты и Архив
+    if (document.getElementById('lblNewStories')) document.getElementById('lblNewStories').innerText = t.lbl_new_stories;
+    if (document.getElementById('emptyToday')) document.getElementById('emptyToday').innerText = t.empty_today;
+    if (document.getElementById('lblArchiveStories')) document.getElementById('lblArchiveStories').innerText = t.lbl_archive_stories;
+    if (document.getElementById('paywallText')) document.getElementById('paywallText').innerText = t.paywall_text;
+    if (document.getElementById('paywallBtn')) document.getElementById('paywallBtn').innerText = t.paywall_btn;
+    
+    // Читалка
+    if (document.getElementById('readerHeaderTitle')) document.getElementById('readerHeaderTitle').innerText = t.reader_header;
+    if (document.getElementById('readerBackBtn')) document.getElementById('readerBackBtn').innerText = t.reader_back;
+
     // Модалка родителя
     if (document.getElementById('modalTitle')) document.getElementById('modalTitle').innerText = t.modal_title;
     if (document.getElementById('modalSub')) document.getElementById('modalSub').innerText = t.modal_sub;
     if (document.getElementById('labelParentRole')) document.getElementById('labelParentRole').innerText = t.label_role;
+    if (document.getElementById('roleMother')) document.getElementById('roleMother').innerText = t.role_mother;
+    if (document.getElementById('roleFather')) document.getElementById('roleFather').innerText = t.role_father;
+    if (document.getElementById('roleGrandma')) document.getElementById('roleGrandma').innerText = t.role_grandma;
+    if (document.getElementById('roleGrandpa')) document.getElementById('roleGrandpa').innerText = t.role_grandpa;
+    if (document.getElementById('roleNanny')) document.getElementById('roleNanny').innerText = t.role_nanny;
+    if (document.getElementById('roleOther')) document.getElementById('roleOther').innerText = t.role_other;
+    if (document.getElementById('customParentRole')) document.getElementById('customParentRole').placeholder = t.role_custom;
     if (document.getElementById('labelParentAge')) document.getElementById('labelParentAge').innerText = t.label_age;
+    if (document.getElementById('parentAgeInput')) document.getElementById('parentAgeInput').placeholder = t.age_placeholder;
     if (document.getElementById('saveParentBtn')) document.getElementById('saveParentBtn').innerText = t.btn_save_parent;
 
-    // Ссылки в чекбоксах
     const consentText = t.consent_text.replace('{offer}', configUrls.offer_url || '#').replace('{privacy}', configUrls.privacy_url || '#');
     if (document.getElementById('regConsentLabel')) document.getElementById('regConsentLabel').innerHTML = consentText;
     if (document.getElementById('paymentConsentLabel')) document.getElementById('paymentConsentLabel').innerHTML = consentText;
 
-    // Отрисовка футера и баннера
     renderFooterAndPromo();
 }
 
-// НОВАЯ ФУНКЦИЯ: Отрисовка футера и глобального рекламного баннера
 function renderFooterAndPromo() {
     const t = i18n_app[currentLang] || i18n_app['ru'];
     const footer = document.getElementById('footerLinks');
@@ -240,7 +189,6 @@ function renderFooterAndPromo() {
 
     let html = '';
     
-    // Глобальный рекламный баннер (из настроек админки)
     if (configUrls.promo_image_url && configUrls.promo_link_url) {
         html += `
             <a href="#" onclick="openLink('${configUrls.promo_link_url}')" style="display:block; margin-bottom: 24px; text-decoration: none; cursor: pointer; transition: transform 0.2s;" onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'">
@@ -249,7 +197,6 @@ function renderFooterAndPromo() {
         `;
     }
     
-    // Юридические ссылки
     html += `
         <a href="#" onclick="openLink('${configUrls.privacy_url}')">${t.footer_privacy}</a>
         <a href="#" onclick="openLink('${configUrls.offer_url}')">${t.footer_offer}</a>
@@ -259,6 +206,7 @@ function renderFooterAndPromo() {
     footer.innerHTML = html;
 }
 
+// === КОНФИГИ И СЛАЙДЕР ===
 async function loadAppConfig() {
     try {
         const [ { data: banners }, { data: settings } ] = await Promise.all([
@@ -269,31 +217,45 @@ async function loadAppConfig() {
         if (banners && banners.length > 0) {
             const track = document.getElementById('sliderTrack');
             document.getElementById('sliderContainer').style.display = 'block';
-            if (track.children.length === 0) {
-                track.innerHTML = banners.map(b => `
+            
+            track.innerHTML = '';
+            
+            if (window.sliderIntervalId) {
+                clearInterval(window.sliderIntervalId);
+                window.sliderIntervalId = null;
+            }
+
+            track.innerHTML = banners.map(b => {
+                const bannerTitle = (currentLang === 'uz' && b.title_uz) ? b.title_uz : ((currentLang === 'en' && b.title_en) ? b.title_en : b.title);
+                return `
                     <div class="slide">
                         <img src="${b.image_url}" class="slide-bg" loading="lazy">
-                        <div class="slide-title">${b.title}</div>
+                        <div class="slide-title">${bannerTitle}</div>
                     </div>
-                `).join('');
-                if (banners.length > 1 && !sliderInterval) {
-                    sliderInterval = setInterval(() => {
-                        track.style.transition = 'transform 0.5s ease-in-out';
-                        track.style.transform = 'translateX(-100%)';
-                        setTimeout(() => { track.style.transition = 'none'; track.appendChild(track.firstElementChild); track.style.transform = 'translateX(0)'; }, 500);
-                    }, 5000);
-                }
+                `;
+            }).join('');
+            
+            if (banners.length > 1) {
+                window.sliderIntervalId = setInterval(() => {
+                    track.style.transition = 'transform 0.5s ease-in-out';
+                    track.style.transform = 'translateX(-100%)';
+                    setTimeout(() => { 
+                        track.style.transition = 'none'; 
+                        track.appendChild(track.firstElementChild); 
+                        track.style.transform = 'translateX(0)'; 
+                    }, 500);
+                }, 5000);
             }
         }
         
         if (settings) {
             settings.forEach(s => configUrls[s.key] = s.value);
-            // Применяем язык и рендерим футер только ПОСЛЕ загрузки ссылок из базы
             applyLanguage(); 
         }
     } catch (e) { console.error(e); }
 }
 
+// === ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ И ДЕТИ ===
 function selectGender(gender) {
     selectedGender = gender;
     document.getElementById('btn-M').classList.remove('selected');
@@ -305,20 +267,27 @@ async function loadProfile() {
     try {
         const { data: users } = await _supabase.from('users').select('*').eq('telegram_id', telegramId).limit(1); 
         const user = (users && users.length > 0) ? users[0] : null;
-        userExists = !!user; currentUserData = user; 
+        userExists = !!user; 
+        currentUserData = user; 
 
         document.getElementById('parentModal').style.display = (!user || !user.parent_role || !user.parent_age) ? 'flex' : 'none';
 
         if (userExists && user.bot_language) currentLang = user.bot_language;
         document.getElementById('appLangSelector').value = currentLang;
         
-        applyLanguage(); updateStatusUI(user);
+        applyLanguage(); 
+        updateStatusUI(user);
 
         const { data: children } = await _supabase.from('children').select('*').eq('parent_telegram_id', telegramId).order('created_at', { ascending: true });
         allChildren = children || [];
 
-    } catch (err) { console.error(err); allChildren = []; } 
-    finally { renderChildren(allChildren); checkLimitAndMode(); }
+    } catch (err) { 
+        console.error(err); 
+        allChildren = []; 
+    } finally { 
+        renderChildren(allChildren); 
+        checkLimitAndMode(); 
+    }
 }
 
 function updateStatusUI(user) {
@@ -334,7 +303,6 @@ function updateStatusUI(user) {
     let isTrial = false;
     let endDate = null;
 
-    // Определяем статус и дату окончания
     if (user.subscription_status === 'active' && subEnd && subEnd > now) {
         hasAccess = true;
         endDate = subEnd;
@@ -346,14 +314,11 @@ function updateStatusUI(user) {
 
     const t = i18n_app[currentLang] || i18n_app['ru'];
     
-    // 1. Устанавливаем бейдж
     document.getElementById('statusBadge').className = `status-badge ${hasAccess ? (isTrial ? 'trial' : 'active') : 'inactive'}`;
     document.getElementById('statusBadge').innerText = hasAccess ? (isTrial ? t.status_trial : t.status_active) : t.status_inactive;
     
-    // 2. Устанавливаем пояснительный текст с датой
     const textEl = document.getElementById('statusText');
     if (hasAccess && endDate) {
-        // Красиво форматируем дату (например: 15 сентября 2026 г.)
         const locale = currentLang === 'en' ? 'en-GB' : (currentLang === 'uz' ? 'uz-UZ' : 'ru-RU');
         const dateStr = endDate.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
         
@@ -364,7 +329,6 @@ function updateStatusUI(user) {
         textEl.innerText = t.status_inactive_text;
     }
 
-    // 3. Устанавливаем текст кнопки оплаты
     const btnEl = document.getElementById('renewBtn');
     btnEl.style.display = 'block';
     if (hasAccess) {
@@ -373,6 +337,7 @@ function updateStatusUI(user) {
         btnEl.innerText = t.btn_renew_inactive;
     }
 }
+
 function initiatePayment() {
     const checkoutUrl = `https://checkout.paycom.uz/${btoa(`m=67fc349fca95ffea6667f140;ac.order_id=${telegramId};a=2450000`)}`;
     tg.openLink(checkoutUrl);
@@ -380,7 +345,11 @@ function initiatePayment() {
 
 function renderChildren(children) {
     const container = document.getElementById('childrenList');
-    if (children.length === 0) { container.innerHTML = `<p style="color: #a0a0a0; font-size: 14px; text-align:center;">Профили еще не добавлены.</p>`; return; }
+    if (children.length === 0) { 
+        const t = i18n_app[currentLang] || i18n_app['ru'];
+        container.innerHTML = `<p style="color: #a0a0a0; font-size: 14px; text-align:center;">${t.no_profiles}</p>`; 
+        return; 
+    }
     container.innerHTML = children.map(child => `
         <div class="child-card">
             <div class="child-info">
@@ -398,6 +367,7 @@ function renderChildren(children) {
 function checkLimitAndMode() {
     const formContainer = document.getElementById('formContainer');
     formContainer.style.display = 'block';
+    document.getElementById('cancelBtn').style.display = editingChildId ? 'block' : 'none';
     if (allChildren.length >= 5 && !editingChildId) formContainer.style.display = 'none'; 
 }
 
@@ -405,15 +375,25 @@ function startEdit(id) {
     const child = allChildren.find(c => c.id === id);
     if (!child) return;
     editingChildId = child.id;
-    document.getElementById('childName').value = child.name; document.getElementById('language').value = child.language; selectGender(child.gender);
-    applyLanguage(); checkLimitAndMode(); window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    document.getElementById('childName').value = child.name; 
+    document.getElementById('language').value = child.language; 
+    selectGender(child.gender);
+    applyLanguage(); 
+    checkLimitAndMode(); 
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
 }
 
-function resetForm() { editingChildId = null; document.getElementById('childName').value = ''; checkLimitAndMode(); }
+function resetForm() { 
+    editingChildId = null; 
+    document.getElementById('childName').value = ''; 
+    applyLanguage();
+    checkLimitAndMode(); 
+}
 
 async function deleteChild(id) {
     if (!confirm('Удалить этот профиль?')) return;
-    await _supabase.from('children').delete().eq('id', id); loadProfile();
+    await _supabase.from('children').delete().eq('id', id); 
+    loadProfile();
 }
 
 async function saveData() {
@@ -425,8 +405,11 @@ async function saveData() {
         } else {
             await _supabase.from('children').insert({ parent_telegram_id: telegramId, name: childName, gender: selectedGender, language: document.getElementById('language').value });
         }
-        resetForm(); loadProfile();
-    } catch (error) { tg.showAlert('Ошибка сохранения'); }
+        resetForm(); 
+        loadProfile();
+    } catch (error) { 
+        tg.showAlert('Ошибка сохранения'); 
+    }
 }
 
 // === ЛОГИКА ЧИТАЛКИ И АРХИВА СКАЗОК ===
@@ -444,22 +427,17 @@ async function loadUserStories() {
         userStories = data || [];
         renderStoriesList();
 
-        // ЛОГИКА АВТОМАТИЧЕСКОГО ОТКРЫТИЯ СКАЗКИ
         const urlParams = new URLSearchParams(window.location.search);
         const storyId = urlParams.get('story_id');
         
-        // Переменная window.deepLinkOpened защищает от повторного открытия при ручном клике на вкладки
         if (storyId && !window.deepLinkOpened) {
             window.deepLinkOpened = true; 
-            
-            // Небольшая задержка, чтобы UI успел переключиться на нужную вкладку
-            setTimeout(() => {
-                openReader(storyId);
-            }, 300); 
+            setTimeout(() => { openReader(storyId); }, 300); 
         }
 
     } catch (err) { console.error("Error loading stories:", err); }
 }
+
 function renderStoriesList() {
     const todayContainer = document.getElementById('todayStoriesList');
     const archiveContainer = document.getElementById('archiveStoriesList');
@@ -473,21 +451,20 @@ function renderStoriesList() {
         (stDate >= today) ? todayStories.push(st) : archiveStories.push(st);
     });
 
-    // Отрисовка за сегодня
+    const t = i18n_app[currentLang] || i18n_app['ru'];
+
     if (todayStories.length === 0) {
-        todayContainer.innerHTML = '<p style="color: #a0a0a0; font-size: 13px; text-align: center; padding: 10px;">Новая сказка появится сегодня в 21:00!</p>';
+        todayContainer.innerHTML = `<p id="emptyToday" style="color: #a0a0a0; font-size: 13px; text-align: center; padding: 10px;">${t.empty_today}</p>`;
     } else {
         todayContainer.innerHTML = todayStories.map(st => createStoryCard(st)).join('');
     }
 
-    // Отрисовка архива
     if (archiveStories.length === 0) {
-        archiveContainer.innerHTML = '<p style="color: #a0a0a0; font-size: 13px; text-align: center; padding: 10px;">Архив пуст. Сказки появятся здесь завтра.</p>';
+        archiveContainer.innerHTML = `<p style="color: #a0a0a0; font-size: 13px; text-align: center; padding: 10px;">${t.empty_archive}</p>`;
         paywall.style.display = 'none';
     } else {
         archiveContainer.innerHTML = archiveStories.map(st => createStoryCard(st)).join('');
         
-        // Логика Пейвола
         let hasAccess = false;
         const now = new Date();
         if (currentUserData) {
@@ -499,7 +476,8 @@ function renderStoriesList() {
 }
 
 function createStoryCard(st) {
-    const d = new Date(st.created_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+    const locale = currentLang === 'en' ? 'en-GB' : (currentLang === 'uz' ? 'uz-UZ' : 'ru-RU');
+    const d = new Date(st.created_at).toLocaleDateString(locale, { day: 'numeric', month: 'short' });
     return `
         <div class="story-card" onclick="openReader('${st.id}')">
             <div>
@@ -511,7 +489,6 @@ function createStoryCard(st) {
     `;
 }
 
-// Открытие Читалки внутри Mini App
 function openReader(storyId) {
     const st = userStories.find(s => s.id === storyId);
     if (!st) return;
@@ -520,11 +497,9 @@ function openReader(storyId) {
     document.getElementById('readerImg').src = st.image_url || '';
     document.getElementById('readerImg').style.display = st.image_url ? 'block' : 'none';
 
-    // Форматируем текст (заменяем переносы строк на параграфы)
     const textHtml = (st.ready_text || '').split('\n').filter(p => p.trim()).map(p => `<p>${p}</p>`).join('');
     document.getElementById('readerText').innerHTML = textHtml;
 
-    // Внедряем рекламный баннер
     const promoLink = document.getElementById('readerPromoLink');
     if (st.promo_image_url && st.promo_link_url) {
         promoLink.href = st.promo_link_url;
@@ -534,7 +509,6 @@ function openReader(storyId) {
         promoLink.style.display = 'none';
     }
 
-    // Показываем экран и блокируем скролл фона
     document.getElementById('readerScreen').style.display = 'flex';
     document.body.style.overflow = 'hidden';
 }
@@ -542,7 +516,6 @@ function openReader(storyId) {
 function closeReader() {
     document.getElementById('readerScreen').style.display = 'none';
     document.body.style.overflow = 'auto';
-    // Очищаем, чтобы не мелькало старое при следующем открытии
     document.getElementById('readerImg').src = '';
     document.getElementById('readerText').innerHTML = '';
 }
