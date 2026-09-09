@@ -1,0 +1,58 @@
+window.langUZ = {
+    tab_home: "Bosh sahifa",
+    tab_profile: "Mening profilim",
+    page_title_home: "Bolalar profillari",
+    page_title_profile: "Mening profilim",
+    
+    no_profiles: "Profillar hali qo'shilmagan.",
+    form_title_add: "Bola qo'shish",
+    form_title_edit: "Profilni tahrirlash",
+    label_lang: "Ertaklar tili",
+    label_name: "Ism",
+    placeholder_name: "Masalan: Temur",
+    label_gender: "Jinsi",
+    btn_boy: "O'g'il bola 👦",
+    btn_girl: "Qiz bola 👧",
+    btn_save_add: "Profilni qo'shish",
+    btn_save_edit: "O'zgarishlarni saqlash",
+    btn_cancel: "Bekor qilish",
+    
+    lbl_app_lang: "Ilova tili",
+    lbl_app_theme: "Mavzu",
+    theme_day: "☀️ Kunduz",
+    theme_night: "🌙 Tun",
+    
+    status_active: "✅ Faol obuna",
+    status_trial: "⏳ Sinov muddati",
+    status_inactive: "❌ Faol emas",
+    status_active_text: "Kirish {date} gacha ochiq. Ertaklar har kuni keladi!",
+    status_trial_text: "Bepul kirish {date} gacha.",
+    status_inactive_text: "Sehrli vaqt tugadi. Kirishni uzaytiring.",
+    btn_renew_active: "Bir oyga uzaytirish (24 500 so'm)",
+    btn_renew_trial: "Obunani rasmiylashtirish (24 500 so'm)",
+    btn_renew_inactive: "Obunani tiklash (24 500 so'm)",
+    
+    lbl_new_stories: "✨ Yangi ertaklar (Bugun)",
+    empty_today: "Yangi ertak bugun soat 21:00 da paydo bo'ladi!",
+    lbl_archive_stories: "📚 Mening ertaklarim (Arxiv)",
+    empty_archive: "Arxiv bo'sh. Ertaklar bu yerda ertaga paydo bo'ladi.",
+    paywall_text: "O'tgan ertaklar arxiviga kirish faqat pullik tarifda mumkin.",
+    paywall_btn: "Kirishni ochish (24 500 so'm)",
+    
+    reader_header: "Ertak",
+    reader_back: "⬅ Orqaga",
+    
+    modal_title: "O'zingiz haqingizda so'zlab bering",
+    modal_sub: "Bu bizga ertaklarni yanada yaxshiroq qilishga yordam beradi:",
+    label_role: "Bola uchun kimsiz?",
+    role_mother: "Ona", role_father: "Ota", role_grandma: "Buvi", role_grandpa: "Bobo", role_nanny: "Enaga", role_other: "Boshqa",
+    role_custom: "Kimsiz ko'rsating...",
+    label_age: "Yoshingiz",
+    age_placeholder: "Masalan: 32",
+    btn_save_parent: "Davom etish",
+    
+    consent_text: "Men <a href='#' onclick='openLink(\"{offer}\")'>Ommaviy oferta</a> va <a href='#' onclick='openLink(\"{privacy}\")'>Maxfiylik siyosati</a> shartlarini qabul qilaman",
+    footer_privacy: "Maxfiylik siyosati",
+    footer_offer: "Ommaviy oferta",
+    footer_about: "Loyiha haqida"
+};
