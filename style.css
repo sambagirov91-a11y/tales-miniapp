@@ -206,3 +206,25 @@ body.light-theme .back-btn { background: rgba(255,255,255,0.5); }
 .footer-links { margin-top: 40px; border-top: 1px solid var(--glass-border); padding-top: 28px; text-align: center; display: flex; flex-direction: column; gap: 18px; }
 .footer-links a { color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 500; transition: 0.2s; }
 .footer-links a:hover { color: var(--gold-main); }
+
+/* === СКРОЛЛ ДЛЯ АРХИВА СКАЗОК === */
+.archive-scroll-list {
+    max-height: 320px; /* Высота ровно под 4 карточки сказок */
+    overflow-y: auto;
+    padding-right: 5px; /* Отступ чтобы ползунок не прилипал к тексту */
+}
+
+/* Красивый кастомный ползунок для архива */
+.archive-scroll-list::-webkit-scrollbar {
+    width: 5px;
+}
+.archive-scroll-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+.archive-scroll-list::-webkit-scrollbar-thumb {
+    background: rgba(147, 51, 234, 0.4);
+    border-radius: 10px;
+}
+.archive-scroll-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(147, 51, 234, 0.7);
+}
