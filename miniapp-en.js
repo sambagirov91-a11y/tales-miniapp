@@ -1,0 +1,58 @@
+window.langEN = {
+    tab_home: "Home",
+    tab_profile: "My Profile",
+    page_title_home: "Children's Profiles",
+    page_title_profile: "My Profile",
+    
+    no_profiles: "Profiles not added yet.",
+    form_title_add: "Add Child",
+    form_title_edit: "Edit Profile",
+    label_lang: "Fairy Tales Language",
+    label_name: "Name",
+    placeholder_name: "Example: Timur",
+    label_gender: "Gender",
+    btn_boy: "Boy 👦",
+    btn_girl: "Girl 👧",
+    btn_save_add: "Add Profile",
+    btn_save_edit: "Save Changes",
+    btn_cancel: "Cancel",
+    
+    lbl_app_lang: "App Language",
+    lbl_app_theme: "Theme",
+    theme_day: "☀️ Day",
+    theme_night: "🌙 Night",
+    
+    status_active: "✅ Active Subscription",
+    status_trial: "⏳ Trial Period",
+    status_inactive: "❌ Inactive",
+    status_active_text: "Access open until {date}. Tales arrive every day!",
+    status_trial_text: "Free access until {date}.",
+    status_inactive_text: "Magic time is over. Renew your access.",
+    btn_renew_active: "Renew for a month (24,500 sum)",
+    btn_renew_trial: "Subscribe (24,500 sum)",
+    btn_renew_inactive: "Renew subscription (24,500 sum)",
+    
+    lbl_new_stories: "✨ New Tales (Today)",
+    empty_today: "A new fairy tale will appear today at 21:00!",
+    lbl_archive_stories: "📚 My Tales (Archive)",
+    empty_archive: "The archive is empty. Tales will appear here tomorrow.",
+    paywall_text: "Access to the archive of past tales is available only in the paid plan.",
+    paywall_btn: "Unlock Access (24,500 sum)",
+    
+    reader_header: "Fairy Tale",
+    reader_back: "⬅ Back",
+    
+    modal_title: "Tell us about yourself",
+    modal_sub: "This will help us make the tales even better:",
+    label_role: "Who are you to the child?",
+    role_mother: "Mother", role_father: "Father", role_grandma: "Grandmother", role_grandpa: "Grandfather", role_nanny: "Nanny", role_other: "Other",
+    role_custom: "Specify who you are...",
+    label_age: "Your age",
+    age_placeholder: "Example: 32",
+    btn_save_parent: "Continue",
+    
+    consent_text: "I accept the <a href='#' onclick='openLink(\"{offer}\")'>Terms of Service</a> and <a href='#' onclick='openLink(\"{privacy}\")'>Privacy Policy</a>",
+    footer_privacy: "Privacy Policy",
+    footer_offer: "Terms of Service",
+    footer_about: "About the project"
+};
