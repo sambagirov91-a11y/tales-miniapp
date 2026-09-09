@@ -7,23 +7,28 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="style.css">
+    
+    <!-- Подключаем внешние файлы со словарями для 3 языков -->
+    <script src="miniapp-ru.js"></script>
+    <script src="miniapp-uz.js"></script>
+    <script src="miniapp-en.js"></script>
 </head>
 <body>
 
     <!-- МОДАЛКА АНКЕТЫ РОДИТЕЛЯ -->
     <div id="parentModal" class="parent-modal" style="display: none;">
         <div class="modal-content">
-            <h2 id="modalTitle">Добро пожаловать!</h2>
-            <p id="modalSub" style="font-size: 13px; color: #a0a0a0; margin-bottom: 20px;">Расскажите о себе:</p>
+            <h2 id="modalTitle">Расскажите о себе</h2>
+            <p id="modalSub" style="font-size: 13px; color: #a0a0a0; margin-bottom: 20px;">Это поможет нам сделать сказки еще лучше:</p>
             
             <label id="labelParentRole">Кто вы для ребенка?</label>
             <select id="parentRoleSelect" onchange="checkCustomRole(this.value)">
-                <option value="Мать">Мать</option>
-                <option value="Отец">Отец</option>
-                <option value="Бабушка">Бабушка</option>
-                <option value="Дедушка">Дедушка</option>
-                <option value="Няня">Няня</option>
-                <option value="Другое">Другое</option>
+                <option value="Мать" id="roleMother">Мать</option>
+                <option value="Отец" id="roleFather">Отец</option>
+                <option value="Бабушка" id="roleGrandma">Бабушка</option>
+                <option value="Дедушка" id="roleGrandpa">Дедушка</option>
+                <option value="Няня" id="roleNanny">Няня</option>
+                <option value="Другое" id="roleOther">Другое</option>
             </select>
             <input type="text" id="customParentRole" placeholder="Укажите кто вы..." style="display: none; margin-top: -10px;">
 
@@ -34,24 +39,26 @@
         </div>
     </div>
 
-    <!-- ОСНОВНОЙ КОНТЕЙНЕР (С отступом для нижнего меню) -->
+    <!-- ОСНОВНОЙ КОНТЕЙНЕР -->
     <div id="mainContent" class="main-content">
         
         <!-- Вкладка: ГЛАВНАЯ -->
         <div id="tabHome" class="tab-page active">
-            <h1 id="pageTitle" class="top-title">Профили детей</h1>
+            <h1 id="pageTitleHome" class="top-title">Профили детей</h1>
             
+            <!-- Слайдер баннеров -->
             <div class="slider-container" id="sliderContainer">
                 <div class="slider-track" id="sliderTrack"></div>
             </div>
 
+            <!-- Список детей -->
             <div id="childrenList">
                 <div class="loader-container">
                     <div class="spinner"></div>
-                    <div class="loader-text" id="loaderText">Загружаем магию...</div>
                 </div>
             </div>
 
+            <!-- Форма добавления/редактирования -->
             <div id="formContainer" style="display: none;">
                 <h2 id="formTitle">Добавить ребенка</h2>
                 
@@ -83,12 +90,12 @@
 
         <!-- Вкладка: ПРОФИЛЬ -->
         <div id="tabProfile" class="tab-page">
-            <h1 class="top-title">Мой профиль</h1>
+            <h1 id="pageTitleProfile" class="top-title">Мой профиль</h1>
             
             <!-- Настройки (Язык и Тема) -->
             <div class="settings-card glass-panel">
                 <div class="settings-row">
-                    <span>Язык приложения</span>
+                    <span id="lblAppLang">Язык приложения</span>
                     <select id="appLangSelector" onchange="changeAppLanguage(this.value)">
                         <option value="ru">🇷🇺 RU</option>
                         <option value="uz">🇺🇿 UZ</option>
@@ -96,7 +103,7 @@
                     </select>
                 </div>
                 <div class="settings-row border-top">
-                    <span>Тема оформления</span>
+                    <span id="lblAppTheme">Тема оформления</span>
                     <button id="themeToggleBtn" onclick="toggleMiniAppTheme()" class="theme-btn">🌙 Ночь</button>
                 </div>
             </div>
@@ -114,29 +121,27 @@
             </div>
 
             <!-- Новые сказки -->
-            <h2 class="section-title">✨ Новые сказки (Сегодня)</h2>
+            <h2 id="lblNewStories" class="section-title">✨ Новые сказки (Сегодня)</h2>
             <div id="todayStoriesList" class="stories-list">
-                <!-- Сюда JS будет вставлять новые сказки -->
-                <p style="color: #a0a0a0; font-size: 13px; text-align: center; padding: 10px;">Новая сказка появится сегодня в 21:00!</p>
+                <p id="emptyToday" style="color: #a0a0a0; font-size: 14px; text-align: center; padding: 10px;">Новая сказка появится сегодня в 21:00!</p>
             </div>
 
-            <!-- Архив сказок (Пейвол) -->
-            <h2 class="section-title" style="margin-top: 24px;">📚 Мои сказки (Архив)</h2>
+            <!-- Архив сказок -->
+            <h2 id="lblArchiveStories" class="section-title" style="margin-top: 24px;">📚 Мои сказки (Архив)</h2>
             <div id="archiveContainer" class="archive-container">
-                <!-- Обертка блокировки -->
+                <!-- Пейвол (Перекрытие Архива) -->
                 <div id="paywallOverlay" class="paywall-overlay" style="display: none;">
                     <div class="paywall-content">
                         <span class="paywall-icon">🔒</span>
-                        <p class="paywall-text">Доступ к архиву прошлых сказок возможен только в платном тарифе.</p>
-                        <button class="primary-btn paywall-btn" onclick="initiatePayment()">Открыть доступ (24 500 сум)</button>
+                        <p id="paywallText" class="paywall-text">Доступ к архиву прошлых сказок возможен только в платном тарифе.</p>
+                        <button id="paywallBtn" class="primary-btn paywall-btn" onclick="initiatePayment()">Открыть доступ</button>
                     </div>
                 </div>
                 
-                <div id="archiveStoriesList" class="stories-list">
-                    <!-- Сюда JS будет вставлять архив -->
-                </div>
+                <div id="archiveStoriesList" class="stories-list"></div>
             </div>
             
+            <!-- Глобальный баннер и ссылки футера -->
             <div class="footer-links" id="footerLinks"></div>
         </div>
 
@@ -145,17 +150,17 @@
     <!-- ЭКРАН ЧИТАЛКИ (Открывается поверх всего) -->
     <div id="readerScreen" class="reader-screen" style="display: none;">
         <div class="reader-header glass-panel">
-            <button onclick="closeReader()" class="back-btn">⬅ Назад</button>
-            <span class="reader-header-title">Сказка</span>
+            <button id="readerBackBtn" onclick="closeReader()" class="back-btn">⬅ Назад</button>
+            <span id="readerHeaderTitle" class="reader-header-title">Сказка</span>
         </div>
         <div class="reader-content" id="readerContentArea">
             <h1 id="readerTitle" class="reader-title"></h1>
             <img id="readerImg" class="reader-img" src="" alt="">
             <div id="readerText" class="reader-text"></div>
             
-            <!-- Место для кликабельного баннера внутри сказки -->
+            <!-- Рекламный баннер внутри сказки -->
             <a id="readerPromoLink" href="#" target="_blank" style="display: none;">
-                <img id="readerPromoImg" class="reader-promo-img" src="" alt="Реклама">
+                <img id="readerPromoImg" class="reader-promo-img" src="" alt="Promo">
                 <p class="reader-promo-cta">👉 Нажмите здесь, чтобы узнать подробности 👈</p>
             </a>
         </div>
@@ -165,14 +170,15 @@
     <nav class="bottom-tab-bar glass-panel">
         <div class="tab-item active" id="btnTabHome" onclick="switchAppTab('home')">
             <span class="tab-icon">🏠</span>
-            <span class="tab-label">Главная</span>
+            <span id="lblTabHome" class="tab-label">Главная</span>
         </div>
         <div class="tab-item" id="btnTabProfile" onclick="switchAppTab('profile')">
             <span class="tab-icon">👤</span>
-            <span class="tab-label">Мой профиль</span>
+            <span id="lblTabProfile" class="tab-label">Мой профиль</span>
         </div>
     </nav>
 
+    <!-- Основной скрипт логики Mini App -->
     <script src="app.js" defer></script>
 </body>
 </html>
