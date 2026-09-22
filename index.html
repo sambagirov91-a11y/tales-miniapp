@@ -148,42 +148,48 @@
 
     </div>
 
-    <!-- ЭКРАН ЧИТАЛКИ (Открывается поверх всего) -->
+<!-- ЭКРАН ЧИТАЛКИ (Открывается поверх всего) -->
     <div id="readerScreen" class="reader-screen" style="display: none;">
         <div class="reader-header glass-panel">
             <button id="readerBackBtn" onclick="closeReader()" class="back-btn">⬅ Назад</button>
             <span id="readerHeaderTitle" class="reader-header-title">Сказка</span>
         </div>
+        
         <div class="reader-content" id="readerContentArea">
             <h1 id="readerTitle" class="reader-title"></h1>
             <img id="readerImg" class="reader-img" src="" alt="">
             <div id="readerText" class="reader-text"></div>
-     <!-- БЛОК ОЦЕНКИ -->
-<div id="rating-block" class="feedback-container" style="display: none;">
-    <h3 class="feedback-title">Как вам сказка?</h3>
-    <div class="stars" id="stars-container">
-        <span data-value="1">★</span>
-        <span data-value="2">★</span>
-        <span data-value="3">★</span>
-        <span data-value="4">★</span>
-        <span data-value="5">★</span>
-    </div>
-    <p id="rating-thanks" style="display:none; color: #9333ea; font-weight: bold; text-align: center;">Спасибо за оценку! 💖</p>
-</div>       
+            
+            <!-- БЛОК ОЦЕНКИ -->
+            <div id="rating-block" class="feedback-container" style="display: none;">
+                <h3 class="feedback-title">Как вам сказка?</h3>
+                <div class="stars" id="stars-container">
+                    <span data-value="1">★</span>
+                    <span data-value="2">★</span>
+                    <span data-value="3">★</span>
+                    <span data-value="4">★</span>
+                    <span data-value="5">★</span>
+                </div>
+                <p id="rating-thanks" style="display:none; color: #9333ea; font-weight: bold; text-align: center;">Спасибо за оценку! 💖</p>
+            </div>        
+            
+            <!-- БЛОК КОММЕНТАРИЕВ (Теперь он внутри читалки!) -->
+            <div id="comment-block" class="feedback-container" style="display: none;">
+                <h3 class="feedback-title">Ваше мнение</h3>
+                <textarea id="story-comment" maxlength="500" placeholder="Напишите, что понравилось малышу (до 500 символов)..." rows="3"></textarea>
+                <!-- Добавил window. перед вызовом функции для 100% срабатывания -->
+                <button id="submit-comment-btn" onclick="window.sendComment()">Отправить отзыв</button>
+                <p id="comment-thanks" style="display:none; color: #9333ea; font-weight: bold; text-align: center;">Ваш отзыв успешно отправлен! 💖</p>
+            </div>
+
             <!-- Рекламный баннер внутри сказки -->
             <a id="readerPromoLink" href="#" target="_blank" style="display: none;">
                 <img id="readerPromoImg" class="reader-promo-img" src="" alt="Promo">
                 <p class="reader-promo-cta">👉 Нажмите здесь, чтобы узнать подробности 👈</p>
             </a>
-        </div>
-    </div>
-<!-- БЛОК КОММЕНТАРИЕВ -->
-<div id="comment-block" class="feedback-container" style="display: none;">
-    <h3 class="feedback-title">Ваше мнение</h3>
-    <textarea id="story-comment" maxlength="500" placeholder="Напишите, что понравилось малышу (до 500 символов)..." rows="3"></textarea>
-    <button id="submit-comment-btn" onclick="sendComment()">Отправить отзыв</button>
-    <p id="comment-thanks" style="display:none; color: #9333ea; font-weight: bold; text-align: center;">Ваш отзыв успешно отправлен! 💖</p>
-</div>
+            
+        </div> <!-- Конец readerContentArea -->
+    </div> <!-- Конец readerScreen -->
     <!-- НИЖНЯЯ ПАНЕЛЬ НАВИГАЦИИ (TAB BAR) -->
     <nav class="bottom-tab-bar glass-panel">
         <div class="tab-item active" id="btnTabHome" onclick="switchAppTab('home')">
