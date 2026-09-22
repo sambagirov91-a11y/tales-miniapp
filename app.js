@@ -519,9 +519,21 @@ function closeReader() {
     document.getElementById('readerImg').src = '';
     document.getElementById('readerText').innerHTML = '';
 }
-// URL твоего бэкенда на Render (проверь, чтобы был правильный)
+// URL твоего бэкенда на Render 
 const BACKEND_URL = 'https://scheherazade-yr42.onrender.com';
 const currentStoryId = new URLSearchParams(window.location.search).get('story_id');
+
+// ЕСЛИ МЫ В СКАЗКЕ - ПОКАЗЫВАЕМ БЛОКИ ОТЗЫВОВ
+if (currentStoryId) {
+    const rb = document.getElementById('rating-block');
+    const cb = document.getElementById('comment-block');
+    if (rb) rb.style.display = 'block';
+    if (cb) cb.style.display = 'block';
+}
+
+// Логика для звездочек
+const stars = document.querySelectorAll('#stars-container span');
+// ... далее код продолжается как было ...
 
 // Логика для звездочек
 const stars = document.querySelectorAll('#stars-container span');
