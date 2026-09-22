@@ -511,6 +511,11 @@ function openReader(storyId) {
 
     document.getElementById('readerScreen').style.display = 'flex';
     document.body.style.overflow = 'hidden';
+
+    // АКТИВАЦИЯ БЛОКОВ ОТЗЫВА
+    if (typeof window.renderFeedbackBlocks === 'function') {
+        window.renderFeedbackBlocks(st.id, st.rating, st.user_comment);
+    }
 }
 
 function closeReader() {
@@ -519,9 +524,8 @@ function closeReader() {
     document.getElementById('readerImg').src = '';
     document.getElementById('readerText').innerHTML = '';
 }
-// Изолируем логику отзывов, чтобы она не ломала основной код Mini App
-document.addEventListener('DOMContentLoaded', () => {
- // --- УМНАЯ ЛОГИКА ОТЗЫВОВ ДЛЯ ЧИТАЛКИ ---
+
+// --- УМНАЯ ЛОГИКА ОТЗЫВОВ ДЛЯ ЧИТАЛКИ ---
 const FEEDBACK_API_URL = 'https://scheherazade-yr42.onrender.com';
 let currentFeedbackStoryId = null;
 
@@ -539,14 +543,12 @@ window.renderFeedbackBlocks = function(storyId, existingRating, existingComment)
     const ratingThanks = document.getElementById('rating-thanks');
     
     if (existingRating) {
-        // Уже оценил
         if (starsWrap) starsWrap.style.display = 'none';
         if (ratingThanks) {
             ratingThanks.style.display = 'block';
             ratingThanks.innerHTML = `Ваша оценка: ${'⭐'.repeat(existingRating)}`;
         }
     } else {
-        // Еще не оценил
         if (starsWrap) starsWrap.style.display = 'flex';
         if (ratingThanks) ratingThanks.style.display = 'none';
         document.querySelectorAll('#stars-container span').forEach(s => s.classList.remove('active'));
@@ -558,7 +560,6 @@ window.renderFeedbackBlocks = function(storyId, existingRating, existingComment)
     const commentThanks = document.getElementById('comment-thanks');
     
     if (existingComment) {
-        // Уже написал отзыв
         if (commentInput) commentInput.style.display = 'none';
         if (btn) btn.style.display = 'none';
         if (commentThanks) {
@@ -566,7 +567,6 @@ window.renderFeedbackBlocks = function(storyId, existingRating, existingComment)
             commentThanks.innerHTML = `<span style="color: #9ca3af; font-style: italic;">Ваш отзыв: "${existingComment}"</span>`;
         }
     } else {
-        // Еще не писал
         if (commentInput) {
             commentInput.style.display = 'block';
             commentInput.value = '';
@@ -591,8 +591,10 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
                 document.getElementById('stars-container').style.display = 'none';
                 const rt = document.getElementById('rating-thanks');
-                rt.style.display = 'block';
-                rt.innerHTML = `Ваша оценка: ${'⭐'.repeat(rating)}`;
+                if (rt) {
+                    rt.style.display = 'block';
+                    rt.innerHTML = `Ваша оценка: ${'⭐'.repeat(rating)}`;
+                }
             }, 300);
 
             await sendFeedbackData(rating, null);
