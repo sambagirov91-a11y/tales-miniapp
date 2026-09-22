@@ -525,13 +525,12 @@ function closeReader() {
     document.getElementById('readerText').innerHTML = '';
 }
 
-// --- УМНАЯ ЛОГИКА ОТЗЫВОВ ДЛЯ ЧИТАЛКИ ---
-const FEEDBACK_API_URL = 'https://scheherazade-yr42.onrender.com';
-let currentFeedbackStoryId = null;
+// --- БЕЗОПАСНАЯ ЛОГИКА ОТЗЫВОВ (Без конфликтов переменных) ---
+window.FEEDBACK_API_URL = 'https://scheherazade-yr42.onrender.com';
+window.currentFeedbackStoryId = null;
 
-// Вызываем при КАЖДОМ открытии сказки (новой или из архива)
 window.renderFeedbackBlocks = function(storyId, existingRating, existingComment) {
-    currentFeedbackStoryId = storyId;
+    window.currentFeedbackStoryId = storyId;
     
     const rb = document.getElementById('rating-block');
     const cb = document.getElementById('comment-block');
@@ -580,27 +579,31 @@ window.renderFeedbackBlocks = function(storyId, existingRating, existingComment)
     }
 };
 
-// Слушатель кликов по звездам
-document.addEventListener('DOMContentLoaded', () => {
-    const stars = document.querySelectorAll('#stars-container span');
-    stars.forEach(star => {
-        star.addEventListener('click', async (e) => {
-            const rating = e.target.getAttribute('data-value');
-            stars.forEach(s => s.classList.toggle('active', s.getAttribute('data-value') <= rating));
-            
-            setTimeout(() => {
-                document.getElementById('stars-container').style.display = 'none';
-                const rt = document.getElementById('rating-thanks');
-                if (rt) {
-                    rt.style.display = 'block';
-                    rt.innerHTML = `Ваша оценка: ${'⭐'.repeat(rating)}`;
-                }
-            }, 300);
+// Глобальная привязка звезд (чтобы избежать дубликатов при загрузке нескольких скриптов)
+if (!window.starsBound) {
+    document.addEventListener('DOMContentLoaded', () => {
+        const stars = document.querySelectorAll('#stars-container span');
+        stars.forEach(star => {
+            star.onclick = async (e) => {
+                const rating = e.target.getAttribute('data-value');
+                stars.forEach(s => s.classList.toggle('active', s.getAttribute('data-value') <= rating));
+                
+                setTimeout(() => {
+                    const sc = document.getElementById('stars-container');
+                    if(sc) sc.style.display = 'none';
+                    const rt = document.getElementById('rating-thanks');
+                    if (rt) {
+                        rt.style.display = 'block';
+                        rt.innerHTML = `Ваша оценка: ${'⭐'.repeat(rating)}`;
+                    }
+                }, 300);
 
-            await sendFeedbackData(rating, null);
+                await window.sendFeedbackData(rating, null);
+            };
         });
     });
-});
+    window.starsBound = true;
+}
 
 // Отправка текста
 window.sendComment = async function() {
@@ -616,7 +619,7 @@ window.sendComment = async function() {
         btn.innerText = 'Отправка...';
     }
 
-    await sendFeedbackData(null, commentText);
+    await window.sendFeedbackData(null, commentText);
 
     commentInput.style.display = 'none';
     if (btn) btn.style.display = 'none';
@@ -629,14 +632,14 @@ window.sendComment = async function() {
 };
 
 // Фоновая отправка на сервер
-async function sendFeedbackData(rating, comment) {
-    if (!currentFeedbackStoryId) return;
+window.sendFeedbackData = async function(rating, comment) {
+    if (!window.currentFeedbackStoryId) return;
     try {
-        await fetch(`${FEEDBACK_API_URL}/api/save-feedback`, { 
+        await fetch(`${window.FEEDBACK_API_URL}/api/save-feedback`, { 
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                story_id: currentFeedbackStoryId,
+                story_id: window.currentFeedbackStoryId,
                 rating: rating,
                 comment: comment
             })
@@ -644,4 +647,4 @@ async function sendFeedbackData(rating, comment) {
     } catch (err) {
         console.error('Ошибка отправки отзыва:', err);
     }
-}
+};
