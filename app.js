@@ -14,16 +14,22 @@ function toggleMiniAppTheme() {
     const isLight = document.body.classList.contains('light-theme');
     localStorage.setItem('samba_theme', isLight ? 'light' : 'dark');
     
-    // Мгновенное обновление текста кнопки темы
     const t = i18n_app[currentLang] || i18n_app['ru'];
     const btn = document.getElementById('themeToggleBtn');
-    if (btn) btn.innerText = isLight ? t.theme_day : t.theme_night;
+    if (btn && t) btn.innerText = isLight ? t.theme_day : t.theme_night;
 }
+
+// Защита словаря (предотвращает краш, если файлы языков не успели загрузиться)
+const i18n_app = {
+    ru: window.langRU || {},
+    uz: window.langUZ || {},
+    en: window.langEN || {}
+};
 
 document.addEventListener('DOMContentLoaded', () => {
     const t = i18n_app[currentLang] || i18n_app['ru'];
     const btn = document.getElementById('themeToggleBtn');
-    if (btn) btn.innerText = document.body.classList.contains('light-theme') ? t.theme_day : t.theme_night;
+    if (btn && t) btn.innerText = document.body.classList.contains('light-theme') ? t.theme_day : t.theme_night;
 });
 
 // === НАВИГАЦИЯ (TAB BAR) ===
@@ -32,11 +38,15 @@ function switchAppTab(tabId) {
     document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
 
     if (tabId === 'home') {
-        document.getElementById('tabHome').classList.add('active');
-        document.getElementById('btnTabHome').classList.add('active');
+        const tHome = document.getElementById('tabHome');
+        const bHome = document.getElementById('btnTabHome');
+        if (tHome) tHome.classList.add('active');
+        if (bHome) bHome.classList.add('active');
     } else {
-        document.getElementById('tabProfile').classList.add('active');
-        document.getElementById('btnTabProfile').classList.add('active');
+        const tProf = document.getElementById('tabProfile');
+        const bProf = document.getElementById('btnTabProfile');
+        if (tProf) tProf.classList.add('active');
+        if (bProf) bProf.classList.add('active');
         loadUserStories(); 
     }
     window.scrollTo(0, 0);
@@ -58,34 +68,32 @@ let currentUserData = null;
 let configUrls = { privacy_url: '', offer_url: '', about_url: '', promo_image_url: '', promo_link_url: '' };
 let sliderIntervalId;
 
-// === СЛОВАРЬ (Собран из внешних файлов) ===
-const i18n_app = {
-    ru: window.langRU,
-    uz: window.langUZ,
-    en: window.langEN
-};
-
 window.onload = async () => {
-    await Promise.all([loadProfile(), loadAppConfig()]);
-    
-    // ПРОВЕРКА DEEP LINK: Если в URL есть id сказки
-    const urlParams = new URLSearchParams(window.location.search);
-    const storyId = urlParams.get('story_id');
-    
-    if (storyId) {
-        switchAppTab('profile'); 
+    try {
+        await Promise.all([loadProfile(), loadAppConfig()]);
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const storyId = urlParams.get('story_id');
+        
+        if (storyId) {
+            switchAppTab('profile'); 
+        }
+    } catch (err) {
+        console.error("Критическая ошибка при загрузке:", err);
     }
 };
 
 // === РОДИТЕЛЬСКАЯ АНКЕТА ===
 function checkCustomRole(val) {
-    document.getElementById('customParentRole').style.display = val === 'Другое' ? 'block' : 'none';
+    const el = document.getElementById('customParentRole');
+    if (el) el.style.display = val === 'Другое' ? 'block' : 'none';
 }
 
 async function saveParentInfo() {
-    let role = document.getElementById('parentRoleSelect').value;
-    if (role === 'Другое') role = document.getElementById('customParentRole').value.trim();
-    const age = parseInt(document.getElementById('parentAgeInput').value);
+    let role = document.getElementById('parentRoleSelect')?.value;
+    if (role === 'Другое') role = document.getElementById('customParentRole')?.value.trim();
+    const ageInput = document.getElementById('parentAgeInput');
+    const age = ageInput ? parseInt(ageInput.value) : 0;
 
     if (!role || isNaN(age) || age < 10 || age > 100) return alert('Пожалуйста, корректно заполните все поля.');
 
@@ -100,7 +108,8 @@ async function saveParentInfo() {
         } else {
             await _supabase.from('users').update({ parent_role: role, parent_age: age }).eq('telegram_id', telegramId);
         }
-        document.getElementById('parentModal').style.display = 'none';
+        const modal = document.getElementById('parentModal');
+        if (modal) modal.style.display = 'none';
         await loadProfile();
     } catch (err) { console.error(err); alert('Ошибка сохранения'); }
 }
@@ -112,7 +121,6 @@ async function changeAppLanguage(newLang) {
     renderChildren(allChildren);
     if (currentUserData) updateStatusUI(currentUserData);
     
-    // Перезапускаем слайдер, чтобы обновить языки баннеров
     loadAppConfig();
     
     if (userExists) {
@@ -122,15 +130,15 @@ async function changeAppLanguage(newLang) {
 
 function applyLanguage() {
     const t = i18n_app[currentLang] || i18n_app['ru'];
+    if (!t) return; // Защита от краша
+
     document.documentElement.lang = currentLang;
     
-    // Вкладки и заголовки
-    if (document.getElementById('lblTabHome')) document.getElementById('lblTabHome').innerText = t.tab_home;
-    if (document.getElementById('lblTabProfile')) document.getElementById('lblTabProfile').innerText = t.tab_profile;
-    if (document.getElementById('pageTitleHome')) document.getElementById('pageTitleHome').innerText = t.page_title_home;
-    if (document.getElementById('pageTitleProfile')) document.getElementById('pageTitleProfile').innerText = t.page_title_profile;
+    if (document.getElementById('lblTabHome')) document.getElementById('lblTabHome').innerText = t.tab_home || 'Главная';
+    if (document.getElementById('lblTabProfile')) document.getElementById('lblTabProfile').innerText = t.tab_profile || 'Мой профиль';
+    if (document.getElementById('pageTitleHome')) document.getElementById('pageTitleHome').innerText = t.page_title_home || '';
+    if (document.getElementById('pageTitleProfile')) document.getElementById('pageTitleProfile').innerText = t.page_title_profile || '';
     
-    // Форма профиля
     if (document.getElementById('formTitle')) document.getElementById('formTitle').innerText = editingChildId ? t.form_title_edit : t.form_title_add;
     if (document.getElementById('labelLang')) document.getElementById('labelLang').innerText = t.label_lang;
     if (document.getElementById('labelName')) document.getElementById('labelName').innerText = t.label_name;
@@ -141,26 +149,21 @@ function applyLanguage() {
     if (document.getElementById('saveBtn')) document.getElementById('saveBtn').innerText = editingChildId ? t.btn_save_edit : t.btn_save_add;
     if (document.getElementById('cancelBtn')) document.getElementById('cancelBtn').innerText = t.btn_cancel;
     
-    // Настройки
     if (document.getElementById('lblAppLang')) document.getElementById('lblAppLang').innerText = t.lbl_app_lang;
     if (document.getElementById('lblAppTheme')) document.getElementById('lblAppTheme').innerText = t.lbl_app_theme;
     
-    // Перевод кнопки темы
     const themeBtn = document.getElementById('themeToggleBtn');
     if (themeBtn) themeBtn.innerText = document.body.classList.contains('light-theme') ? t.theme_day : t.theme_night;
     
-    // Сюжеты и Архив
     if (document.getElementById('lblNewStories')) document.getElementById('lblNewStories').innerText = t.lbl_new_stories;
     if (document.getElementById('emptyToday')) document.getElementById('emptyToday').innerText = t.empty_today;
     if (document.getElementById('lblArchiveStories')) document.getElementById('lblArchiveStories').innerText = t.lbl_archive_stories;
     if (document.getElementById('paywallText')) document.getElementById('paywallText').innerText = t.paywall_text;
     if (document.getElementById('paywallBtn')) document.getElementById('paywallBtn').innerText = t.paywall_btn;
     
-    // Читалка
     if (document.getElementById('readerHeaderTitle')) document.getElementById('readerHeaderTitle').innerText = t.reader_header;
     if (document.getElementById('readerBackBtn')) document.getElementById('readerBackBtn').innerText = t.reader_back;
 
-    // Модалка родителя
     if (document.getElementById('modalTitle')) document.getElementById('modalTitle').innerText = t.modal_title;
     if (document.getElementById('modalSub')) document.getElementById('modalSub').innerText = t.modal_sub;
     if (document.getElementById('labelParentRole')) document.getElementById('labelParentRole').innerText = t.label_role;
@@ -175,9 +178,11 @@ function applyLanguage() {
     if (document.getElementById('parentAgeInput')) document.getElementById('parentAgeInput').placeholder = t.age_placeholder;
     if (document.getElementById('saveParentBtn')) document.getElementById('saveParentBtn').innerText = t.btn_save_parent;
 
-    const consentText = t.consent_text.replace('{offer}', configUrls.offer_url || '#').replace('{privacy}', configUrls.privacy_url || '#');
-    if (document.getElementById('regConsentLabel')) document.getElementById('regConsentLabel').innerHTML = consentText;
-    if (document.getElementById('paymentConsentLabel')) document.getElementById('paymentConsentLabel').innerHTML = consentText;
+    if (t.consent_text) {
+        const consentText = t.consent_text.replace('{offer}', configUrls.offer_url || '#').replace('{privacy}', configUrls.privacy_url || '#');
+        if (document.getElementById('regConsentLabel')) document.getElementById('regConsentLabel').innerHTML = consentText;
+        if (document.getElementById('paymentConsentLabel')) document.getElementById('paymentConsentLabel').innerHTML = consentText;
+    }
 
     renderFooterAndPromo();
 }
@@ -185,7 +190,7 @@ function applyLanguage() {
 function renderFooterAndPromo() {
     const t = i18n_app[currentLang] || i18n_app['ru'];
     const footer = document.getElementById('footerLinks');
-    if (!footer) return;
+    if (!footer || !t) return;
 
     let html = '';
     
@@ -198,9 +203,9 @@ function renderFooterAndPromo() {
     }
     
     html += `
-        <a href="#" onclick="openLink('${configUrls.privacy_url}')">${t.footer_privacy}</a>
-        <a href="#" onclick="openLink('${configUrls.offer_url}')">${t.footer_offer}</a>
-        <a href="#" onclick="openLink('${configUrls.about_url}')">${t.footer_about}</a>
+        <a href="#" onclick="openLink('${configUrls.privacy_url}')">${t.footer_privacy || ''}</a>
+        <a href="#" onclick="openLink('${configUrls.offer_url}')">${t.footer_offer || ''}</a>
+        <a href="#" onclick="openLink('${configUrls.about_url}')">${t.footer_about || ''}</a>
     `;
     
     footer.innerHTML = html;
@@ -216,35 +221,37 @@ async function loadAppConfig() {
 
         if (banners && banners.length > 0) {
             const track = document.getElementById('sliderTrack');
-            document.getElementById('sliderContainer').style.display = 'block';
-            
-            track.innerHTML = '';
-            
-            if (window.sliderIntervalId) {
-                clearInterval(window.sliderIntervalId);
-                window.sliderIntervalId = null;
-            }
+            const sliderCont = document.getElementById('sliderContainer');
+            if (track && sliderCont) {
+                sliderCont.style.display = 'block';
+                track.innerHTML = '';
+                
+                if (window.sliderIntervalId) {
+                    clearInterval(window.sliderIntervalId);
+                    window.sliderIntervalId = null;
+                }
 
-            track.innerHTML = banners.map(b => {
-                const bannerTitle = (currentLang === 'uz' && b.title_uz) ? b.title_uz : ((currentLang === 'en' && b.title_en) ? b.title_en : b.title);
-                return `
-                    <div class="slide">
-                        <img src="${b.image_url}" class="slide-bg" loading="lazy">
-                        <div class="slide-title">${bannerTitle}</div>
-                    </div>
-                `;
-            }).join('');
-            
-            if (banners.length > 1) {
-                window.sliderIntervalId = setInterval(() => {
-                    track.style.transition = 'transform 0.5s ease-in-out';
-                    track.style.transform = 'translateX(-100%)';
-                    setTimeout(() => { 
-                        track.style.transition = 'none'; 
-                        track.appendChild(track.firstElementChild); 
-                        track.style.transform = 'translateX(0)'; 
-                    }, 500);
-                }, 5000);
+                track.innerHTML = banners.map(b => {
+                    const bannerTitle = (currentLang === 'uz' && b.title_uz) ? b.title_uz : ((currentLang === 'en' && b.title_en) ? b.title_en : b.title);
+                    return `
+                        <div class="slide">
+                            <img src="${b.image_url}" class="slide-bg" loading="lazy">
+                            <div class="slide-title">${bannerTitle}</div>
+                        </div>
+                    `;
+                }).join('');
+                
+                if (banners.length > 1) {
+                    window.sliderIntervalId = setInterval(() => {
+                        track.style.transition = 'transform 0.5s ease-in-out';
+                        track.style.transform = 'translateX(-100%)';
+                        setTimeout(() => { 
+                            track.style.transition = 'none'; 
+                            track.appendChild(track.firstElementChild); 
+                            track.style.transform = 'translateX(0)'; 
+                        }, 500);
+                    }, 5000);
+                }
             }
         }
         
@@ -258,9 +265,12 @@ async function loadAppConfig() {
 // === ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ И ДЕТИ ===
 function selectGender(gender) {
     selectedGender = gender;
-    document.getElementById('btn-M').classList.remove('selected');
-    document.getElementById('btn-F').classList.remove('selected');
-    document.getElementById(`btn-${gender}`).classList.add('selected');
+    const m = document.getElementById('btn-M');
+    const f = document.getElementById('btn-F');
+    const tgt = document.getElementById(`btn-${gender}`);
+    if(m) m.classList.remove('selected');
+    if(f) f.classList.remove('selected');
+    if(tgt) tgt.classList.add('selected');
 }
 
 async function loadProfile() {
@@ -270,10 +280,12 @@ async function loadProfile() {
         userExists = !!user; 
         currentUserData = user; 
 
-        document.getElementById('parentModal').style.display = (!user || !user.parent_role || !user.parent_age) ? 'flex' : 'none';
+        const pModal = document.getElementById('parentModal');
+        if (pModal) pModal.style.display = (!user || !user.parent_role || !user.parent_age) ? 'flex' : 'none';
 
         if (userExists && user.bot_language) currentLang = user.bot_language;
-        document.getElementById('appLangSelector').value = currentLang;
+        const langSel = document.getElementById('appLangSelector');
+        if (langSel) langSel.value = currentLang;
         
         applyLanguage(); 
         updateStatusUI(user);
@@ -282,7 +294,7 @@ async function loadProfile() {
         allChildren = children || [];
 
     } catch (err) { 
-        console.error(err); 
+        console.error("Ошибка загрузки профиля:", err); 
         allChildren = []; 
     } finally { 
         renderChildren(allChildren); 
@@ -292,6 +304,8 @@ async function loadProfile() {
 
 function updateStatusUI(user) {
     const section = document.getElementById('statusSection');
+    if (!section) return;
+    
     if (!user) { section.style.display = 'none'; return; }
     
     section.style.display = 'block';
@@ -313,28 +327,36 @@ function updateStatusUI(user) {
     }
 
     const t = i18n_app[currentLang] || i18n_app['ru'];
+    if (!t) return;
     
-    document.getElementById('statusBadge').className = `status-badge ${hasAccess ? (isTrial ? 'trial' : 'active') : 'inactive'}`;
-    document.getElementById('statusBadge').innerText = hasAccess ? (isTrial ? t.status_trial : t.status_active) : t.status_inactive;
+    const badge = document.getElementById('statusBadge');
+    if (badge) {
+        badge.className = `status-badge ${hasAccess ? (isTrial ? 'trial' : 'active') : 'inactive'}`;
+        badge.innerText = hasAccess ? (isTrial ? t.status_trial : t.status_active) : t.status_inactive;
+    }
     
     const textEl = document.getElementById('statusText');
-    if (hasAccess && endDate) {
-        const locale = currentLang === 'en' ? 'en-GB' : (currentLang === 'uz' ? 'uz-UZ' : 'ru-RU');
-        const dateStr = endDate.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
-        
-        textEl.innerText = isTrial 
-            ? t.status_trial_text.replace('{date}', dateStr) 
-            : t.status_active_text.replace('{date}', dateStr);
-    } else {
-        textEl.innerText = t.status_inactive_text;
+    if (textEl) {
+        if (hasAccess && endDate) {
+            const locale = currentLang === 'en' ? 'en-GB' : (currentLang === 'uz' ? 'uz-UZ' : 'ru-RU');
+            const dateStr = endDate.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
+            
+            textEl.innerText = isTrial 
+                ? (t.status_trial_text || '').replace('{date}', dateStr) 
+                : (t.status_active_text || '').replace('{date}', dateStr);
+        } else {
+            textEl.innerText = t.status_inactive_text;
+        }
     }
 
     const btnEl = document.getElementById('renewBtn');
-    btnEl.style.display = 'block';
-    if (hasAccess) {
-        btnEl.innerText = isTrial ? t.btn_renew_trial : t.btn_renew_active;
-    } else {
-        btnEl.innerText = t.btn_renew_inactive;
+    if (btnEl) {
+        btnEl.style.display = 'block';
+        if (hasAccess) {
+            btnEl.innerText = isTrial ? t.btn_renew_trial : t.btn_renew_active;
+        } else {
+            btnEl.innerText = t.btn_renew_inactive;
+        }
     }
 }
 
@@ -345,9 +367,11 @@ function initiatePayment() {
 
 function renderChildren(children) {
     const container = document.getElementById('childrenList');
+    if (!container) return; // Защита от краша при рендере
+
     if (children.length === 0) { 
         const t = i18n_app[currentLang] || i18n_app['ru'];
-        container.innerHTML = `<p style="color: #a0a0a0; font-size: 14px; text-align:center;">${t.no_profiles}</p>`; 
+        container.innerHTML = `<p style="color: #a0a0a0; font-size: 14px; text-align:center;">${t?.no_profiles || 'Нет профилей'}</p>`; 
         return; 
     }
     container.innerHTML = children.map(child => `
@@ -366,8 +390,11 @@ function renderChildren(children) {
 
 function checkLimitAndMode() {
     const formContainer = document.getElementById('formContainer');
+    const cancelBtn = document.getElementById('cancelBtn');
+    if (!formContainer) return;
+
     formContainer.style.display = 'block';
-    document.getElementById('cancelBtn').style.display = editingChildId ? 'block' : 'none';
+    if (cancelBtn) cancelBtn.style.display = editingChildId ? 'block' : 'none';
     if (allChildren.length >= 5 && !editingChildId) formContainer.style.display = 'none'; 
 }
 
@@ -375,8 +402,12 @@ function startEdit(id) {
     const child = allChildren.find(c => c.id === id);
     if (!child) return;
     editingChildId = child.id;
-    document.getElementById('childName').value = child.name; 
-    document.getElementById('language').value = child.language; 
+    
+    const nameEl = document.getElementById('childName');
+    const langEl = document.getElementById('language');
+    if(nameEl) nameEl.value = child.name; 
+    if(langEl) langEl.value = child.language; 
+    
     selectGender(child.gender);
     applyLanguage(); 
     checkLimitAndMode(); 
@@ -385,7 +416,8 @@ function startEdit(id) {
 
 function resetForm() { 
     editingChildId = null; 
-    document.getElementById('childName').value = ''; 
+    const nameEl = document.getElementById('childName');
+    if (nameEl) nameEl.value = ''; 
     applyLanguage();
     checkLimitAndMode(); 
 }
@@ -397,13 +429,18 @@ async function deleteChild(id) {
 }
 
 async function saveData() {
-    const childName = document.getElementById('childName').value.trim();
+    const nameEl = document.getElementById('childName');
+    const langEl = document.getElementById('language');
+    if (!nameEl || !langEl) return;
+
+    const childName = nameEl.value.trim();
     if (!childName) return tg.showAlert('Введите имя ребенка');
+    
     try {
         if (editingChildId) {
-            await _supabase.from('children').update({ name: childName, gender: selectedGender, language: document.getElementById('language').value }).eq('id', editingChildId);
+            await _supabase.from('children').update({ name: childName, gender: selectedGender, language: langEl.value }).eq('id', editingChildId);
         } else {
-            await _supabase.from('children').insert({ parent_telegram_id: telegramId, name: childName, gender: selectedGender, language: document.getElementById('language').value });
+            await _supabase.from('children').insert({ parent_telegram_id: telegramId, name: childName, gender: selectedGender, language: langEl.value });
         }
         resetForm(); 
         loadProfile();
@@ -442,6 +479,8 @@ function renderStoriesList() {
     const todayContainer = document.getElementById('todayStoriesList');
     const archiveContainer = document.getElementById('archiveStoriesList');
     const paywall = document.getElementById('paywallOverlay');
+    
+    if (!todayContainer || !archiveContainer || !paywall) return; // Защита от отсутствующих блоков
 
     const today = new Date(); today.setHours(0,0,0,0);
     const todayStories = []; const archiveStories = [];
@@ -454,13 +493,13 @@ function renderStoriesList() {
     const t = i18n_app[currentLang] || i18n_app['ru'];
 
     if (todayStories.length === 0) {
-        todayContainer.innerHTML = `<p id="emptyToday" style="color: #a0a0a0; font-size: 13px; text-align: center; padding: 10px;">${t.empty_today}</p>`;
+        todayContainer.innerHTML = `<p id="emptyToday" style="color: #a0a0a0; font-size: 13px; text-align: center; padding: 10px;">${t?.empty_today || ''}</p>`;
     } else {
         todayContainer.innerHTML = todayStories.map(st => createStoryCard(st)).join('');
     }
 
     if (archiveStories.length === 0) {
-        archiveContainer.innerHTML = `<p style="color: #a0a0a0; font-size: 13px; text-align: center; padding: 10px;">${t.empty_archive}</p>`;
+        archiveContainer.innerHTML = `<p style="color: #a0a0a0; font-size: 13px; text-align: center; padding: 10px;">${t?.empty_archive || ''}</p>`;
         paywall.style.display = 'none';
     } else {
         archiveContainer.innerHTML = archiveStories.map(st => createStoryCard(st)).join('');
@@ -493,24 +532,38 @@ function openReader(storyId) {
     const st = userStories.find(s => s.id === storyId);
     if (!st) return;
 
-    document.getElementById('readerTitle').innerText = st.title;
-    document.getElementById('readerImg').src = st.image_url || '';
-    document.getElementById('readerImg').style.display = st.image_url ? 'block' : 'none';
-
-    const textHtml = (st.ready_text || '').split('\n').filter(p => p.trim()).map(p => `<p>${p}</p>`).join('');
-    document.getElementById('readerText').innerHTML = textHtml;
-
-    const promoLink = document.getElementById('readerPromoLink');
-    if (st.promo_image_url && st.promo_link_url) {
-        promoLink.href = st.promo_link_url;
-        document.getElementById('readerPromoImg').src = st.promo_image_url;
-        promoLink.style.display = 'block';
-    } else {
-        promoLink.style.display = 'none';
+    const rTitle = document.getElementById('readerTitle');
+    const rImg = document.getElementById('readerImg');
+    const rText = document.getElementById('readerText');
+    const pLink = document.getElementById('readerPromoLink');
+    const pImg = document.getElementById('readerPromoImg');
+    const rScreen = document.getElementById('readerScreen');
+    
+    if(rTitle) rTitle.innerText = st.title;
+    if(rImg) {
+        rImg.src = st.image_url || '';
+        rImg.style.display = st.image_url ? 'block' : 'none';
     }
 
-    document.getElementById('readerScreen').style.display = 'flex';
-    document.body.style.overflow = 'hidden';
+    if(rText) {
+        const textHtml = (st.ready_text || '').split('\n').filter(p => p.trim()).map(p => `<p>${p}</p>`).join('');
+        rText.innerHTML = textHtml;
+    }
+
+    if (pLink && pImg) {
+        if (st.promo_image_url && st.promo_link_url) {
+            pLink.href = st.promo_link_url;
+            pImg.src = st.promo_image_url;
+            pLink.style.display = 'block';
+        } else {
+            pLink.style.display = 'none';
+        }
+    }
+
+    if(rScreen) {
+        rScreen.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
 
     // АКТИВАЦИЯ БЛОКОВ ОТЗЫВА
     if (typeof window.renderFeedbackBlocks === 'function') {
@@ -519,13 +572,17 @@ function openReader(storyId) {
 }
 
 function closeReader() {
-    document.getElementById('readerScreen').style.display = 'none';
+    const rScreen = document.getElementById('readerScreen');
+    const rImg = document.getElementById('readerImg');
+    const rText = document.getElementById('readerText');
+    
+    if(rScreen) rScreen.style.display = 'none';
     document.body.style.overflow = 'auto';
-    document.getElementById('readerImg').src = '';
-    document.getElementById('readerText').innerHTML = '';
+    if(rImg) rImg.src = '';
+    if(rText) rText.innerHTML = '';
 }
 
-// --- БЕЗОПАСНАЯ ЛОГИКА ОТЗЫВОВ (Без конфликтов переменных) ---
+// --- БЕЗОПАСНАЯ ЛОГИКА ОТЗЫВОВ ---
 window.FEEDBACK_API_URL = 'https://scheherazade-yr42.onrender.com';
 window.currentFeedbackStoryId = null;
 
@@ -537,7 +594,6 @@ window.renderFeedbackBlocks = function(storyId, existingRating, existingComment)
     if (rb) rb.style.display = 'block';
     if (cb) cb.style.display = 'block';
     
-    // --- ЛОГИКА ЗВЕЗД ---
     const starsWrap = document.getElementById('stars-container');
     const ratingThanks = document.getElementById('rating-thanks');
     
@@ -553,7 +609,6 @@ window.renderFeedbackBlocks = function(storyId, existingRating, existingComment)
         document.querySelectorAll('#stars-container span').forEach(s => s.classList.remove('active'));
     }
     
-    // --- ЛОГИКА КОММЕНТАРИЕВ ---
     const commentInput = document.getElementById('story-comment');
     const btn = document.getElementById('submit-comment-btn');
     const commentThanks = document.getElementById('comment-thanks');
@@ -579,33 +634,32 @@ window.renderFeedbackBlocks = function(storyId, existingRating, existingComment)
     }
 };
 
-// Глобальная привязка звезд (чтобы избежать дубликатов при загрузке нескольких скриптов)
-if (!window.starsBound) {
-    document.addEventListener('DOMContentLoaded', () => {
-        const stars = document.querySelectorAll('#stars-container span');
-        stars.forEach(star => {
-            star.onclick = async (e) => {
-                const rating = e.target.getAttribute('data-value');
-                stars.forEach(s => s.classList.toggle('active', s.getAttribute('data-value') <= rating));
-                
-                setTimeout(() => {
-                    const sc = document.getElementById('stars-container');
-                    if(sc) sc.style.display = 'none';
-                    const rt = document.getElementById('rating-thanks');
-                    if (rt) {
-                        rt.style.display = 'block';
-                        rt.innerHTML = `Ваша оценка: ${'⭐'.repeat(rating)}`;
-                    }
-                }, 300);
+// Бронебойный глобальный слушатель (Event Delegation) — работает независимо от загрузки
+if (!window.feedbackListenerBound) {
+    document.addEventListener('click', async (e) => {
+        // Если клик был по звезде
+        if (e.target.tagName === 'SPAN' && e.target.parentElement && e.target.parentElement.id === 'stars-container') {
+            const rating = e.target.getAttribute('data-value');
+            const stars = document.querySelectorAll('#stars-container span');
+            
+            stars.forEach(s => s.classList.toggle('active', s.getAttribute('data-value') <= rating));
+            
+            setTimeout(() => {
+                const sc = document.getElementById('stars-container');
+                if(sc) sc.style.display = 'none';
+                const rt = document.getElementById('rating-thanks');
+                if (rt) {
+                    rt.style.display = 'block';
+                    rt.innerHTML = `Ваша оценка: ${'⭐'.repeat(rating)}`;
+                }
+            }, 300);
 
-                await window.sendFeedbackData(rating, null);
-            };
-        });
+            await window.sendFeedbackData(rating, null);
+        }
     });
-    window.starsBound = true;
+    window.feedbackListenerBound = true;
 }
 
-// Отправка текста
 window.sendComment = async function() {
     const commentInput = document.getElementById('story-comment');
     if (!commentInput) return;
@@ -631,7 +685,6 @@ window.sendComment = async function() {
     }
 };
 
-// Фоновая отправка на сервер
 window.sendFeedbackData = async function(rating, comment) {
     if (!window.currentFeedbackStoryId) return;
     try {
