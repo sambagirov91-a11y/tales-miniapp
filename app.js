@@ -521,52 +521,67 @@ function closeReader() {
 }
 // Изолируем логику отзывов, чтобы она не ломала основной код Mini App
 document.addEventListener('DOMContentLoaded', () => {
-  // --- ЛОГИКА ОТЗЫВОВ (ОБНОВЛЕННАЯ) ---
+ // --- УМНАЯ ЛОГИКА ОТЗЫВОВ ДЛЯ ЧИТАЛКИ ---
 const FEEDBACK_API_URL = 'https://scheherazade-yr42.onrender.com';
 let currentFeedbackStoryId = null;
 
-// Эту функцию нужно вызывать при открытии сказки из профиля
-window.showFeedbackBlocks = function(storyId) {
+// Вызываем при КАЖДОМ открытии сказки (новой или из архива)
+window.renderFeedbackBlocks = function(storyId, existingRating, existingComment) {
     currentFeedbackStoryId = storyId;
     
-    // Показываем блоки
     const rb = document.getElementById('rating-block');
     const cb = document.getElementById('comment-block');
     if (rb) rb.style.display = 'block';
     if (cb) cb.style.display = 'block';
     
-    // Сбрасываем состояние интерфейса (если открыли другую сказку подряд)
-    const sc = document.getElementById('stars-container');
-    const rt = document.getElementById('rating-thanks');
-    if (sc) sc.style.display = 'flex';
-    if (rt) rt.style.display = 'none';
-    document.querySelectorAll('#stars-container span').forEach(s => s.classList.remove('active'));
+    // --- ЛОГИКА ЗВЕЗД ---
+    const starsWrap = document.getElementById('stars-container');
+    const ratingThanks = document.getElementById('rating-thanks');
     
+    if (existingRating) {
+        // Уже оценил
+        if (starsWrap) starsWrap.style.display = 'none';
+        if (ratingThanks) {
+            ratingThanks.style.display = 'block';
+            ratingThanks.innerHTML = `Ваша оценка: ${'⭐'.repeat(existingRating)}`;
+        }
+    } else {
+        // Еще не оценил
+        if (starsWrap) starsWrap.style.display = 'flex';
+        if (ratingThanks) ratingThanks.style.display = 'none';
+        document.querySelectorAll('#stars-container span').forEach(s => s.classList.remove('active'));
+    }
+    
+    // --- ЛОГИКА КОММЕНТАРИЕВ ---
     const commentInput = document.getElementById('story-comment');
     const btn = document.getElementById('submit-comment-btn');
-    const ct = document.getElementById('comment-thanks');
+    const commentThanks = document.getElementById('comment-thanks');
     
-    if (commentInput) {
-        commentInput.style.display = 'block';
-        commentInput.value = '';
+    if (existingComment) {
+        // Уже написал отзыв
+        if (commentInput) commentInput.style.display = 'none';
+        if (btn) btn.style.display = 'none';
+        if (commentThanks) {
+            commentThanks.style.display = 'block';
+            commentThanks.innerHTML = `<span style="color: #9ca3af; font-style: italic;">Ваш отзыв: "${existingComment}"</span>`;
+        }
+    } else {
+        // Еще не писал
+        if (commentInput) {
+            commentInput.style.display = 'block';
+            commentInput.value = '';
+        }
+        if (btn) {
+            btn.style.display = 'block';
+            btn.disabled = false;
+            btn.innerText = 'Отправить отзыв';
+        }
+        if (commentThanks) commentThanks.style.display = 'none';
     }
-    if (btn) {
-        btn.style.display = 'block';
-        btn.disabled = false;
-        btn.innerText = 'Отправить отзыв';
-    }
-    if (ct) ct.style.display = 'none';
 };
 
-// Слушатели событий
+// Слушатель кликов по звездам
 document.addEventListener('DOMContentLoaded', () => {
-    // Оставляем проверку URL на случай, если зашли напрямую из бота
-    const urlId = new URLSearchParams(window.location.search).get('story_id');
-    if (urlId) {
-        window.showFeedbackBlocks(urlId);
-    }
-
-    // Клик по звездам
     const stars = document.querySelectorAll('#stars-container span');
     stars.forEach(star => {
         star.addEventListener('click', async (e) => {
@@ -575,7 +590,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             setTimeout(() => {
                 document.getElementById('stars-container').style.display = 'none';
-                document.getElementById('rating-thanks').style.display = 'block';
+                const rt = document.getElementById('rating-thanks');
+                rt.style.display = 'block';
+                rt.innerHTML = `Ваша оценка: ${'⭐'.repeat(rating)}`;
             }, 300);
 
             await sendFeedbackData(rating, null);
@@ -601,14 +618,17 @@ window.sendComment = async function() {
 
     commentInput.style.display = 'none';
     if (btn) btn.style.display = 'none';
+    
     const ct = document.getElementById('comment-thanks');
-    if (ct) ct.style.display = 'block';
+    if (ct) {
+        ct.style.display = 'block';
+        ct.innerHTML = `<span style="color: #9ca3af; font-style: italic;">Ваш отзыв: "${commentText}"</span>`;
+    }
 };
 
 // Фоновая отправка на сервер
 async function sendFeedbackData(rating, comment) {
-    if (!currentFeedbackStoryId) return console.warn('ID сказки не найден');
-    
+    if (!currentFeedbackStoryId) return;
     try {
         await fetch(`${FEEDBACK_API_URL}/api/save-feedback`, { 
             method: 'POST',
