@@ -519,3 +519,68 @@ function closeReader() {
     document.getElementById('readerImg').src = '';
     document.getElementById('readerText').innerHTML = '';
 }
+// URL твоего бэкенда на Render (проверь, чтобы был правильный)
+const BACKEND_URL = 'https://scheherazade-yr42.onrender.com';
+const currentStoryId = new URLSearchParams(window.location.search).get('story_id');
+
+// Логика для звездочек
+const stars = document.querySelectorAll('#stars-container span');
+stars.forEach(star => {
+    star.addEventListener('click', async (e) => {
+        const rating = e.target.getAttribute('data-value');
+        
+        // Закрашиваем звезды
+        stars.forEach(s => {
+            if (s.getAttribute('data-value') <= rating) {
+                s.classList.add('active');
+            } else {
+                s.classList.remove('active');
+            }
+        });
+        
+        // Скрываем звезды, показываем "Спасибо"
+        setTimeout(() => {
+            document.getElementById('stars-container').style.display = 'none';
+            document.getElementById('rating-thanks').style.display = 'block';
+        }, 300);
+
+        // Отправляем оценку на сервер
+        await saveFeedbackToServer(rating, null);
+    });
+});
+
+// Логика для текста
+async function sendComment() {
+    const commentText = document.getElementById('story-comment').value.trim();
+    if (!commentText) return alert('Пожалуйста, напишите что-нибудь перед отправкой.');
+    
+    const btn = document.getElementById('submit-comment-btn');
+    btn.disabled = true;
+    btn.innerText = 'Отправка...';
+
+    // Отправляем комментарий на сервер
+    await saveFeedbackToServer(null, commentText);
+
+    document.getElementById('story-comment').style.display = 'none';
+    btn.style.display = 'none';
+    document.getElementById('comment-thanks').style.display = 'block';
+}
+
+// Общая функция отправки (умеет отправлять либо только рейтинг, либо только текст)
+async function saveFeedbackToServer(rating, comment) {
+    if (!currentStoryId) return; // Если мы открыли апп без ID сказки (например, превью в админке), ничего не шлем
+
+    try {
+        await fetch(`${BACKEND_URL}/api/save-feedback`, { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                story_id: currentStoryId,
+                rating: rating,
+                comment: comment
+            })
+        });
+    } catch (err) {
+        console.error('Ошибка отправки отзыва:', err);
+    }
+}
