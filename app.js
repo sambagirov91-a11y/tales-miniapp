@@ -521,81 +521,105 @@ function closeReader() {
 }
 // Изолируем логику отзывов, чтобы она не ломала основной код Mini App
 document.addEventListener('DOMContentLoaded', () => {
-    // Используем уникальное имя переменной
-    const FEEDBACK_API_URL = 'https://scheherazade-yr42.onrender.com';
-    const storyId = new URLSearchParams(window.location.search).get('story_id');
+  // --- ЛОГИКА ОТЗЫВОВ (ОБНОВЛЕННАЯ) ---
+const FEEDBACK_API_URL = 'https://scheherazade-yr42.onrender.com';
+let currentFeedbackStoryId = null;
 
-    // ЕСЛИ МЫ В СКАЗКЕ - ПОКАЗЫВАЕМ БЛОКИ ОТЗЫВОВ
-    if (storyId) {
-        const rb = document.getElementById('rating-block');
-        const cb = document.getElementById('comment-block');
-        if (rb) rb.style.display = 'block';
-        if (cb) cb.style.display = 'block';
+// Эту функцию нужно вызывать при открытии сказки из профиля
+window.showFeedbackBlocks = function(storyId) {
+    currentFeedbackStoryId = storyId;
+    
+    // Показываем блоки
+    const rb = document.getElementById('rating-block');
+    const cb = document.getElementById('comment-block');
+    if (rb) rb.style.display = 'block';
+    if (cb) cb.style.display = 'block';
+    
+    // Сбрасываем состояние интерфейса (если открыли другую сказку подряд)
+    const sc = document.getElementById('stars-container');
+    const rt = document.getElementById('rating-thanks');
+    if (sc) sc.style.display = 'flex';
+    if (rt) rt.style.display = 'none';
+    document.querySelectorAll('#stars-container span').forEach(s => s.classList.remove('active'));
+    
+    const commentInput = document.getElementById('story-comment');
+    const btn = document.getElementById('submit-comment-btn');
+    const ct = document.getElementById('comment-thanks');
+    
+    if (commentInput) {
+        commentInput.style.display = 'block';
+        commentInput.value = '';
+    }
+    if (btn) {
+        btn.style.display = 'block';
+        btn.disabled = false;
+        btn.innerText = 'Отправить отзыв';
+    }
+    if (ct) ct.style.display = 'none';
+};
+
+// Слушатели событий
+document.addEventListener('DOMContentLoaded', () => {
+    // Оставляем проверку URL на случай, если зашли напрямую из бота
+    const urlId = new URLSearchParams(window.location.search).get('story_id');
+    if (urlId) {
+        window.showFeedbackBlocks(urlId);
     }
 
-    // Логика для звездочек
+    // Клик по звездам
     const stars = document.querySelectorAll('#stars-container span');
     stars.forEach(star => {
         star.addEventListener('click', async (e) => {
             const rating = e.target.getAttribute('data-value');
+            stars.forEach(s => s.classList.toggle('active', s.getAttribute('data-value') <= rating));
             
-            // Закрашиваем звезды
-            stars.forEach(s => {
-                s.classList.toggle('active', s.getAttribute('data-value') <= rating);
-            });
-            
-            // Скрываем звезды, показываем благодарность
             setTimeout(() => {
-                const sc = document.getElementById('stars-container');
-                const rt = document.getElementById('rating-thanks');
-                if (sc) sc.style.display = 'none';
-                if (rt) rt.style.display = 'block';
+                document.getElementById('stars-container').style.display = 'none';
+                document.getElementById('rating-thanks').style.display = 'block';
             }, 300);
 
-            // Отправляем рейтинг
-            await sendFeedbackData(storyId, rating, null);
+            await sendFeedbackData(rating, null);
         });
     });
-
-    // Делаем функцию доступной глобально для кнопки HTML
-    window.sendComment = async function() {
-        const commentInput = document.getElementById('story-comment');
-        if (!commentInput) return;
-        
-        const commentText = commentInput.value.trim();
-        if (!commentText) return alert('Пожалуйста, напишите что-нибудь перед отправкой.');
-        
-        const btn = document.getElementById('submit-comment-btn');
-        if (btn) {
-            btn.disabled = true;
-            btn.innerText = 'Отправка...';
-        }
-
-        // Отправляем текст
-        await sendFeedbackData(storyId, null, commentText);
-
-        commentInput.style.display = 'none';
-        if (btn) btn.style.display = 'none';
-        
-        const ct = document.getElementById('comment-thanks');
-        if (ct) ct.style.display = 'block';
-    };
-
-    // Внутренняя функция отправки запроса
-    async function sendFeedbackData(id, rating, comment) {
-        if (!id) return;
-        try {
-            await fetch(`${FEEDBACK_API_URL}/api/save-feedback`, { 
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    story_id: id,
-                    rating: rating,
-                    comment: comment
-                })
-            });
-        } catch (err) {
-            console.error('Ошибка отправки отзыва:', err);
-        }
-    }
 });
+
+// Отправка текста
+window.sendComment = async function() {
+    const commentInput = document.getElementById('story-comment');
+    if (!commentInput) return;
+    
+    const commentText = commentInput.value.trim();
+    if (!commentText) return alert('Пожалуйста, напишите что-нибудь перед отправкой.');
+    
+    const btn = document.getElementById('submit-comment-btn');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerText = 'Отправка...';
+    }
+
+    await sendFeedbackData(null, commentText);
+
+    commentInput.style.display = 'none';
+    if (btn) btn.style.display = 'none';
+    const ct = document.getElementById('comment-thanks');
+    if (ct) ct.style.display = 'block';
+};
+
+// Фоновая отправка на сервер
+async function sendFeedbackData(rating, comment) {
+    if (!currentFeedbackStoryId) return console.warn('ID сказки не найден');
+    
+    try {
+        await fetch(`${FEEDBACK_API_URL}/api/save-feedback`, { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                story_id: currentFeedbackStoryId,
+                rating: rating,
+                comment: comment
+            })
+        });
+    } catch (err) {
+        console.error('Ошибка отправки отзыва:', err);
+    }
+}
