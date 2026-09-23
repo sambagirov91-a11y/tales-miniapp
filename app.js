@@ -266,20 +266,6 @@ function applyLanguage() {
     if (document.getElementById('readerHeaderTitle')) document.getElementById('readerHeaderTitle').innerText = t.reader_header;
     if (document.getElementById('readerBackBtn')) document.getElementById('readerBackBtn').innerText = t.reader_back;
 
-    if (document.getElementById('modalTitle')) document.getElementById('modalTitle').innerText = t.modal_title;
-    if (document.getElementById('modalSub')) document.getElementById('modalSub').innerText = t.modal_sub;
-    if (document.getElementById('labelParentRole')) document.getElementById('labelParentRole').innerText = t.label_role;
-    if (document.getElementById('roleMother')) document.getElementById('roleMother').innerText = t.role_mother;
-    if (document.getElementById('roleFather')) document.getElementById('roleFather').innerText = t.role_father;
-    if (document.getElementById('roleGrandma')) document.getElementById('roleGrandma').innerText = t.role_grandma;
-    if (document.getElementById('roleGrandpa')) document.getElementById('roleGrandpa').innerText = t.role_grandpa;
-    if (document.getElementById('roleNanny')) document.getElementById('roleNanny').innerText = t.role_nanny;
-    if (document.getElementById('roleOther')) document.getElementById('roleOther').innerText = t.role_other;
-    if (document.getElementById('customParentRole')) document.getElementById('customParentRole').placeholder = t.role_custom;
-    if (document.getElementById('labelParentAge')) document.getElementById('labelParentAge').innerText = t.label_age;
-    if (document.getElementById('parentAgeInput')) document.getElementById('parentAgeInput').placeholder = t.age_placeholder;
-    if (document.getElementById('saveParentBtn')) document.getElementById('saveParentBtn').innerText = t.btn_save_parent;
-
     if (t.consent_text) {
         const consentText = t.consent_text.replace('{offer}', configUrls.offer_url || '#').replace('{privacy}', configUrls.privacy_url || '#');
         if (document.getElementById('regConsentLabel')) document.getElementById('regConsentLabel').innerHTML = consentText;
