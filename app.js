@@ -206,6 +206,53 @@ function applyLanguage() {
     
     if (document.getElementById('lblAppLang')) document.getElementById('lblAppLang').innerText = t.lbl_app_lang;
     if (document.getElementById('lblAppTheme')) document.getElementById('lblAppTheme').innerText = t.lbl_app_theme;
+
+// Тексты анкеты родителя
+    const mTitle = document.getElementById('modalTitle');
+    if (mTitle) mTitle.innerText = t.modalTitle;
+    
+    const mSub = document.getElementById('modalSub');
+    if (mSub) mSub.innerText = t.modalSub;
+
+    const lblName = document.getElementById('labelParentName');
+    if (lblName) lblName.innerText = t.labelParentName;
+
+    const inpName = document.getElementById('parentNameInput');
+    if (inpName) inpName.placeholder = t.parentNamePlaceholder;
+
+    const lblRole = document.getElementById('labelParentRole');
+    if (lblRole) lblRole.innerText = t.labelParentRole;
+
+    const rMother = document.getElementById('roleMother');
+    if (rMother) rMother.innerText = t.roleMother;
+    const rFather = document.getElementById('roleFather');
+    if (rFather) rFather.innerText = t.roleFather;
+    const rGrandma = document.getElementById('roleGrandma');
+    if (rGrandma) rGrandma.innerText = t.roleGrandma;
+    const rGrandpa = document.getElementById('roleGrandpa');
+    if (rGrandpa) rGrandpa.innerText = t.roleGrandpa;
+    const rNanny = document.getElementById('roleNanny');
+    if (rNanny) rNanny.innerText = t.roleNanny;
+    const rOther = document.getElementById('roleOther');
+    if (rOther) rOther.innerText = t.roleOther;
+
+    const inpRole = document.getElementById('customParentRole');
+    if (inpRole) inpRole.placeholder = t.customRolePlaceholder;
+
+    const lblAge = document.getElementById('labelParentAge');
+    if (lblAge) lblAge.innerText = t.labelParentAge;
+
+    const inpAge = document.getElementById('parentAgeInput');
+    if (inpAge) inpAge.placeholder = t.parentAgePlaceholder;
+
+    const txtPrivacy = document.getElementById('textPrivacy');
+    if (txtPrivacy) txtPrivacy.innerHTML = t.textPrivacy; // innerHTML, чтобы ссылки остались кликабельными
+
+    const txtOffer = document.getElementById('textOffer');
+    if (txtOffer) txtOffer.innerHTML = t.textOffer; // innerHTML, чтобы ссылки остались кликабельными
+
+    const btnSave = document.getElementById('saveParentBtn');
+    if (btnSave) btnSave.innerText = t.saveParentBtn;
     
     const themeBtn = document.getElementById('themeToggleBtn');
     if (themeBtn) themeBtn.innerText = document.body.classList.contains('light-theme') ? t.theme_day : t.theme_night;
