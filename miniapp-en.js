@@ -42,7 +42,7 @@ window.langEN = {
     reader_header: "Fairy Tale",
     reader_back: "⬅ Back",
     
-modalTitle: "Tell us about yourself",
+    modalTitle: "Tell us about yourself",
     modalSub: "This will help us make the fairy tales even better:",
     labelParentName: "Your name",
     parentNamePlaceholder: "e.g. Alexander",
