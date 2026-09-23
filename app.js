@@ -143,7 +143,8 @@ async function saveParentInfo() {
 
         if (btn) btn.innerText = 'Продолжить';
         
-        await loadProfile();
+        // Обновляем данные в фоне (без await)
+        loadProfile();
     } catch (err) { 
         console.error(err); 
         alert('Ошибка сохранения'); 
