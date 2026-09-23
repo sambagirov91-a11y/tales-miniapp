@@ -32,8 +32,8 @@ window.langUZ = {
     btn_renew_trial: "Obunani rasmiylashtirish (24 500 so'm)",
     btn_renew_inactive: "Obunani tiklash (24 500 so'm)",
     
-    lbl_new_stories: "✨ Yangi ertaklar (Bugun)",
-    empty_today: "Yangi ertak bugun soat 21:00 da paydo bo'ladi!",
+    lbl_new_stories: "✨ Yangi ertaklar!",
+    empty_today: "Yangi ertak soat 21:00 da paydo bo'ladi!",
     lbl_archive_stories: "📚 Mening ertaklarim (Arxiv)",
     empty_archive: "Arxiv bo'sh. Ertaklar bu yerda ertaga paydo bo'ladi.",
     paywall_text: "O'tgan ertaklar arxiviga kirish faqat pullik tarifda mumkin.",
