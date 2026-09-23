@@ -134,8 +134,13 @@ async function saveParentInfo() {
             }).eq('telegram_id', telegramId);
         }
         
+        // === ИСПРАВЛЕННЫЙ БЛОК ПЕРЕКЛЮЧЕНИЯ ЭКРАНОВ ===
         const modal = document.getElementById('parentModal');
-        if (modal) modal.style.display = 'none';
+        if (modal) modal.style.display = 'none'; // Прячем анкету
+
+        const mainContent = document.getElementById('mainAppContent');
+        if (mainContent) mainContent.style.display = 'block'; // Показываем детей
+
         if (btn) btn.innerText = 'Продолжить';
         
         await loadProfile();
@@ -329,16 +334,30 @@ async function loadProfile() {
         userExists = !!user; 
         currentUserData = user; 
 
+        // === ЛОГИКА ПЕРЕКЛЮЧЕНИЯ ЭКРАНОВ ===
         const pModal = document.getElementById('parentModal');
-        if (pModal) pModal.style.display = (!user || !user.parent_role || !user.parent_age) ? 'flex' : 'none';
+        const mainContent = document.getElementById('mainAppContent');
 
+        // Проверяем: если юзера нет или он не заполнил обязательные поля (роль, имя или возраст)
+        if (!user || !user.parent_role || !user.parent_name) {
+            // НОВИЧОК - Показываем анкету, скрываем приложение
+            if (pModal) pModal.style.display = 'block'; 
+            if (mainContent) mainContent.style.display = 'none';
+        } else {
+            // ПОЛЬЗОВАТЕЛЬ УЖЕ ЕСТЬ - Скрываем анкету, показываем приложение
+            if (pModal) pModal.style.display = 'none';
+            if (mainContent) mainContent.style.display = 'block';
+        }
+
+        // === НАСТРОЙКИ ЯЗЫКА И ИНТЕРФЕЙСА ===
         if (userExists && user.bot_language) currentLang = user.bot_language;
         const langSel = document.getElementById('appLangSelector');
         if (langSel) langSel.value = currentLang;
-        
+
         applyLanguage(); 
         updateStatusUI(user);
 
+        // === ЗАГРУЗКА ДЕТЕЙ ===
         const { data: children } = await _supabase.from('children').select('*').eq('parent_telegram_id', telegramId).order('created_at', { ascending: true });
         allChildren = children || [];
 
@@ -350,7 +369,6 @@ async function loadProfile() {
         checkLimitAndMode(); 
     }
 }
-
 function updateStatusUI(user) {
     const section = document.getElementById('statusSection');
     if (!section) return;
