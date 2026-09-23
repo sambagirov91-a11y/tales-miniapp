@@ -90,30 +90,79 @@ function checkCustomRole(val) {
 }
 
 async function saveParentInfo() {
+    // Собираем данные
+    const parentName = document.getElementById('parentNameInput')?.value.trim();
     let role = document.getElementById('parentRoleSelect')?.value;
     if (role === 'Другое') role = document.getElementById('customParentRole')?.value.trim();
+    
     const ageInput = document.getElementById('parentAgeInput');
     const age = ageInput ? parseInt(ageInput.value) : 0;
+    
+    const cbPrivacy = document.getElementById('cbPrivacy')?.checked || false;
+    const cbOffer = document.getElementById('cbOffer')?.checked || false;
 
-    if (!role || isNaN(age) || age < 10 || age > 100) return alert('Пожалуйста, корректно заполните все поля.');
+    // Проверки
+    if (!parentName) return alert('Пожалуйста, введите ваше имя.');
+    if (!role || isNaN(age) || age < 10 || age > 100) return alert('Пожалуйста, корректно укажите роль и возраст.');
+    if (!cbPrivacy || !cbOffer) return alert('Необходимо принять условия соглашений.');
+
+    const btn = document.getElementById('saveParentBtn');
+    if (btn) btn.innerText = 'Сохранение...';
 
     try {
         if (!userExists) {
             const trialEndDate = new Date(); trialEndDate.setDate(trialEndDate.getDate() + 7);
             await _supabase.from('users').insert({ 
-                telegram_id: telegramId, subscription_status: 'trial', trial_end_date: trialEndDate.toISOString(),
-                bot_language: currentLang, parent_role: role, parent_age: age
+                telegram_id: telegramId, 
+                subscription_status: 'trial', 
+                trial_end_date: trialEndDate.toISOString(),
+                bot_language: currentLang, 
+                parent_name: parentName,      // НОВОЕ ПОЛЕ
+                parent_role: role, 
+                parent_age: age,
+                agreed_to_privacy: cbPrivacy, // НОВОЕ ПОЛЕ
+                agreed_to_offer: cbOffer      // НОВОЕ ПОЛЕ
             });
             userExists = true;
         } else {
-            await _supabase.from('users').update({ parent_role: role, parent_age: age }).eq('telegram_id', telegramId);
+            await _supabase.from('users').update({ 
+                parent_name: parentName,      // НОВОЕ ПОЛЕ
+                parent_role: role, 
+                parent_age: age,
+                agreed_to_privacy: cbPrivacy, // НОВОЕ ПОЛЕ
+                agreed_to_offer: cbOffer      // НОВОЕ ПОЛЕ
+            }).eq('telegram_id', telegramId);
         }
+        
         const modal = document.getElementById('parentModal');
         if (modal) modal.style.display = 'none';
+        if (btn) btn.innerText = 'Продолжить';
+        
         await loadProfile();
-    } catch (err) { console.error(err); alert('Ошибка сохранения'); }
+    } catch (err) { 
+        console.error(err); 
+        alert('Ошибка сохранения'); 
+        if (btn) btn.innerText = 'Продолжить';
+    }
 }
-
+// --- ЛОГИКА ДЛЯ ЧЕКБОКСОВ АНКЕТЫ ---
+window.toggleParentBtn = function() {
+    const cbPrivacy = document.getElementById('cbPrivacy');
+    const cbOffer = document.getElementById('cbOffer');
+    const btn = document.getElementById('saveParentBtn');
+    
+    if (cbPrivacy && cbOffer && btn) {
+        if (cbPrivacy.checked && cbOffer.checked) {
+            btn.disabled = false;
+            btn.style.background = '#9333ea'; // Яркий фиолетовый
+            btn.style.cursor = 'pointer';
+        } else {
+            btn.disabled = true;
+            btn.style.background = '#4b5563'; // Неактивный серый
+            btn.style.cursor = 'not-allowed';
+        }
+    }
+};
 // === ЯЗЫК И ИНТЕРФЕЙС ===
 async function changeAppLanguage(newLang) {
     currentLang = newLang; 
