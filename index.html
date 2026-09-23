@@ -15,30 +15,46 @@
 </head>
 <body>
 
-    <!-- МОДАЛКА АНКЕТЫ РОДИТЕЛЯ -->
-    <div id="parentModal" class="parent-modal" style="display: none;">
-        <div class="modal-content">
-            <h2 id="modalTitle">Расскажите о себе</h2>
-            <p id="modalSub" style="font-size: 13px; color: #a0a0a0; margin-bottom: 20px;">Это поможет нам сделать сказки еще лучше:</p>
-            
-            <label id="labelParentRole">Кто вы для ребенка?</label>
-            <select id="parentRoleSelect" onchange="checkCustomRole(this.value)">
-                <option value="Мать" id="roleMother">Мать</option>
-                <option value="Отец" id="roleFather">Отец</option>
-                <option value="Бабушка" id="roleGrandma">Бабушка</option>
-                <option value="Дедушка" id="roleGrandpa">Дедушка</option>
-                <option value="Няня" id="roleNanny">Няня</option>
-                <option value="Другое" id="roleOther">Другое</option>
-            </select>
-            <input type="text" id="customParentRole" placeholder="Укажите кто вы..." style="display: none; margin-top: -10px;">
+ <!-- МОДАЛЬНОЕ ОКНО РОДИТЕЛЯ (Анкета) -->
+<div id="parentModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content glass-panel" style="max-width: 400px; padding: 20px;">
+        <h2 id="modalTitle" style="margin-top: 0; color: #fff;">Расскажите о себе</h2>
+        <p id="modalSub" style="color: #cbd5e1; font-size: 14px; margin-bottom: 20px;">Это поможет нам сделать сказки еще лучше:</p>
 
-            <label id="labelParentAge" style="margin-top: 15px;">Ваш возраст</label>
-            <input type="number" id="parentAgeInput" placeholder="Например: 32" min="12" max="100">
+        <!-- НОВОЕ: Имя родителя -->
+        <label style="display:block; margin-bottom: 5px; color: #e2e8f0; font-weight: bold;">Ваше имя</label>
+        <input type="text" id="parentNameInput" placeholder="Например: Самир" style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 8px; border: 1px solid rgba(147, 51, 234, 0.4); background: rgba(0, 0, 0, 0.4); color: #fff; box-sizing: border-box;">
 
-            <button class="primary-btn" id="saveParentBtn" onclick="saveParentInfo()" style="margin-top: 10px;">Продолжить</button>
+        <!-- СТАРЫЕ ПОЛЯ: Роль и возраст -->
+        <label id="labelParentRole" style="display:block; margin-bottom: 5px; color: #e2e8f0; font-weight: bold;">Кто вы для ребенка?</label>
+        <select id="parentRoleSelect" onchange="checkCustomRole(this.value)" style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 8px; border: 1px solid rgba(147, 51, 234, 0.4); background: rgba(0, 0, 0, 0.4); color: #fff; box-sizing: border-box;">
+            <option value="Мать" id="roleMother">Мать</option>
+            <option value="Отец" id="roleFather">Отец</option>
+            <option value="Бабушка" id="roleGrandma">Бабушка</option>
+            <option value="Дедушка" id="roleGrandpa">Дедушка</option>
+            <option value="Няня" id="roleNanny">Няня</option>
+            <option value="Другое" id="roleOther">Другое</option>
+        </select>
+        <input type="text" id="customParentRole" placeholder="Укажите кто вы..." style="display:none; width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 8px; border: 1px solid rgba(147, 51, 234, 0.4); background: rgba(0, 0, 0, 0.4); color: #fff; box-sizing: border-box;">
+
+        <label id="labelParentAge" style="display:block; margin-bottom: 5px; color: #e2e8f0; font-weight: bold;">Ваш возраст</label>
+        <input type="number" id="parentAgeInput" placeholder="Например: 32" style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 8px; border: 1px solid rgba(147, 51, 234, 0.4); background: rgba(0, 0, 0, 0.4); color: #fff; box-sizing: border-box;">
+
+        <!-- НОВОЕ: Чекбоксы согласия -->
+        <div style="margin-bottom: 20px; font-size: 13px; color: #cbd5e1; display: flex; flex-direction: column; gap: 10px;">
+            <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="cbPrivacy" checked onchange="toggleParentBtn()" style="margin-top: 3px; accent-color: #9333ea;">
+                <span style="line-height: 1.4;">Ознакомлен и согласен с <a href="#" onclick="openLink(configUrls.privacy_url)" style="color: #c084fc; text-decoration: underline;">политикой конфиденциальности</a></span>
+            </label>
+            <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="cbOffer" checked onchange="toggleParentBtn()" style="margin-top: 3px; accent-color: #9333ea;">
+                <span style="line-height: 1.4;">Принимаю условия <a href="#" onclick="openLink(configUrls.offer_url)" style="color: #c084fc; text-decoration: underline;">договора оферты</a></span>
+            </label>
         </div>
-    </div>
 
+        <button id="saveParentBtn" onclick="saveParentInfo()" style="width: 100%; background: #9333ea; color: white; font-weight: bold; padding: 14px; border-radius: 10px; border: none; cursor: pointer; transition: background 0.3s;">Продолжить</button>
+    </div>
+</div>
     <!-- ОСНОВНОЙ КОНТЕЙНЕР -->
     <div id="mainContent" class="main-content">
         
