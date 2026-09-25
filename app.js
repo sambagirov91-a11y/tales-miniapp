@@ -802,3 +802,24 @@ window.sendFeedbackData = async function(rating, comment) {
         console.error('Ошибка отправки отзыва:', err);
     }
 };
+async function bindAliceColonna(code) {
+    try {
+        const response = await fetch(`${API_URL}/api/bind-alice`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                telegramId: telegramId, // берем из Telegram.WebApp
+                code: code
+            })
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('🎉 Колонка успешно подключена!');
+        } else {
+            alert('❌ Ошибка: ' + data.error);
+        }
+    } catch (err) {
+        alert('Ошибка соединения с сервером');
+    }
+}
