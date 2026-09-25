@@ -41,6 +41,12 @@ window.langUZ = {
     
     reader_header: "Ertak",
     reader_back: "⬅ Orqaga",
+
+    textAliceBtn: "Yandex Alisa-ni ulash",
+    aliceModalTitle: "Alisa bilan bog'lash",
+    aliceModalSub: "Kalonkaga «Alisa, Scheherezade ertaklarini ishga tushir» deng va u aytadigan 4 ta raqamni kiriting:",
+    aliceSubmitBtn: "Ulash",
+    aliceCancelBtn: "Bekor qilish",
     
 modalTitle: "O'zingiz haqingizda so'zlab bering",
     modalSub: "Bu bizga ertaklarni yanada yaxshiroq qilishga yordam beradi:",
