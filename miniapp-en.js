@@ -59,6 +59,12 @@ window.langEN = {
     textPrivacy: 'I have read and agree to the <a href="#" onclick="openLink(configUrls.privacy_url)" style="color: #c084fc; text-decoration: underline;">Privacy Policy</a>',
     textOffer: 'I accept the terms of the <a href="#" onclick="openLink(configUrls.offer_url)" style="color: #c084fc; text-decoration: underline;">Offer Agreement</a>',
     saveParentBtn: "Continue",
+
+    textAliceBtn: "Connect Yandex Alice",
+    aliceModalTitle: "Link with Alice",
+    aliceModalSub: "Say to the speaker «Alice, launch Scheherezade tales» and enter the 4 digits it dictates:",
+    aliceSubmitBtn: "Connect",
+    aliceCancelBtn: "Cancel",
     
     consent_text: "I accept the <a href='#' onclick='openLink(\"{offer}\")'>Terms of Service</a> and <a href='#' onclick='openLink(\"{privacy}\")'>Privacy Policy</a>",
     footer_privacy: "Privacy Policy",
