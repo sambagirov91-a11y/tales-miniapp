@@ -31,7 +31,58 @@ document.addEventListener('DOMContentLoaded', () => {
     const btn = document.getElementById('themeToggleBtn');
     if (btn && t) btn.innerText = document.body.classList.contains('light-theme') ? t.theme_day : t.theme_night;
 });
+// ==========================================
+// ЛОГИКА ДЛЯ ЯНДЕКС АЛИСЫ
+// ==========================================
+function openAliceModal() {
+    const modal = document.getElementById('aliceModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        document.getElementById('aliceCodeInput').value = ''; 
+    }
+}
 
+function closeAliceModal() {
+    const modal = document.getElementById('aliceModal');
+    if (modal) modal.style.display = 'none';
+}
+
+async function submitAliceCode() {
+    const codeInput = document.getElementById('aliceCodeInput').value.trim();
+    const btn = document.getElementById('aliceSubmitBtn');
+
+    if (!codeInput || codeInput.length !== 4) {
+        alert(currentLang === 'ru' ? 'Введите 4 цифры' : (currentLang === 'uz' ? '4 ta raqam kiriting' : 'Enter 4 digits'));
+        return;
+    }
+
+    if (btn) btn.innerText = '...';
+
+    try {
+        // ВАЖНО: Замени НА ТВОЙ АДРЕС RENDER
+        const response = await fetch(`https://scheherazade-yr42.onrender.com/api/bind-alice`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                telegramId: telegramId, 
+                code: codeInput
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('🎉 ' + (currentLang === 'ru' ? 'Колонка успешно подключена!' : (currentLang === 'uz' ? 'Qurilma muvaffaqiyatli ulandi!' : 'Device connected successfully!')));
+            closeAliceModal();
+        } else {
+            alert('❌ ' + data.error);
+        }
+    } catch (err) {
+        alert('Ошибка соединения с сервером');
+    } finally {
+        if (btn) btn.innerText = (i18n_app[currentLang] || i18n_app['ru']).aliceSubmitBtn || 'Подключить';
+    }
+}
 // === НАВИГАЦИЯ (TAB BAR) ===
 function switchAppTab(tabId) {
     document.querySelectorAll('.tab-page').forEach(el => el.classList.remove('active'));
@@ -206,7 +257,12 @@ function applyLanguage() {
     
     if (document.getElementById('lblAppLang')) document.getElementById('lblAppLang').innerText = t.lbl_app_lang;
     if (document.getElementById('lblAppTheme')) document.getElementById('lblAppTheme').innerText = t.lbl_app_theme;
-
+// Тексты Алисы
+    if (document.getElementById('textAliceBtn')) document.getElementById('textAliceBtn').innerText = t.textAliceBtn;
+    if (document.getElementById('aliceModalTitle')) document.getElementById('aliceModalTitle').innerText = t.aliceModalTitle;
+    if (document.getElementById('aliceModalSub')) document.getElementById('aliceModalSub').innerText = t.aliceModalSub;
+    if (document.getElementById('aliceSubmitBtn')) document.getElementById('aliceSubmitBtn').innerText = t.aliceSubmitBtn;
+    if (document.getElementById('aliceCancelBtn')) document.getElementById('aliceCancelBtn').innerText = t.aliceCancelBtn;
 // Тексты анкеты родителя
     const mTitle = document.getElementById('modalTitle');
     if (mTitle) mTitle.innerText = t.modalTitle;
