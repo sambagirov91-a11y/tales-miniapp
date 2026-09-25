@@ -66,6 +66,12 @@ modalTitle: "Расскажите о себе",
     textPrivacy: 'Ознакомлен и согласен с <a href="#" onclick="openLink(configUrls.privacy_url)" style="color: #c084fc; text-decoration: underline;">политикой конфиденциальности</a>',
     textOffer: 'Принимаю условия <a href="#" onclick="openLink(configUrls.offer_url)" style="color: #c084fc; text-decoration: underline;">договора оферты</a>',
     saveParentBtn: "Продолжить",
+
+    textAliceBtn: "Подключить Яндекс Алису",
+    aliceModalTitle: "Связка с Алисой",
+    aliceModalSub: "Скажите колонке «Алиса, запусти Сказки Шехерезады» и введите 4 цифры, которые она продиктует:",
+    aliceSubmitBtn: "Подключить",
+    aliceCancelBtn: "Отмена",
     
     // Футер и легальное
     consent_text: "Я принимаю условия <a href='#' onclick='openLink(\"{offer}\")'>Оферты</a> и <a href='#' onclick='openLink(\"{privacy}\")'>Политики</a>",
