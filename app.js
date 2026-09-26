@@ -46,7 +46,19 @@ function closeAliceModal() {
     const modal = document.getElementById('aliceModal');
     if (modal) modal.style.display = 'none';
 }
+function updateAliceUI(isAliceConnected) {
+    const disconnectedState = document.getElementById('alice-disconnected-state');
+    const connectedState = document.getElementById('alice-connected-state');
+    if (!disconnectedState || !connectedState) return;
 
+    if (isAliceConnected) {
+        disconnectedState.style.display = 'none';
+        connectedState.style.display = 'block';
+    } else {
+        disconnectedState.style.display = 'block';
+        connectedState.style.display = 'none';
+    }
+}
 async function submitAliceCode() {
     const codeInput = document.getElementById('aliceCodeInput').value.trim();
     const btn = document.getElementById('aliceSubmitBtn');
@@ -71,9 +83,16 @@ async function submitAliceCode() {
         
         const data = await response.json();
         
-        if (data.success) {
-            alert('🎉 ' + (currentLang === 'ru' ? 'Колонка успешно подключена!' : (currentLang === 'uz' ? 'Qurilma muvaffaqiyatli ulandi!' : 'Device connected successfully!')));
+     if (data.success) {
+            // Берем текущий словарь
+            const t = i18n_app[currentLang] || i18n_app['ru'];
+            
+            // Выводим alert из словаря
+            alert('🎉 ' + (t.aliceAlertSuccess || 'Колонка успешно подключена!'));
+            
             closeAliceModal();
+            updateAliceUI(true); 
+            if (currentUserData) currentUserData.alice_id = 'connected'; 
         } else {
             alert('❌ ' + data.error);
         }
@@ -263,6 +282,10 @@ function applyLanguage() {
     if (document.getElementById('aliceModalSub')) document.getElementById('aliceModalSub').innerText = t.aliceModalSub;
     if (document.getElementById('aliceSubmitBtn')) document.getElementById('aliceSubmitBtn').innerText = t.aliceSubmitBtn;
     if (document.getElementById('aliceCancelBtn')) document.getElementById('aliceCancelBtn').innerText = t.aliceCancelBtn;
+    // НОВЫЕ ТЕКСТЫ ДЛЯ ПЛАШКИ УСПЕХА
+    if (document.getElementById('aliceSuccessTitle')) document.getElementById('aliceSuccessTitle').innerText = t.aliceSuccessTitle;
+    if (document.getElementById('aliceSuccessText')) document.getElementById('aliceSuccessText').innerText = t.aliceSuccessText;
+    if (document.getElementById('aliceSuccessPhrase')) document.getElementById('aliceSuccessPhrase').innerText = t.aliceSuccessPhrase;
 // Тексты анкеты родителя
     const mTitle = document.getElementById('modalTitle');
     if (mTitle) mTitle.innerText = t.modalTitle;
