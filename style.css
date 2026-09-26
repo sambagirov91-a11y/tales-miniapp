@@ -278,3 +278,76 @@ body.light-theme .back-btn { background: rgba(255,255,255,0.5); }
     border: none;
     cursor: pointer;
 }
+/* === БЛОК ИНТЕГРАЦИИ С АЛИСОЙ === */
+.alice-integration {
+    margin-top: 20px;
+}
+
+.alice-bind-btn {
+    width: 100%;
+    background: #4338ca;
+    color: white;
+    font-weight: bold;
+    padding: 16px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 15px;
+    transition: background 0.3s, transform 0.2s;
+}
+.alice-bind-btn:active {
+    transform: scale(0.98);
+}
+body.light-theme .alice-bind-btn {
+    background: #4f46e5;
+}
+
+/* Плашка успеха (Зеленый стеклянный эффект) */
+.alice-success-box {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    padding: 18px;
+    text-align: center;
+}
+body.light-theme .alice-success-box {
+    background: rgba(16, 185, 129, 0.15);
+}
+
+.alice-success-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.success-icon {
+    font-size: 20px;
+}
+
+.success-title {
+    font-weight: 700;
+    color: #34d399;
+    font-size: 16px;
+}
+body.light-theme .success-title {
+    color: #059669;
+}
+
+.alice-instruction {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.alice-phrase {
+    margin-top: 10px;
+    font-weight: 700;
+    font-style: italic;
+    color: var(--gold-main);
+    font-size: 15px;
+}
