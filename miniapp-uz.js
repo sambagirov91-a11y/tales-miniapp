@@ -47,8 +47,11 @@ window.langUZ = {
     aliceModalSub: "Kalonkaga «Alisa, Scheherezade ertaklarini ishga tushir» deng va u aytadigan 4 ta raqamni kiriting:",
     aliceSubmitBtn: "Ulash",
     aliceCancelBtn: "Bekor qilish",
-    
-modalTitle: "O'zingiz haqingizda so'zlab bering",
+    aliceSuccessTitle: "Alisa ustuni ulandi!",
+    aliceSuccessText: "Ertaklarni tinglash uchun ustunga ayting:",
+    aliceSuccessPhrase: "«Alisa, запусти навык Сказки Шахерезады»", 
+    /* Фраза вызова Алисы остается на русском, так как Алиса понимает русский */
+    modalTitle: "O'zingiz haqingizda so'zlab bering",
     modalSub: "Bu bizga ertaklarni yanada yaxshiroq qilishga yordam beradi:",
     labelParentName: "Ismingiz",
     parentNamePlaceholder: "Masalan: Iskandar",
