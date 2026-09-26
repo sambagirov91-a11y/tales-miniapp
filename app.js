@@ -41,7 +41,21 @@ function openAliceModal() {
         document.getElementById('aliceCodeInput').value = ''; 
     }
 }
+window.updateAliceUI = function(isAliceConnected) {
+    const disconnectedState = document.getElementById('alice-disconnected-state');
+    const connectedState = document.getElementById('alice-connected-state');
+    
+    // Защита: если элементов нет на странице, ничего не ломаем
+    if (!disconnectedState || !connectedState) return;
 
+    if (isAliceConnected) {
+        disconnectedState.style.display = 'none';
+        connectedState.style.display = 'block';
+    } else {
+        disconnectedState.style.display = 'block';
+        connectedState.style.display = 'none';
+    }
+};
 function closeAliceModal() {
     const modal = document.getElementById('aliceModal');
     if (modal) modal.style.display = 'none';
