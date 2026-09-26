@@ -31,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btn = document.getElementById('themeToggleBtn');
     if (btn && t) btn.innerText = document.body.classList.contains('light-theme') ? t.theme_day : t.theme_night;
 });
+
 // ==========================================
 // ЛОГИКА ДЛЯ ЯНДЕКС АЛИСЫ
 // ==========================================
@@ -41,11 +42,17 @@ function openAliceModal() {
         document.getElementById('aliceCodeInput').value = ''; 
     }
 }
+
+function closeAliceModal() {
+    const modal = document.getElementById('aliceModal');
+    if (modal) modal.style.display = 'none';
+}
+
+// Глобальная функция переключения плашки Алисы
 window.updateAliceUI = function(isAliceConnected) {
     const disconnectedState = document.getElementById('alice-disconnected-state');
     const connectedState = document.getElementById('alice-connected-state');
     
-    // Защита: если элементов нет на странице, ничего не ломаем
     if (!disconnectedState || !connectedState) return;
 
     if (isAliceConnected) {
@@ -56,23 +63,7 @@ window.updateAliceUI = function(isAliceConnected) {
         connectedState.style.display = 'none';
     }
 };
-function closeAliceModal() {
-    const modal = document.getElementById('aliceModal');
-    if (modal) modal.style.display = 'none';
-}
-function updateAliceUI(isAliceConnected) {
-    const disconnectedState = document.getElementById('alice-disconnected-state');
-    const connectedState = document.getElementById('alice-connected-state');
-    if (!disconnectedState || !connectedState) return;
 
-    if (isAliceConnected) {
-        disconnectedState.style.display = 'none';
-        connectedState.style.display = 'block';
-    } else {
-        disconnectedState.style.display = 'block';
-        connectedState.style.display = 'none';
-    }
-}
 async function submitAliceCode() {
     const codeInput = document.getElementById('aliceCodeInput').value.trim();
     const btn = document.getElementById('aliceSubmitBtn');
@@ -85,7 +76,6 @@ async function submitAliceCode() {
     if (btn) btn.innerText = '...';
 
     try {
-        // ВАЖНО: Замени НА ТВОЙ АДРЕС RENDER
         const response = await fetch(`https://scheherazade-yr42.onrender.com/api/bind-alice`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -97,16 +87,13 @@ async function submitAliceCode() {
         
         const data = await response.json();
         
-     if (data.success) {
-            // Берем текущий словарь
+        if (data.success) {
             const t = i18n_app[currentLang] || i18n_app['ru'];
-            
-            // Выводим alert из словаря
             alert('🎉 ' + (t.aliceAlertSuccess || 'Колонка успешно подключена!'));
             
             closeAliceModal();
-            updateAliceUI(true); 
-            if (currentUserData) currentUserData.alice_id = 'connected'; 
+            window.updateAliceUI(true); // Включаем плашку
+            if (currentUserData) currentUserData.alice_id = 'connected'; // Обновляем локально
         } else {
             alert('❌ ' + data.error);
         }
@@ -116,6 +103,7 @@ async function submitAliceCode() {
         if (btn) btn.innerText = (i18n_app[currentLang] || i18n_app['ru']).aliceSubmitBtn || 'Подключить';
     }
 }
+
 // === НАВИГАЦИЯ (TAB BAR) ===
 function switchAppTab(tabId) {
     document.querySelectorAll('.tab-page').forEach(el => el.classList.remove('active'));
@@ -174,7 +162,6 @@ function checkCustomRole(val) {
 }
 
 async function saveParentInfo() {
-    // Собираем данные
     const parentName = document.getElementById('parentNameInput')?.value.trim();
     let role = document.getElementById('parentRoleSelect')?.value;
     if (role === 'Другое') role = document.getElementById('customParentRole')?.value.trim();
@@ -185,7 +172,6 @@ async function saveParentInfo() {
     const cbPrivacy = document.getElementById('cbPrivacy')?.checked || false;
     const cbOffer = document.getElementById('cbOffer')?.checked || false;
 
-    // Проверки
     if (!parentName) return alert('Пожалуйста, введите ваше имя.');
     if (!role || isNaN(age) || age < 10 || age > 100) return alert('Пожалуйста, корректно укажите роль и возраст.');
     if (!cbPrivacy || !cbOffer) return alert('Необходимо принять условия соглашений.');
@@ -201,33 +187,31 @@ async function saveParentInfo() {
                 subscription_status: 'trial', 
                 trial_end_date: trialEndDate.toISOString(),
                 bot_language: currentLang, 
-                parent_name: parentName,      // НОВОЕ ПОЛЕ
+                parent_name: parentName,      
                 parent_role: role, 
                 parent_age: age,
-                agreed_to_privacy: cbPrivacy, // НОВОЕ ПОЛЕ
-                agreed_to_offer: cbOffer      // НОВОЕ ПОЛЕ
+                agreed_to_privacy: cbPrivacy, 
+                agreed_to_offer: cbOffer      
             });
             userExists = true;
         } else {
             await _supabase.from('users').update({ 
-                parent_name: parentName,      // НОВОЕ ПОЛЕ
+                parent_name: parentName,      
                 parent_role: role, 
                 parent_age: age,
-                agreed_to_privacy: cbPrivacy, // НОВОЕ ПОЛЕ
-                agreed_to_offer: cbOffer      // НОВОЕ ПОЛЕ
+                agreed_to_privacy: cbPrivacy, 
+                agreed_to_offer: cbOffer      
             }).eq('telegram_id', telegramId);
         }
         
-        // === ИСПРАВЛЕННЫЙ БЛОК ПЕРЕКЛЮЧЕНИЯ ЭКРАНОВ ===
         const modal = document.getElementById('parentModal');
-        if (modal) modal.style.display = 'none'; // Прячем анкету
+        if (modal) modal.style.display = 'none'; 
 
         const mainContent = document.getElementById('mainAppContent');
-        if (mainContent) mainContent.style.display = 'block'; // Показываем детей
+        if (mainContent) mainContent.style.display = 'block'; 
 
         if (btn) btn.innerText = 'Продолжить';
         
-        // Обновляем данные в фоне (без await)
         loadProfile();
     } catch (err) { 
         console.error(err); 
@@ -235,7 +219,7 @@ async function saveParentInfo() {
         if (btn) btn.innerText = 'Продолжить';
     }
 }
-// --- ЛОГИКА ДЛЯ ЧЕКБОКСОВ АНКЕТЫ ---
+
 window.toggleParentBtn = function() {
     const cbPrivacy = document.getElementById('cbPrivacy');
     const cbOffer = document.getElementById('cbOffer');
@@ -244,15 +228,16 @@ window.toggleParentBtn = function() {
     if (cbPrivacy && cbOffer && btn) {
         if (cbPrivacy.checked && cbOffer.checked) {
             btn.disabled = false;
-            btn.style.background = '#9333ea'; // Яркий фиолетовый
+            btn.style.background = '#9333ea'; 
             btn.style.cursor = 'pointer';
         } else {
             btn.disabled = true;
-            btn.style.background = '#4b5563'; // Неактивный серый
+            btn.style.background = '#4b5563'; 
             btn.style.cursor = 'not-allowed';
         }
     }
 };
+
 // === ЯЗЫК И ИНТЕРФЕЙС ===
 async function changeAppLanguage(newLang) {
     currentLang = newLang; 
@@ -269,7 +254,7 @@ async function changeAppLanguage(newLang) {
 
 function applyLanguage() {
     const t = i18n_app[currentLang] || i18n_app['ru'];
-    if (!t) return; // Защита от краша
+    if (!t) return; 
 
     document.documentElement.lang = currentLang;
     
@@ -290,17 +275,18 @@ function applyLanguage() {
     
     if (document.getElementById('lblAppLang')) document.getElementById('lblAppLang').innerText = t.lbl_app_lang;
     if (document.getElementById('lblAppTheme')) document.getElementById('lblAppTheme').innerText = t.lbl_app_theme;
-// Тексты Алисы
+
+    // Тексты Алисы
     if (document.getElementById('textAliceBtn')) document.getElementById('textAliceBtn').innerText = t.textAliceBtn;
     if (document.getElementById('aliceModalTitle')) document.getElementById('aliceModalTitle').innerText = t.aliceModalTitle;
     if (document.getElementById('aliceModalSub')) document.getElementById('aliceModalSub').innerText = t.aliceModalSub;
     if (document.getElementById('aliceSubmitBtn')) document.getElementById('aliceSubmitBtn').innerText = t.aliceSubmitBtn;
     if (document.getElementById('aliceCancelBtn')) document.getElementById('aliceCancelBtn').innerText = t.aliceCancelBtn;
-    // НОВЫЕ ТЕКСТЫ ДЛЯ ПЛАШКИ УСПЕХА
     if (document.getElementById('aliceSuccessTitle')) document.getElementById('aliceSuccessTitle').innerText = t.aliceSuccessTitle;
     if (document.getElementById('aliceSuccessText')) document.getElementById('aliceSuccessText').innerText = t.aliceSuccessText;
     if (document.getElementById('aliceSuccessPhrase')) document.getElementById('aliceSuccessPhrase').innerText = t.aliceSuccessPhrase;
-// Тексты анкеты родителя
+
+    // Тексты анкеты родителя
     const mTitle = document.getElementById('modalTitle');
     if (mTitle) mTitle.innerText = t.modalTitle;
     
@@ -339,10 +325,10 @@ function applyLanguage() {
     if (inpAge) inpAge.placeholder = t.parentAgePlaceholder;
 
     const txtPrivacy = document.getElementById('textPrivacy');
-    if (txtPrivacy) txtPrivacy.innerHTML = t.textPrivacy; // innerHTML, чтобы ссылки остались кликабельными
+    if (txtPrivacy) txtPrivacy.innerHTML = t.textPrivacy; 
 
     const txtOffer = document.getElementById('textOffer');
-    if (txtOffer) txtOffer.innerHTML = t.textOffer; // innerHTML, чтобы ссылки остались кликабельными
+    if (txtOffer) txtOffer.innerHTML = t.textOffer; 
 
     const btnSave = document.getElementById('saveParentBtn');
     if (btnSave) btnSave.innerText = t.saveParentBtn;
@@ -461,22 +447,17 @@ async function loadProfile() {
         userExists = !!user; 
         currentUserData = user; 
 
-        // === ЛОГИКА ПЕРЕКЛЮЧЕНИЯ ЭКРАНОВ ===
         const pModal = document.getElementById('parentModal');
         const mainContent = document.getElementById('mainAppContent');
 
-        // Проверяем: если юзера нет или он не заполнил обязательные поля (роль, имя или возраст)
         if (!user || !user.parent_role || !user.parent_name) {
-            // НОВИЧОК - Показываем анкету, скрываем приложение
             if (pModal) pModal.style.display = 'block'; 
             if (mainContent) mainContent.style.display = 'none';
         } else {
-            // ПОЛЬЗОВАТЕЛЬ УЖЕ ЕСТЬ - Скрываем анкету, показываем приложение
             if (pModal) pModal.style.display = 'none';
             if (mainContent) mainContent.style.display = 'block';
         }
 
-        // === НАСТРОЙКИ ЯЗЫКА И ИНТЕРФЕЙСА ===
         if (userExists && user.bot_language) currentLang = user.bot_language;
         const langSel = document.getElementById('appLangSelector');
         if (langSel) langSel.value = currentLang;
@@ -484,7 +465,13 @@ async function loadProfile() {
         applyLanguage(); 
         updateStatusUI(user);
 
-        // === ЗАГРУЗКА ДЕТЕЙ ===
+        // === ПРОВЕРКА СТАТУСА АЛИСЫ (ЗДЕСЬ БЫЛА ОШИБКА, ТЕПЕРЬ ИСПРАВЛЕНО) ===
+        if (userExists) {
+            window.updateAliceUI(!!user.alice_id); 
+        } else {
+            window.updateAliceUI(false);
+        }
+
         const { data: children } = await _supabase.from('children').select('*').eq('parent_telegram_id', telegramId).order('created_at', { ascending: true });
         allChildren = children || [];
 
@@ -496,6 +483,7 @@ async function loadProfile() {
         checkLimitAndMode(); 
     }
 }
+
 function updateStatusUI(user) {
     const section = document.getElementById('statusSection');
     if (!section) return;
@@ -561,7 +549,7 @@ function initiatePayment() {
 
 function renderChildren(children) {
     const container = document.getElementById('childrenList');
-    if (!container) return; // Защита от краша при рендере
+    if (!container) return; 
 
     if (children.length === 0) { 
         const t = i18n_app[currentLang] || i18n_app['ru'];
@@ -674,7 +662,7 @@ function renderStoriesList() {
     const archiveContainer = document.getElementById('archiveStoriesList');
     const paywall = document.getElementById('paywallOverlay');
     
-    if (!todayContainer || !archiveContainer || !paywall) return; // Защита от отсутствующих блоков
+    if (!todayContainer || !archiveContainer || !paywall) return; 
 
     const today = new Date(); today.setHours(0,0,0,0);
     const todayStories = []; const archiveStories = [];
@@ -828,10 +816,8 @@ window.renderFeedbackBlocks = function(storyId, existingRating, existingComment)
     }
 };
 
-// Бронебойный глобальный слушатель (Event Delegation) — работает независимо от загрузки
 if (!window.feedbackListenerBound) {
     document.addEventListener('click', async (e) => {
-        // Если клик был по звезде
         if (e.target.tagName === 'SPAN' && e.target.parentElement && e.target.parentElement.id === 'stars-container') {
             const rating = e.target.getAttribute('data-value');
             const stars = document.querySelectorAll('#stars-container span');
@@ -895,24 +881,3 @@ window.sendFeedbackData = async function(rating, comment) {
         console.error('Ошибка отправки отзыва:', err);
     }
 };
-async function bindAliceColonna(code) {
-    try {
-        const response = await fetch(`${API_URL}/api/bind-alice`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                telegramId: telegramId, // берем из Telegram.WebApp
-                code: code
-            })
-        });
-        const data = await response.json();
-        
-        if (data.success) {
-            alert('🎉 Колонка успешно подключена!');
-        } else {
-            alert('❌ Ошибка: ' + data.error);
-        }
-    } catch (err) {
-        alert('Ошибка соединения с сервером');
-    }
-}
