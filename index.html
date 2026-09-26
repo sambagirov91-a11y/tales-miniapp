@@ -89,11 +89,28 @@
                     <div class="spinner"></div>
                 </div>
             </div>
-<!-- Кнопка подключения Алисы -->
-<button id="aliceBindBtn" onclick="openAliceModal()" style="width: 100%; background: #4338ca; color: white; font-weight: bold; padding: 14px; border-radius: 10px; border: none; cursor: pointer; margin-top: 15px; display: flex; align-items: center; justify-content: center; gap: 10px;">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
-    <span id="textAliceBtn">Подключить Яндекс Алису</span>
-</button>
+<!-- УМНЫЙ БЛОК ИНТЕГРАЦИИ С АЛИСОЙ -->
+<div id="aliceIntegrationContainer" class="alice-integration">
+    <!-- Состояние 1: КНОПКА (НЕ ПОДКЛЮЧЕНО) -->
+    <div id="alice-disconnected-state" style="display: none;">
+        <button id="aliceBindBtn" onclick="openAliceModal()" class="alice-bind-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
+            <span id="textAliceBtn">Подключить Яндекс Алису</span>
+        </button>
+    </div>
+
+    <!-- Состояние 2: ПЛАШКА УСПЕХА (ПОДКЛЮЧЕНО) -->
+    <div id="alice-connected-state" style="display: none;" class="alice-success-box glass-panel">
+        <div class="alice-success-header">
+            <span class="success-icon">✅</span>
+            <span class="success-title">Колонка с Алисой подключена!</span>
+        </div>
+        <div class="alice-instruction">
+            Для прослушивания сказок скажите колонке:
+            <div class="alice-phrase">«Алиса, запусти навык Сказки Шахерезады»</div>
+        </div>
+    </div>
+</div>
             <!-- Форма добавления/редактирования -->
             <div id="formContainer" style="display: none;">
                 <h2 id="formTitle">Добавить ребенка</h2>
