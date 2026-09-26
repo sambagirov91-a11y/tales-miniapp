@@ -65,7 +65,10 @@ window.langEN = {
     aliceModalSub: "Say to the speaker «Alice, launch Scheherezade tales» and enter the 4 digits it dictates:",
     aliceSubmitBtn: "Connect",
     aliceCancelBtn: "Cancel",
-    
+    aliceSuccessTitle: "Alice speaker is connected!",
+    aliceSuccessText: "To listen to stories, say to the speaker:",
+    aliceSuccessPhrase: "«Alisa, запусти навык Сказки Шахерезады»", /* Фраза вызова Алисы остается на русском */
+
     consent_text: "I accept the <a href='#' onclick='openLink(\"{offer}\")'>Terms of Service</a> and <a href='#' onclick='openLink(\"{privacy}\")'>Privacy Policy</a>",
     footer_privacy: "Privacy Policy",
     footer_offer: "Terms of Service",
