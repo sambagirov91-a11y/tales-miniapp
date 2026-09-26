@@ -72,7 +72,9 @@ modalTitle: "Расскажите о себе",
     aliceModalSub: "Скажите колонке «Алиса, запусти Сказки Шехерезады» и введите 4 цифры, которые она продиктует:",
     aliceSubmitBtn: "Подключить",
     aliceCancelBtn: "Отмена",
-    
+    aliceSuccessTitle: "Колонка с Алисой подключена!",
+    aliceSuccessText: "Для прослушивания сказок скажите колонке:",
+    aliceSuccessPhrase: "«Алиса, запусти навык Сказки Шахерезады»",
     // Футер и легальное
     consent_text: "Я принимаю условия <a href='#' onclick='openLink(\"{offer}\")'>Оферты</a> и <a href='#' onclick='openLink(\"{privacy}\")'>Политики</a>",
     footer_privacy: "Политика конфиденциальности",
