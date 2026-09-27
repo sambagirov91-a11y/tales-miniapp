@@ -31,6 +31,7 @@ window.langEN = {
     btn_renew_active: "Renew for a month (24,500 sum)",
     btn_renew_trial: "Subscribe (24,500 sum)",
     btn_renew_inactive: "Renew subscription (24,500 sum)",
+    offer_timer_text: "🔥 Hot sale! Pay within {hours} hours and get the first month for just 19,000 UZS!",
     
     lbl_new_stories: "✨ New Tales (Today)",
     empty_today: "A new fairy tale will appear today at 21:00!",
