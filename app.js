@@ -523,11 +523,29 @@ function updateStatusUI(user) {
             const locale = currentLang === 'en' ? 'en-GB' : (currentLang === 'uz' ? 'uz-UZ' : 'ru-RU');
             const dateStr = endDate.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
             
-            textEl.innerText = isTrial 
+            let statusHTML = isTrial 
                 ? (t.status_trial_text || '').replace('{date}', dateStr) 
                 : (t.status_active_text || '').replace('{date}', dateStr);
+
+            // === НОВАЯ ЛОГИКА: ТАЙМЕР СКИДКИ ДЛЯ ТРИАЛА ===
+            if (isTrial && user.created_at) {
+                const createdAt = new Date(user.created_at);
+                const hoursDiff = (now - createdAt) / (1000 * 60 * 60);
+                
+                if (hoursDiff <= 48) {
+                    const hoursLeft = Math.floor(48 - hoursDiff);
+                    
+                    // Берем шаблон из словаря и подставляем часы
+                    const offerTemplate = t.offer_timer_text || "🔥 Скидка! Оплатите в течение {hours} часов за 19 000 сум!";
+                    const offerText = offerTemplate.replace('{hours}', hoursLeft);
+                    
+                    statusHTML += `<br><br><span style="color: #facc15; font-weight: bold;">${offerText}</span>`;
+                }
+            }
+            
+            textEl.innerHTML = statusHTML; // Важно: используем innerHTML вместо innerText для отображения тегов <br> и <span>
         } else {
-            textEl.innerText = t.status_inactive_text;
+            textEl.innerHTML = t.status_inactive_text;
         }
     }
 
@@ -541,12 +559,25 @@ function updateStatusUI(user) {
         }
     }
 }
-
 function initiatePayment() {
-    const checkoutUrl = `https://checkout.paycom.uz/${btoa(`m=67fc349fca95ffea6667f140;ac.order_id=${telegramId};a=2450000`)}`;
+    if (!currentUserData) return;
+    
+    let amount = 2450000; // Базовая цена: 24 500 сум в тийинах
+    
+    // Проверяем, прошло ли меньше 48 часов с момента регистрации
+    if (currentUserData.created_at) {
+        const createdAt = new Date(currentUserData.created_at);
+        const now = new Date();
+        const hoursDiff = (now - createdAt) / (1000 * 60 * 60);
+        
+        if (hoursDiff <= 48) {
+            amount = 1900000; // Цена со скидкой: 19 000 сум
+        }
+    }
+    
+    const checkoutUrl = `https://checkout.paycom.uz/${btoa(`m=67fc349fca95ffea6667f140;ac.order_id=${telegramId};a=${amount}`)}`;
     tg.openLink(checkoutUrl);
 }
-
 function renderChildren(children) {
     const container = document.getElementById('childrenList');
     if (!container) return; 
