@@ -139,6 +139,7 @@ let currentLang = 'ru';
 let currentUserData = null; 
 let configUrls = { privacy_url: '', offer_url: '', about_url: '', promo_image_url: '', promo_link_url: '' };
 let sliderIntervalId;
+let promoTimerInterval = null;
 
 window.onload = async () => {
     try {
@@ -486,7 +487,12 @@ async function loadProfile() {
 
 function updateStatusUI(user) {
     const section = document.getElementById('statusSection');
+    const timerContainer = document.getElementById('promoTimerContainer');
     if (!section) return;
+
+    // Сбрасываем предыдущий интервал при каждом обновлении интерфейса
+    if (promoTimerInterval) clearInterval(promoTimerInterval);
+    if (timerContainer) timerContainer.style.display = 'none';
     
     if (!user) { section.style.display = 'none'; return; }
     
@@ -523,39 +529,52 @@ function updateStatusUI(user) {
             const locale = currentLang === 'en' ? 'en-GB' : (currentLang === 'uz' ? 'uz-UZ' : 'ru-RU');
             const dateStr = endDate.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
             
-            let statusHTML = isTrial 
+            textEl.innerHTML = isTrial 
                 ? (t.status_trial_text || '').replace('{date}', dateStr) 
                 : (t.status_active_text || '').replace('{date}', dateStr);
-
-            // === НОВАЯ ЛОГИКА: ТАЙМЕР СКИДКИ ДЛЯ ТРИАЛА ===
-            if (isTrial && user.created_at) {
-                const createdAt = new Date(user.created_at);
-                const hoursDiff = (now - createdAt) / (1000 * 60 * 60);
-                
-                if (hoursDiff <= 48) {
-                    const hoursLeft = Math.floor(48 - hoursDiff);
-                    
-                    // Берем шаблон из словаря и подставляем часы
-                    const offerTemplate = t.offer_timer_text || "🔥 Скидка! Оплатите в течение {hours} часов за 19 000 сум!";
-                    const offerText = offerTemplate.replace('{hours}', hoursLeft);
-                    
-                    statusHTML += `<br><br><span style="color: #facc15; font-weight: bold;">${offerText}</span>`;
-                }
-            }
-            
-            textEl.innerHTML = statusHTML; // Важно: используем innerHTML вместо innerText для отображения тегов <br> и <span>
         } else {
             textEl.innerHTML = t.status_inactive_text;
         }
     }
 
     const btnEl = document.getElementById('renewBtn');
+    const timerTitle = document.getElementById('promoTimerTitle');
+    const timerCountdown = document.getElementById('promoTimerCountdown');
+
     if (btnEl) {
         btnEl.style.display = 'block';
-        if (hasAccess) {
-            btnEl.innerText = isTrial ? t.btn_renew_trial : t.btn_renew_active;
+        let baseBtnText = t.btn_renew_standard || (hasAccess ? (isTrial ? t.btn_renew_trial : t.btn_renew_active) : t.btn_renew_inactive);
+        
+        // Логика 48 часов для статуса trial
+        if (user.subscription_status === 'trial' && user.created_at) {
+            const createdAt = new Date(user.created_at);
+            const deadline = new Date(createdAt.getTime() + 48 * 60 * 60 * 1000); 
+
+            if (now < deadline) {
+                if (timerContainer) timerContainer.style.display = 'block';
+                if (timerTitle) timerTitle.innerText = t.timer_title;
+                btnEl.innerText = t.btn_renew_promo || "Оплатить 19 000 сум (Акция)";
+
+                promoTimerInterval = setInterval(() => {
+                    const currentTime = new Date();
+                    const diff = deadline - currentTime;
+
+                    if (diff <= 0) {
+                        clearInterval(promoTimerInterval);
+                        if (timerContainer) timerContainer.style.display = 'none';
+                        btnEl.innerText = baseBtnText;
+                    } else {
+                        const h = Math.floor(diff / (1000 * 60 * 60)).toString().padStart(2, '0');
+                        const m = Math.floor((diff / 1000 / 60) % 60).toString().padStart(2, '0');
+                        const s = Math.floor((diff / 1000) % 60).toString().padStart(2, '0');
+                        if (timerCountdown) timerCountdown.innerText = `${h}:${m}:${s}`;
+                    }
+                }, 1000);
+            } else {
+                btnEl.innerText = baseBtnText;
+            }
         } else {
-            btnEl.innerText = t.btn_renew_inactive;
+            btnEl.innerText = baseBtnText;
         }
     }
 }
