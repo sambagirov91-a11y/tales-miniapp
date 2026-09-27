@@ -32,8 +32,8 @@ window.langEN = {
     btn_renew_trial: "Subscribe (24,500 sum)",
     btn_renew_inactive: "Renew subscription (24,500 sum)",
     offer_timer_text: "🔥 Hot sale! Pay within {hours} hours and get the first month for just 19,000 UZS!",
-    timer_title: "🔥Pay now and get a discount! - Special offer expires in:",
-    btn_renew_promo: "Pay 19,000 UZS - Promo 🔥",
+    timer_title: "🔥Pay now and get a discount! After that, the price will return to 24,500 UZS! 🔥 Special offer expires in:",
+    btn_renew_promo: "Pay 19,000 UZS - Promo 🔥🔥🔥",
     btn_renew_standard: "Pay 24,500 UZS",
     
     lbl_new_stories: "✨ New Tales (Today)",
