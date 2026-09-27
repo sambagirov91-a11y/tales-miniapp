@@ -32,6 +32,9 @@ window.langUZ = {
     btn_renew_trial: "Obunani rasmiylashtirish (24 500 so'm)",
     btn_renew_inactive: "Obunani tiklash (24 500 so'm)",
     offer_timer_text: "🔥 Maxsus taklif! {hours} soat ichida to'lang va birinchi oy uchun atigi 19 000 so'm to'lang!",
+    timer_title: "🔥 Maxsus taklif tugashiga:",
+    btn_renew_promo: "19 000 so'm to'lash (Aksiya 🔥)",
+    btn_renew_standard: "24 500 so'm to'lash",
     
     lbl_new_stories: "✨ Yangi ertaklar!",
     empty_today: "Yangi ertak soat 21:00 da paydo bo'ladi!",
