@@ -66,7 +66,7 @@ window.langEN = {
 
     textAliceBtn: "Connect Yandex Alice",
     aliceModalTitle: "Link with Alice",
-    aliceModalSub: "Say to the speaker «Alice, launch Scheherezade tales» and enter the 4 digits it dictates:",
+    aliceModalSub: "Say to the speaker «Alice, launch the Scheherazade's Tales skill» and enter the 4 digits it dictates:",
     aliceSubmitBtn: "Connect",
     aliceCancelBtn: "Cancel",
     aliceSuccessTitle: "Alice speaker is connected!",
