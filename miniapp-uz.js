@@ -48,7 +48,7 @@ window.langUZ = {
 
     textAliceBtn: "Yandex Alisa-ni ulash",
     aliceModalTitle: "Alisa bilan bog'lash",
-    aliceModalSub: "Kalonkaga «Alisa, Scheherezade ertaklarini ishga tushir» deng va u aytadigan 4 ta raqamni kiriting:",
+    aliceModalSub: "Kalonkaga «Алиса, запусти навык Сказки Шехерезады» deng va u aytadigan 4 ta raqamni kiriting:",
     aliceSubmitBtn: "Ulash",
     aliceCancelBtn: "Bekor qilish",
     aliceSuccessTitle: "Alisa ustuni ulandi!",
