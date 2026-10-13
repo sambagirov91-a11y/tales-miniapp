@@ -351,3 +351,43 @@ body.light-theme .success-title {
     color: var(--gold-main);
     font-size: 15px;
 }
+
+/* =====================================================================
+   ЭКРАНЫ ЗАГРУЗКИ, «ОТКРОЙТЕ В TELEGRAM» И ОШИБКИ
+   ===================================================================== */
+.app-state {
+    position: fixed; inset: 0; z-index: 10000;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 12px; padding: 32px 28px; box-sizing: border-box; text-align: center;
+    background: linear-gradient(135deg, var(--bg-grad-1) 0%, var(--bg-grad-2) 100%);
+    color: var(--text-main);
+}
+.app-state h2 { margin: 0; font-size: 20px; color: var(--gold-main); }
+.app-state p { margin: 0; max-width: 320px; line-height: 1.5; color: var(--text-muted); font-size: 15px; }
+.app-state-icon { font-size: 48px; }
+.app-state .spinner { margin-bottom: 4px; }
+.app-state .primary-btn { margin-top: 12px; max-width: 280px; }
+
+/* Ссылки в согласиях анкеты (раньше стиль был зашит в текст словаря) */
+#textPrivacy a, #textOffer a { color: #c084fc; text-decoration: underline; }
+
+/* Пустые списки */
+.empty-note { color: #a0a0a0; font-size: 13px; text-align: center; padding: 10px; margin: 0; }
+
+/* Пояснение под таймером акции */
+.promo-timer-note { margin-top: 10px; font-size: 13px; line-height: 1.4; color: var(--text-muted); }
+
+/* Закрытая сказка в архиве */
+.story-card.locked { opacity: 0.6; border-left-color: var(--text-muted); }
+.story-icon { font-size: 20px; }
+
+/* Свой отзыв в читалке */
+.feedback-own { color: #9ca3af; font-style: italic; }
+
+/* Рекламный баннер в футере */
+.footer-promo { display: block; margin-bottom: 24px; text-decoration: none; transition: transform 0.2s; }
+.footer-promo:active { transform: scale(0.98); }
+.footer-promo img { width: 100%; border-radius: 16px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); }
+
+/* Неактивные кнопки во время запросов */
+button:disabled { opacity: 0.7; cursor: not-allowed; }
