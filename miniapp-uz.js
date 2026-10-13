@@ -1,9 +1,22 @@
+// Narxlar matnda yozilmaydi: {price} va {promo_price} server javobidan qo'yiladi.
 window.langUZ = {
+    currency: "so'm",
+
     tab_home: "Bosh sahifa",
     tab_profile: "Mening profilim",
     page_title_home: "Bolalar profillari",
     page_title_profile: "Mening profilim",
-    
+
+    loading: "Yuklanmoqda...",
+    open_in_telegram_title: "Ilovani Telegram orqali oching",
+    open_in_telegram_text: "Ilova faqat Telegram ichida ishlaydi. Botga qayting va «Profilni ochish» tugmasini bosing.",
+    error_load: "Ma'lumotlarni yuklab bo'lmadi. Internetni tekshirib, qayta urinib ko'ring.",
+    error_session: "Sessiya eskirdi. Ilovani yopib, bot orqali qayta oching.",
+    error_network: "Server bilan aloqa yo'q. Internetni tekshirib, qayta urinib ko'ring.",
+    error_generic: "Xatolik yuz berdi. Qayta urinib ko'ring.",
+    btn_retry: "Qayta urinish",
+    saving: "Saqlanmoqda...",
+
     no_profiles: "Profillar hali qo'shilmagan.",
     form_title_add: "Bola qo'shish",
     form_title_edit: "Profilni tahrirlash",
@@ -16,45 +29,51 @@ window.langUZ = {
     btn_save_add: "Profilni qo'shish",
     btn_save_edit: "O'zgarishlarni saqlash",
     btn_cancel: "Bekor qilish",
-    
+    alert_enter_child_name: "Bolaning ismini kiriting",
+    alert_children_limit: "{max} tadan ortiq profil qo'shib bo'lmaydi.",
+    confirm_delete_child: "Ushbu profilni o'chirasizmi? Unga ertaklar boshqa kelmaydi.",
+
     lbl_app_lang: "Ilova tili",
     lbl_app_theme: "Mavzu",
     theme_day: "☀️ Kunduz",
     theme_night: "🌙 Tun",
-    
+
     status_active: "✅ Faol obuna",
     status_trial: "⏳ Sinov muddati",
     status_inactive: "❌ Faol emas",
     status_active_text: "Kirish {date} gacha ochiq. Ertaklar har kuni keladi!",
     status_trial_text: "Bepul kirish {date} gacha.",
     status_inactive_text: "Sehrli vaqt tugadi. Kirishni uzaytiring.",
-    btn_renew_active: "Bir oyga uzaytirish (24 500 so'm)",
-    btn_renew_trial: "Obunani rasmiylashtirish (24 500 so'm)",
-    btn_renew_inactive: "Obunani tiklash (24 500 so'm)",
-    offer_timer_text: "🔥 Maxsus taklif! {hours} soat ichida to'lang va birinchi oy uchun atigi 19 000 so'm to'lang!",
-    timer_title: "🔥Hozir to‘lang va chegirmaga ega bo‘ling! Keyin narx yana 24 500 so‘m bo‘ladi! 🔥Maxsus taklif tugashiga:",
-    btn_renew_promo: "19 000 so'm to'lash - Aksiya🔥🔥🔥",
-    btn_renew_standard: "24 500 so'm to'lash",
-    
-    lbl_new_stories: "✨ Yangi ertaklar!",
-    empty_today: "Yangi ertak soat 21:00 da paydo bo'ladi!",
+
+    btn_renew_active: "Bir oyga uzaytirish ({price})",
+    btn_renew_trial: "Obunani rasmiylashtirish ({price})",
+    btn_renew_inactive: "Obunani tiklash ({price})",
+    btn_renew_promo: "{promo_price} to'lash — maxsus taklif 🔥",
+    timer_title: "🔥 Hozir chegirma bilan to'lang! Keyin narx {price} bo'ladi. Maxsus taklif tugashiga:",
+    promo_keeps_trial: "Bepul kunlaringiz saqlanib qoladi: obuna sinov muddati tugagach boshlanadi.",
+    payment_opening: "To'lov sahifasi ochilmoqda...",
+    payment_success: "🎉 To'lov qabul qilindi! Obuna {date} gacha faol.",
+
+    lbl_new_stories: "✨ Yangi ertaklar (Bugun)",
+    empty_today: "Yangi ertak bugun soat 21:00 da paydo bo'ladi!",
     lbl_archive_stories: "📚 Mening ertaklarim (Arxiv)",
     empty_archive: "Arxiv bo'sh. Ertaklar bu yerda ertaga paydo bo'ladi.",
     paywall_text: "O'tgan ertaklar arxiviga kirish faqat pullik tarifda mumkin.",
-    paywall_btn: "Kirishni ochish (24 500 so'm)",
-    
+    paywall_btn: "Kirishni ochish ({price})",
+    story_locked: "🔒 Obuna bilan",
+
     reader_header: "Ertak",
     reader_back: "⬅ Orqaga",
+    reader_promo_cta: "👉 Batafsil ma'lumot uchun shu yerni bosing 👈",
+    feedback_rating_title: "Ertak sizga yoqdimi?",
+    feedback_your_rating: "Bahoyingiz:",
+    feedback_comment_title: "Fikringiz",
+    feedback_placeholder: "Farzandingizga nima yoqqanini yozing (500 belgigacha)...",
+    feedback_send: "Fikrni yuborish",
+    feedback_sending: "Yuborilmoqda...",
+    feedback_your_comment: "Fikringiz:",
+    feedback_empty: "Iltimos, yuborishdan oldin biror narsa yozing.",
 
-    textAliceBtn: "Yandex Alisa-ni ulash",
-    aliceModalTitle: "Alisa bilan bog'lash",
-    aliceModalSub: "Kalonkaga «Алиса, запусти навык Сказки Шехерезады» deng va u aytadigan 4 ta raqamni kiriting:",
-    aliceSubmitBtn: "Ulash",
-    aliceCancelBtn: "Bekor qilish",
-    aliceSuccessTitle: "Alisa ustuni ulandi!",
-    aliceSuccessText: "Ertaklarni tinglash uchun ustunga ayting:",
-    aliceSuccessPhrase: "«Alisa, запусти навык Сказки Шахерезады»", 
-    /* Фраза вызова Алисы остается на русском, так как Алиса понимает русский */
     modalTitle: "O'zingiz haqingizda so'zlab bering",
     modalSub: "Bu bizga ertaklarni yanada yaxshiroq qilishga yordam beradi:",
     labelParentName: "Ismingiz",
@@ -69,11 +88,25 @@ window.langUZ = {
     customRolePlaceholder: "Kimligingizni kiriting...",
     labelParentAge: "Yoshingiz",
     parentAgePlaceholder: "Masalan: 32",
-    textPrivacy: 'Men <a href="#" onclick="openLink(configUrls.privacy_url)" style="color: #c084fc; text-decoration: underline;">maxfiylik siyosati</a> bilan tanishdim va roziman',
-    textOffer: 'Men <a href="#" onclick="openLink(configUrls.offer_url)" style="color: #c084fc; text-decoration: underline;">ommaviy oferta</a> shartlarini qabul qilaman',
+    textPrivacy: 'Men <a href="#" data-config-link="privacy_url">maxfiylik siyosati</a> bilan tanishdim va roziman',
+    textOffer: 'Men <a href="#" data-config-link="offer_url">ommaviy oferta</a> shartlarini qabul qilaman',
     saveParentBtn: "Davom etish",
-    
-    consent_text: "Men <a href='#' onclick='openLink(\"{offer}\")'>Ommaviy oferta</a> va <a href='#' onclick='openLink(\"{privacy}\")'>Maxfiylik siyosati</a> shartlarini qabul qilaman",
+    alert_enter_parent_name: "Iltimos, ismingizni kiriting.",
+    alert_parent_role_age: "Iltimos, kimligingiz va yoshingizni to'g'ri kiriting.",
+    alert_accept_terms: "Davom etish uchun shartlarni qabul qiling.",
+
+    // {phrase} — navykni ishga tushirish iborasi, u doim rus tilida
+    textAliceBtn: "Yandex Alisa-ni ulash",
+    aliceModalTitle: "Alisa bilan bog'lash",
+    aliceModalSub: "Kolonkaga rus tilida {phrase} deng va u aytadigan 4 ta raqamni kiriting:",
+    aliceSubmitBtn: "Ulash",
+    aliceCancelBtn: "Bekor qilish",
+    aliceSuccessTitle: "Alisa kolonkasi ulandi!",
+    aliceSuccessText: "Ertaklarni tinglash uchun kolonkaga rus tilida ayting:",
+    aliceAlertSuccess: "Kolonka muvaffaqiyatli ulandi!",
+    alice_enter_4_digits: "4 ta raqam kiriting",
+    alice_code_not_found: "Kod topilmadi yoki eskirgan. Alisadan yangi kod so'rang.",
+
     footer_privacy: "Maxfiylik siyosati",
     footer_offer: "Ommaviy oferta",
     footer_about: "Loyiha haqida"
