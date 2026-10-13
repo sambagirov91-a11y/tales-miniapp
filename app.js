@@ -581,7 +581,7 @@ function updateStatusUI(user) {
 function initiatePayment() {
     if (!currentUserData) return;
     
-    let amount = 2450000; // Базовая цена: 24 500 сум в тийинах
+    let amount = 3490000; // Базовая цена: 34 900 сум в тийинах
     
     // Проверяем, прошло ли меньше 48 часов с момента регистрации
     if (currentUserData.created_at) {
