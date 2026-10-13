@@ -1,9 +1,22 @@
+// Prices are not written in the text: {price} and {promo_price} come from the server.
 window.langEN = {
+    currency: "UZS",
+
     tab_home: "Home",
     tab_profile: "My Profile",
     page_title_home: "Children's Profiles",
     page_title_profile: "My Profile",
-    
+
+    loading: "Loading...",
+    open_in_telegram_title: "Open the app in Telegram",
+    open_in_telegram_text: "The app works only inside Telegram. Go back to the bot and tap “Open profile”.",
+    error_load: "Couldn't load your data. Check your connection and try again.",
+    error_session: "Your session has expired. Close the app and open it again from the bot.",
+    error_network: "No connection to the server. Check your internet and try again.",
+    error_generic: "Something went wrong. Please try again.",
+    btn_retry: "Try again",
+    saving: "Saving...",
+
     no_profiles: "Profiles not added yet.",
     form_title_add: "Add Child",
     form_title_edit: "Edit Profile",
@@ -16,36 +29,51 @@ window.langEN = {
     btn_save_add: "Add Profile",
     btn_save_edit: "Save Changes",
     btn_cancel: "Cancel",
-    
+    alert_enter_child_name: "Enter the child's name",
+    alert_children_limit: "You can add up to {max} profiles.",
+    confirm_delete_child: "Delete this profile? Tales will no longer be sent for this child.",
+
     lbl_app_lang: "App Language",
     lbl_app_theme: "Theme",
     theme_day: "☀️ Day",
     theme_night: "🌙 Night",
-    
+
     status_active: "✅ Active Subscription",
     status_trial: "⏳ Trial Period",
     status_inactive: "❌ Inactive",
     status_active_text: "Access open until {date}. Tales arrive every day!",
     status_trial_text: "Free access until {date}.",
     status_inactive_text: "Magic time is over. Renew your access.",
-    btn_renew_active: "Renew for a month (24,500 sum)",
-    btn_renew_trial: "Subscribe (24,500 sum)",
-    btn_renew_inactive: "Renew subscription (24,500 sum)",
-    offer_timer_text: "🔥 Hot sale! Pay within {hours} hours and get the first month for just 19,000 UZS!",
-    timer_title: "🔥Pay now and get a discount! After that, the price will return to 24,500 UZS! 🔥 Special offer expires in:",
-    btn_renew_promo: "Pay 19,000 UZS - Promo 🔥🔥🔥",
-    btn_renew_standard: "Pay 24,500 UZS",
-    
+
+    btn_renew_active: "Renew for a month ({price})",
+    btn_renew_trial: "Subscribe ({price})",
+    btn_renew_inactive: "Renew subscription ({price})",
+    btn_renew_promo: "Pay {promo_price} — special offer 🔥",
+    timer_title: "🔥 Pay now with a discount! After that the price will be {price}. The special offer ends in:",
+    promo_keeps_trial: "Your free days won't be lost: the subscription starts after the trial ends.",
+    payment_opening: "Opening payment...",
+    payment_success: "🎉 Payment received! Your subscription is active until {date}.",
+
     lbl_new_stories: "✨ New Tales (Today)",
     empty_today: "A new fairy tale will appear today at 21:00!",
     lbl_archive_stories: "📚 My Tales (Archive)",
     empty_archive: "The archive is empty. Tales will appear here tomorrow.",
     paywall_text: "Access to the archive of past tales is available only in the paid plan.",
-    paywall_btn: "Unlock Access (24,500 sum)",
-    
+    paywall_btn: "Unlock Access ({price})",
+    story_locked: "🔒 Subscribers only",
+
     reader_header: "Fairy Tale",
     reader_back: "⬅ Back",
-    
+    reader_promo_cta: "👉 Tap here to learn more 👈",
+    feedback_rating_title: "Did you like the tale?",
+    feedback_your_rating: "Your rating:",
+    feedback_comment_title: "Your feedback",
+    feedback_placeholder: "Tell us what your child liked (up to 500 characters)...",
+    feedback_send: "Send feedback",
+    feedback_sending: "Sending...",
+    feedback_your_comment: "Your feedback:",
+    feedback_empty: "Please write something before sending.",
+
     modalTitle: "Tell us about yourself",
     modalSub: "This will help us make the fairy tales even better:",
     labelParentName: "Your name",
@@ -60,20 +88,25 @@ window.langEN = {
     customRolePlaceholder: "Please specify...",
     labelParentAge: "Your age",
     parentAgePlaceholder: "e.g. 32",
-    textPrivacy: 'I have read and agree to the <a href="#" onclick="openLink(configUrls.privacy_url)" style="color: #c084fc; text-decoration: underline;">Privacy Policy</a>',
-    textOffer: 'I accept the terms of the <a href="#" onclick="openLink(configUrls.offer_url)" style="color: #c084fc; text-decoration: underline;">Offer Agreement</a>',
+    textPrivacy: 'I have read and agree to the <a href="#" data-config-link="privacy_url">Privacy Policy</a>',
+    textOffer: 'I accept the terms of the <a href="#" data-config-link="offer_url">Offer Agreement</a>',
     saveParentBtn: "Continue",
+    alert_enter_parent_name: "Please enter your name.",
+    alert_parent_role_age: "Please specify your role and age correctly.",
+    alert_accept_terms: "Please accept the terms to continue.",
 
+    // {phrase} is the skill launch phrase; Alice understands only Russian
     textAliceBtn: "Connect Yandex Alice",
     aliceModalTitle: "Link with Alice",
-    aliceModalSub: "Say to the speaker «Alice, launch the Scheherazade's Tales skill» and enter the 4 digits it dictates:",
+    aliceModalSub: "Say to the speaker in Russian {phrase} and enter the 4 digits it dictates:",
     aliceSubmitBtn: "Connect",
     aliceCancelBtn: "Cancel",
     aliceSuccessTitle: "Alice speaker is connected!",
-    aliceSuccessText: "To listen to stories, say to the speaker:",
-    aliceSuccessPhrase: "«Alisa, запусти навык Сказки Шахерезады»", /* Фраза вызова Алисы остается на русском */
+    aliceSuccessText: "To listen to tales, say to the speaker in Russian:",
+    aliceAlertSuccess: "The speaker is connected!",
+    alice_enter_4_digits: "Enter 4 digits",
+    alice_code_not_found: "Code not found or expired. Ask Alice for a new one.",
 
-    consent_text: "I accept the <a href='#' onclick='openLink(\"{offer}\")'>Terms of Service</a> and <a href='#' onclick='openLink(\"{privacy}\")'>Privacy Policy</a>",
     footer_privacy: "Privacy Policy",
     footer_offer: "Terms of Service",
     footer_about: "About the project"
