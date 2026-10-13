@@ -144,25 +144,38 @@ async function api(path, options) {
     const headers = { 'X-Telegram-Init-Data': initData };
     if (body !== undefined) headers['Content-Type'] = 'application/json';
 
-    let response;
-    try {
-        response = await fetch(API_BASE + path, {
-            method,
-            headers,
-            body: body !== undefined ? JSON.stringify(body) : undefined
-        });
-    } catch (e) {
-        throw new ApiError(tr('error_network'), 0, 'NETWORK');
+    async function tryFetch(base) {
+        const url = (base ? String(base).replace(/\/$/, '') : '') + path;
+        try {
+            const res = await fetch(url, {
+                method,
+                headers,
+                body: body !== undefined ? JSON.stringify(body) : undefined,
+                credentials: 'same-origin'
+            });
+            return res;
+        } catch (e) {
+            return { ok: false, status: 0, _fetchError: e };
+        }
     }
+
+    let response = await tryFetch(API_BASE);
+
+    if ((!response.ok && (response.status === 0 || response.status === 404 || response.status === 410)) && !path.startsWith('http')) {
+        console.warn('API_BASE failed or returned 404; retrying relative path:', API_BASE + path);
+        response = await tryFetch('');
+    }
+
     let data = null;
     try { data = await response.json(); } catch (e) { /* не JSON */ }
 
     if (!response.ok || (data && data.success === false)) {
-        const code = (data && data.code) || ('HTTP_' + response.status);
+        const code = (data && data.code) || ('HTTP_' + (response.status || 0));
         const key = ERROR_TEXT_KEYS[code];
         const message = key ? tr(key, { max: maxChildren }) : tr('error_generic');
         throw new ApiError(message, response.status, code);
     }
+
     return data || {};
 }
 // ====================================================================
@@ -190,7 +203,7 @@ async function boot() {
         return;
     }
     showScreen('loading');
-    loadAppConfig();   // баннеры и ссылки — параллельно, не блокируют запуск
+    loadAppConfig();
 
     try {
         await loadProfile();
@@ -199,7 +212,6 @@ async function boot() {
         showLoadError(err);
         return;
     }
-    // Переход из сообщения бота: ?story_id=...
     const storyId = new URLSearchParams(window.location.search).get('story_id');
     if (storyId && profileData && profileData.user && profileData.user.profile_complete) {
         switchAppTab('profile');
@@ -325,8 +337,6 @@ async function changeAppLanguage(newLang) {
 
     if (!userExists) return;
     try {
-        // Раньше здесь был .catch() у запроса Supabase — метода нет, запрос не уходил,
-        // и язык бота не менялся. Теперь язык сохраняет сервер.
         await api('/api/app/language', { method: 'POST', body: { language: newLang } });
     } catch (err) {
         console.error('Не удалось сохранить язык:', err);
@@ -359,7 +369,6 @@ function applyLanguage() {
     setText('lblAppLang', tr('lbl_app_lang'));
     setText('lblAppTheme', tr('lbl_app_theme'));
     updateThemeButton();
-    // Алиса
     setText('textAliceBtn', tr('textAliceBtn'));
     setText('aliceModalTitle', tr('aliceModalTitle'));
     setText('aliceModalSub', tr('aliceModalSub', { phrase: ALICE_SKILL_PHRASE }));
@@ -368,7 +377,6 @@ function applyLanguage() {
     setText('aliceSuccessTitle', tr('aliceSuccessTitle'));
     setText('aliceSuccessText', tr('aliceSuccessText'));
     setText('aliceSuccessPhrase', ALICE_SKILL_PHRASE);
-    // Анкета родителя
     setText('modalTitle', tr('modalTitle'));
     setText('modalSub', tr('modalSub'));
     setText('labelParentName', tr('labelParentName'));
@@ -383,13 +391,11 @@ function applyLanguage() {
     setPlaceholder('customParentRole', tr('customRolePlaceholder'));
     setText('labelParentAge', tr('labelParentAge'));
     setPlaceholder('parentAgeInput', tr('parentAgePlaceholder'));
-    // Тексты согласий — из наших словарей (ссылки через data-config-link)
     const privacyText = el('textPrivacy');
     if (privacyText) privacyText.innerHTML = tr('textPrivacy');
     const offerText = el('textOffer');
     if (offerText) offerText.innerHTML = tr('textOffer');
     setText('saveParentBtn', tr('saveParentBtn'));
-    // Сказки, читалка, отзывы
     setText('lblNewStories', tr('lbl_new_stories'));
     setText('lblArchiveStories', tr('lbl_archive_stories'));
     setText('paywallText', tr('paywall_text'));
@@ -538,7 +544,6 @@ function startPromoTimer(deadlineMs, standardPrice, keepsTrialDays) {
             clearInterval(promoTimerInterval);
             promoTimerInterval = null;
             hide('promoTimerContainer');
-            // Акция закончилась — спрашиваем у сервера актуальную цену (не чаще раза в 10 секунд)
             if (Date.now() - (window.lastPromoReload || 0) > 10000) {
                 window.lastPromoReload = Date.now();
                 loadProfile().catch(err => console.error(err));
@@ -577,7 +582,6 @@ async function initiatePayment() {
         buttons.forEach(b => { b.disabled = false; b.innerText = b.dataset.label || b.innerText; });
     }
 }
-// Пользователь вернулся из Payme — перечитываем статус, чтобы не заплатить дважды
 function subscribeReturnFromPayment() {
     if (window.paymentReturnBound) return;
     window.paymentReturnBound = true;
@@ -599,7 +603,6 @@ async function checkPaymentResult(retryOnce) {
             paymentSnapshot = null;
             showAlert(tr('payment_success', { date: formatDate(access.endDate) }));
         } else if (retryOnce) {
-            // Payme мог ещё не прислать подтверждение — проверим ещё раз через несколько секунд
             setTimeout(() => checkPaymentResult(false), 5000);
         }
     } catch (err) {
@@ -826,7 +829,7 @@ async function openReader(storyId) {
 
     renderFeedbackBlocks(story);
     await refreshVoiceoverBalance();
-updateAudioInterface(story.id, story.audio_url, voiceoversLeft);
+    updateAudioInterface(story.id, story.audio_url, voiceoversLeft);
 }
 function closeReader() {
     hide('readerScreen');
@@ -874,7 +877,6 @@ function renderFeedbackBlocks(story) {
         if (commentThanks) commentThanks.style.display = 'none';
     }
 }
-// Запоминаем отзыв локально, чтобы при повторном открытии сказки он уже был виден
 function rememberFeedback(storyId, patch) {
     [currentStory, userStories.find(s => String(s.id) === String(storyId))].forEach(st => {
         if (st && String(st.id) === String(storyId)) Object.assign(st, patch);
@@ -903,7 +905,7 @@ document.addEventListener('click', async (event) => {
         s.classList.toggle('active', Number(s.getAttribute('data-value')) <= rating));
 
     const storyId = currentStory.id;
-    rememberFeedback(storyId, { rating });           // защита от двойного нажатия
+    rememberFeedback(storyId, { rating });
     const ok = await sendFeedbackData(rating, null);
     if (!ok) {
         rememberFeedback(storyId, { rating: null });
@@ -963,14 +965,12 @@ async function submitAliceCode() {
         if (profileData && profileData.user) profileData.user.alice_connected = true;
         showAlert('🎉 ' + tr('aliceAlertSuccess'));
     } catch (err) {
-        // У этого эндпоинта свои понятные тексты ошибок (код не найден и т.п.)
         showAlert('❌ ' + (err.message || tr('error_generic')));
     } finally {
         if (button) { button.disabled = false; button.innerText = tr('aliceSubmitBtn'); }
     }
 }
 // Функция обновления интерфейса аудио
-// 1. Узнаём лимит через сервер
 let voiceoversLeft = 0;
 
 async function refreshVoiceoverBalance() {
@@ -994,7 +994,6 @@ function updateAudioInterface(storyId, audioUrl, left) {
     const container = document.getElementById('audio-dynamic-content');
     if (!container) return;
 
-    // Состояние 1: аудио уже сгенерировано
     if (audioUrl) {
         container.innerHTML = `
             <div class="flex flex-col items-center gap-3">
@@ -1007,7 +1006,6 @@ function updateAudioInterface(storyId, audioUrl, left) {
         return;
     }
 
-    // Состояние 2: можно попробовать бесплатно
     if (left > 0) {
         container.innerHTML = `
             <div class="flex flex-col items-center gap-2">
@@ -1020,7 +1018,6 @@ function updateAudioInterface(storyId, audioUrl, left) {
         return;
     }
 
-    // Состояние 3: лимит исчерпан, платная генерация
     container.innerHTML = `
         <div class="flex flex-col items-center gap-2">
             <p class="text-xs text-gray-500 dark:text-gray-400">Лимит бесплатных озвучек исчерпан.</p>
@@ -1030,10 +1027,7 @@ function updateAudioInterface(storyId, audioUrl, left) {
         </div>
     `;
 }
-// =====================================================================
-// ОБРАБОТЧИКИ КЛИКОВ
-// =====================================================================
-// Если у пользователя есть лимиты
+
 async function requestAudioGeneration(storyId) {
     const btn = document.getElementById('btn-gen-audio');
     if (!btn) return;
@@ -1043,17 +1037,10 @@ async function requestAudioGeneration(storyId) {
     btn.classList.add('opacity-70');
 
     try {
-        const response = await fetch(API_BASE + '/api/user/generate-audio', {
+        const data = await api('/api/user/generate-audio', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Telegram-Init-Data': initData
-            },
-            body: JSON.stringify({ plod_id: storyId })
+            body: { plod_id: storyId }
         });
-
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Ошибка генерации аудио');
 
         updateAudioInterface(storyId, data.audioUrl, data.voiceoversLeft);
     } catch (error) {
@@ -1067,7 +1054,6 @@ async function requestAudioGeneration(storyId) {
 
 function buyAudioGeneration(storyId) {
     const confirmPay = confirm('Оплатить 14 900 сум за озвучку этой сказки?');
-
     if (confirmPay) {
         requestAudioGeneration(storyId);
     }
