@@ -968,6 +968,17 @@ async function submitAliceCode() {
     }
 }
   // Функция обновления интерфейса аудио
+// 1. Узнаем, сколько лимитов осталось у юзера
+const { data: user } = await supabase
+    .from('users')
+    .select('voiceovers_left')
+    .eq('telegram_id', window.Telegram.WebApp.initDataUnsafe.user.id) // Или как ты получаешь ID
+    .single();
+
+const voiceoversLeft = user ? user.voiceovers_left : 0;
+
+// 2. Запускаем отрисовку кнопок или плеера!
+updateAudioInterface(story.id, story.audio_url, voiceoversLeft);
 // Вызывай её, когда загружаешь данные сказки из БД (delivered_stories)
 function updateAudioInterface(storyId, audioUrl, voiceoversLeft) {
     const container = document.getElementById('audio-dynamic-content');
