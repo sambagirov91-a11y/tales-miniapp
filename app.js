@@ -977,7 +977,7 @@ if (tgId) {
         const balRes = await fetch('/api/user/check-balance', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ telegram_id: tgId })
+            body: JSON.stringify({ telegram_id: telegram_id })
         });
         const balData = await balRes.json();
         voiceoversLeft = balData.voiceovers_left || 0;
@@ -988,7 +988,7 @@ if (tgId) {
 // 2. Запускаем отрисовку кнопок или плеера!
 updateAudioInterface(story.id, story.audio_url, voiceoversLeft);
 // Вызывай её, когда загружаешь данные сказки из БД (delivered_stories)
-function updateAudioInterface(storyId, audioUrl, voiceoversLeft) {
+function updateAudioInterface(plod_id, audioUrl, voiceoversLeft) {
     const container = document.getElementById('audio-dynamic-content');
     if (!container) return;
     // СОСТОЯНИЕ 1: Аудио уже сгенерировано -> Показываем красивый плеер
@@ -1008,7 +1008,7 @@ function updateAudioInterface(storyId, audioUrl, voiceoversLeft) {
         container.innerHTML = `
             <div class="flex flex-col items-center gap-2">
                 <p class="text-xs text-gray-500 dark:text-gray-400">Озвучить сказку профессиональными голосами?</p>
-                <button onclick="requestAudioGeneration('${storyId}')" id="btn-gen-audio" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2">
+                <button onclick="requestAudioGeneration('${plod_id}')" id="btn-gen-audio" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2">
                     <span>🎙️</span> Озвучить (Осталось: ${voiceoversLeft})
                 </button>
             </div>
@@ -1040,7 +1040,7 @@ async function requestAudioGeneration(storyId) {
         const response = await fetch('/api/user/generate-audio', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ story_id: storyId })
+            body: JSON.stringify({ plod_id: plod_id })
         });
         
         const data = await response.json();
