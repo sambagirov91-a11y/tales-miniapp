@@ -996,9 +996,9 @@ function updateAudioInterface(storyId, audioUrl, left) {
 
     if (audioUrl) {
         container.innerHTML = `
-            <div class="flex flex-col items-center gap-3">
-                <h4 class="text-sm font-bold text-indigo-600 dark:text-indigo-400">🎧 Аудиоспектакль готов</h4>
-                <audio controls class="w-full h-10 outline-none rounded-full">
+            <div class="audio-card audio-card--ready">
+                <div class="audio-card__badge">🎧 Аудиоспектакль готов</div>
+                <audio controls class="audio-player">
                     <source src="${audioUrl}" type="audio/mpeg">
                 </audio>
             </div>
@@ -1008,10 +1008,15 @@ function updateAudioInterface(storyId, audioUrl, left) {
 
     if (left > 0) {
         container.innerHTML = `
-            <div class="flex flex-col items-center gap-2">
-                <p class="text-xs text-gray-500 dark:text-gray-400">Озвучить сказку профессиональными голосами?</p>
-                <button onclick="requestAudioGeneration('${storyId}')" id="btn-gen-audio" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2">
-                    <span>🎙️</span> Озвучить (Осталось: ${left})
+            <div class="audio-card audio-card--free">
+                <div class="audio-card__meta">
+                    <span class="audio-card__icon">🎙️</span>
+                    <span class="audio-card__title">Озвучить сказку</span>
+                </div>
+                <div class="audio-card__desc">Профессиональные голоса • осталось: ${left}</div>
+                <button onclick="requestAudioGeneration('${storyId}')" id="btn-gen-audio" class="audio-btn audio-btn--primary" type="button">
+                    <span class="audio-btn__icon">🎙️</span>
+                    <span>Озвучить</span>
                 </button>
             </div>
         `;
@@ -1019,10 +1024,15 @@ function updateAudioInterface(storyId, audioUrl, left) {
     }
 
     container.innerHTML = `
-        <div class="flex flex-col items-center gap-2">
-            <p class="text-xs text-gray-500 dark:text-gray-400">Лимит бесплатных озвучек исчерпан.</p>
-            <button onclick="buyAudioGeneration('${storyId}')" id="btn-buy-audio" class="w-full bg-orange-500 hover:bg-orange-400 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2">
-                <span>💳</span> Озвучить за 14 900 сум
+        <div class="audio-card audio-card--paid">
+            <div class="audio-card__meta">
+                <span class="audio-card__icon">🔒</span>
+                <span class="audio-card__title">Лимит исчерпан</span>
+            </div>
+            <div class="audio-card__desc">Завершите оплату, чтобы озвучить сказку.</div>
+            <button onclick="buyAudioGeneration('${storyId}')" id="btn-buy-audio" class="audio-btn audio-btn--secondary" type="button">
+                <span class="audio-btn__icon">💳</span>
+                <span>Озвучить за 14 900 сум</span>
             </button>
         </div>
     `;
@@ -1032,9 +1042,9 @@ async function requestAudioGeneration(storyId) {
     const btn = document.getElementById('btn-gen-audio');
     if (!btn) return;
 
-    btn.innerHTML = '⏳ Создаем аудиоспектакль... (~30 сек)';
+    btn.innerHTML = '<span class="audio-btn__icon">⏳</span><span>Создаем...</span>';
     btn.disabled = true;
-    btn.classList.add('opacity-70');
+    btn.classList.add('is-loading');
 
     try {
         const data = await api('/api/user/generate-audio', {
@@ -1046,9 +1056,9 @@ async function requestAudioGeneration(storyId) {
     } catch (error) {
         console.error(error);
         alert('Ошибка при озвучке: ' + error.message);
-        btn.innerHTML = '<span>🎙️</span> Ошибка. Попробовать снова';
+        btn.innerHTML = '<span class="audio-btn__icon">🎙️</span><span>Ошибка. Попробовать снова</span>';
         btn.disabled = false;
-        btn.classList.remove('opacity-70');
+        btn.classList.remove('is-loading');
     }
 }
 
