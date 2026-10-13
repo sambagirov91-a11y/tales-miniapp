@@ -13,14 +13,12 @@ const initData = tg ? (tg.initData || '') : '';
 if (tg) {
     try { tg.ready(); tg.expand(); } catch (e) { /* старые клиенты Telegram */ }
 }
-
 // Словари (на случай, если файл языка не загрузился, — пустые объекты)
 const i18n_app = {
     ru: window.langRU || {},
     uz: window.langUZ || {},
     en: window.langEN || {}
 };
-
 let currentLang = detectInitialLang();
 let selectedGender = 'M';
 let editingChildId = null;
@@ -36,7 +34,6 @@ let promoTimerInterval = null;
 let awaitingPayment = false;
 let paymentSnapshot = null;
 let currentStory = null;
-
 // =====================================================================
 // ВСПОМОГАТЕЛЬНОЕ
 // =====================================================================
@@ -46,7 +43,6 @@ function detectInitialLang() {
     if (code.startsWith('en')) return 'en';
     return 'ru';
 }
-
 // Перевод с подстановкой: tr('btn_renew_trial', { price: '34 900 сум' })
 function tr(key, vars) {
     const dict = i18n_app[currentLang] || {};
@@ -56,18 +52,15 @@ function tr(key, vars) {
     }
     return text;
 }
-
 function escapeHtml(value) {
     return String(value === null || value === undefined ? '' : value).replace(/[&<>"']/g, ch => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     }[ch]));
 }
-
 function safeUrl(value) {
     const url = String(value || '').trim();
     return /^https?:\/\//i.test(url) ? url : '';
 }
-
 function el(id) { return document.getElementById(id); }
 function setText(id, text) { const node = el(id); if (node) node.innerText = text; }
 function setPlaceholder(id, text) { const node = el(id); if (node) node.placeholder = text; }
@@ -77,13 +70,11 @@ function hide(id) { const node = el(id); if (node) node.style.display = 'none'; 
 function localeTag() {
     return currentLang === 'en' ? 'en-GB' : (currentLang === 'uz' ? 'uz-UZ' : 'ru-RU');
 }
-
 function formatPrice(tiyin) {
     const sum = Math.round(Number(tiyin) / 100);
     const number = new Intl.NumberFormat(currentLang === 'en' ? 'en-GB' : 'ru-RU').format(sum);
     return `${number} ${tr('currency')}`;
 }
-
 function formatDate(iso, options) {
     try {
         return new Date(iso).toLocaleDateString(localeTag(), options || { day: 'numeric', month: 'long', year: 'numeric' });
@@ -91,16 +82,13 @@ function formatDate(iso, options) {
         return new Date(iso).toLocaleDateString('ru-RU', options);
     }
 }
-
 function serverNow() { return Date.now() + clockOffsetMs; }
-
 function showAlert(message) {
     try {
         if (tg && tg.showAlert) { tg.showAlert(message); return; }
     } catch (e) { /* например, уже открыт другой попап */ }
     alert(message);
 }
-
 function showConfirm(message) {
     return new Promise(resolve => {
         try {
@@ -109,14 +97,12 @@ function showConfirm(message) {
         resolve(window.confirm(message));
     });
 }
-
 function openLink(url) {
     const link = safeUrl(url);
     if (!link) return;
     if (tg && tg.openLink) tg.openLink(link);
     else window.open(link, '_blank');
 }
-
 // Ссылки из настроек (политика, оферта, баннер) — через data-атрибуты, без JS в разметке
 document.addEventListener('click', (event) => {
     const configLink = event.target.closest('[data-config-link]');
@@ -131,7 +117,6 @@ document.addEventListener('click', (event) => {
         openLink(directLink.getAttribute('data-open-link'));
     }
 });
-
 // =====================================================================
 // ЗАПРОСЫ К СЕРВЕРУ
 // =====================================================================
@@ -142,7 +127,6 @@ class ApiError extends Error {
         this.code = code;
     }
 }
-
 const ERROR_TEXT_KEYS = {
     NO_INIT_DATA: 'error_session',
     CHILDREN_LIMIT: 'alert_children_limit',
@@ -154,7 +138,6 @@ const ERROR_TEXT_KEYS = {
     ALICE_CODE_NOT_FOUND: 'alice_code_not_found',
     NETWORK: 'error_network'
 };
-
 async function api(path, options) {
     const method = (options && options.method) || 'GET';
     const body = options ? options.body : undefined;
@@ -171,7 +154,6 @@ async function api(path, options) {
     } catch (e) {
         throw new ApiError(tr('error_network'), 0, 'NETWORK');
     }
-
     let data = null;
     try { data = await response.json(); } catch (e) { /* не JSON */ }
 
@@ -183,8 +165,7 @@ async function api(path, options) {
     }
     return data || {};
 }
-
-// =====================================================================
+// ====================================================================
 // ЭКРАНЫ: загрузка / «откройте в Telegram» / ошибка / анкета / приложение
 // =====================================================================
 function showScreen(name) {
@@ -195,12 +176,10 @@ function showScreen(name) {
     if (name === 'parent') show('parentModal');
     if (name === 'main') show('mainAppContent');
 }
-
 function showLoadError(err) {
     setText('appErrorText', err && err.code === 'NO_INIT_DATA' ? tr('error_session') : tr('error_load'));
     showScreen('error');
 }
-
 async function boot() {
     applyTheme();
     applyLanguage();
@@ -210,7 +189,6 @@ async function boot() {
         showScreen('openInTelegram');
         return;
     }
-
     showScreen('loading');
     loadAppConfig();   // баннеры и ссылки — параллельно, не блокируют запуск
 
@@ -221,21 +199,17 @@ async function boot() {
         showLoadError(err);
         return;
     }
-
     // Переход из сообщения бота: ?story_id=...
     const storyId = new URLSearchParams(window.location.search).get('story_id');
     if (storyId && profileData && profileData.user && profileData.user.profile_complete) {
         switchAppTab('profile');
         openReader(storyId);
     }
-
     subscribeReturnFromPayment();
 }
-
 async function retryBoot() {
     await boot();
 }
-
 // =====================================================================
 // ТЕМА
 // =====================================================================
@@ -254,7 +228,6 @@ function toggleMiniAppTheme() {
     try { localStorage.setItem('samba_theme', isLight ? 'light' : 'dark'); } catch (e) { /* приватный режим */ }
     updateThemeButton();
 }
-
 // =====================================================================
 // ПРОФИЛЬ
 // =====================================================================
@@ -284,7 +257,6 @@ async function loadProfile() {
     renderChildren();
     checkLimitAndMode();
 }
-
 // =====================================================================
 // АНКЕТА РОДИТЕЛЯ
 // =====================================================================
@@ -311,7 +283,6 @@ window.toggleParentBtn = function () {
     button.style.background = enabled ? '#9333ea' : '#4b5563';
     button.style.cursor = enabled ? 'pointer' : 'not-allowed';
 };
-
 async function saveParentInfo() {
     const parentName = (el('parentNameInput') ? el('parentNameInput').value : '').trim();
     let role = el('parentRoleSelect') ? el('parentRoleSelect').value : '';
@@ -341,7 +312,6 @@ async function saveParentInfo() {
         window.toggleParentBtn();
     }
 }
-
 // =====================================================================
 // ЯЗЫК И ТЕКСТЫ ИНТЕРФЕЙСА
 // =====================================================================
@@ -363,7 +333,6 @@ async function changeAppLanguage(newLang) {
         showAlert(err.message || tr('error_generic'));
     }
 }
-
 function applyLanguage() {
     document.documentElement.lang = currentLang;
 
@@ -390,7 +359,6 @@ function applyLanguage() {
     setText('lblAppLang', tr('lbl_app_lang'));
     setText('lblAppTheme', tr('lbl_app_theme'));
     updateThemeButton();
-
     // Алиса
     setText('textAliceBtn', tr('textAliceBtn'));
     setText('aliceModalTitle', tr('aliceModalTitle'));
@@ -400,7 +368,6 @@ function applyLanguage() {
     setText('aliceSuccessTitle', tr('aliceSuccessTitle'));
     setText('aliceSuccessText', tr('aliceSuccessText'));
     setText('aliceSuccessPhrase', ALICE_SKILL_PHRASE);
-
     // Анкета родителя
     setText('modalTitle', tr('modalTitle'));
     setText('modalSub', tr('modalSub'));
@@ -422,7 +389,6 @@ function applyLanguage() {
     const offerText = el('textOffer');
     if (offerText) offerText.innerHTML = tr('textOffer');
     setText('saveParentBtn', tr('saveParentBtn'));
-
     // Сказки, читалка, отзывы
     setText('lblNewStories', tr('lbl_new_stories'));
     setText('lblArchiveStories', tr('lbl_archive_stories'));
@@ -442,7 +408,6 @@ function applyLanguage() {
 
     renderFooterAndPromo();
 }
-
 function renderFooterAndPromo() {
     const footer = el('footerLinks');
     if (!footer) return;
@@ -462,7 +427,6 @@ function renderFooterAndPromo() {
         <a href="#" data-config-link="about_url">${escapeHtml(tr('footer_about'))}</a>`;
     footer.innerHTML = html;
 }
-
 // =====================================================================
 // НАСТРОЙКИ И СЛАЙДЕР БАННЕРОВ
 // =====================================================================
@@ -477,7 +441,6 @@ async function loadAppConfig() {
         console.error('Не удалось загрузить баннеры и ссылки:', err);
     }
 }
-
 function renderBanners() {
     const track = el('sliderTrack');
     const container = el('sliderContainer');
@@ -512,7 +475,6 @@ function renderBanners() {
         }, 5000);
     }
 }
-
 // =====================================================================
 // СТАТУС ПОДПИСКИ, ЦЕНА И ТАЙМЕР АКЦИИ
 // Сумму и дедлайн акции решает сервер — здесь только показ.
@@ -561,7 +523,6 @@ function updateStatusUI() {
         startPromoTimer(new Date(payment.promo_deadline).getTime(), standardPrice, payment.keeps_trial_days);
     }
 }
-
 function startPromoTimer(deadlineMs, standardPrice, keepsTrialDays) {
     setText('promoTimerTitle', tr('timer_title', { price: standardPrice }));
     const note = el('promoTimerNote');
@@ -592,7 +553,6 @@ function startPromoTimer(deadlineMs, standardPrice, keepsTrialDays) {
     tick();
     promoTimerInterval = setInterval(tick, 1000);
 }
-
 // =====================================================================
 // ОПЛАТА: ссылку собирает сервер
 // =====================================================================
@@ -617,7 +577,6 @@ async function initiatePayment() {
         buttons.forEach(b => { b.disabled = false; b.innerText = b.dataset.label || b.innerText; });
     }
 }
-
 // Пользователь вернулся из Payme — перечитываем статус, чтобы не заплатить дважды
 function subscribeReturnFromPayment() {
     if (window.paymentReturnBound) return;
@@ -629,7 +588,6 @@ function subscribeReturnFromPayment() {
         if (document.visibilityState === 'visible') onReturn();
     });
 }
-
 async function checkPaymentResult(retryOnce) {
     try {
         await loadProfile();
@@ -648,7 +606,6 @@ async function checkPaymentResult(retryOnce) {
         console.error('Не удалось обновить статус после оплаты:', err);
     }
 }
-
 // =====================================================================
 // ДЕТИ
 // =====================================================================
@@ -663,7 +620,6 @@ function selectGender(gender) {
 function languageBadge(language) {
     return language === 'ru' ? '🇷🇺 RU' : (language === 'uz' ? '🇺🇿 UZ' : '🇬🇧 EN');
 }
-
 function renderChildren() {
     const container = el('childrenList');
     if (!container) return;
@@ -684,7 +640,6 @@ function renderChildren() {
             </div>
         </div>`).join('');
 }
-
 function checkLimitAndMode() {
     const form = el('formContainer');
     if (!form) return;
@@ -692,7 +647,6 @@ function checkLimitAndMode() {
     const cancel = el('cancelBtn');
     if (cancel) cancel.style.display = editingChildId ? 'block' : 'none';
 }
-
 function startEdit(id) {
     const child = allChildren.find(c => String(c.id) === String(id));
     if (!child) return;
@@ -705,7 +659,6 @@ function startEdit(id) {
     const form = el('formContainer');
     if (form) form.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
-
 function resetForm() {
     editingChildId = null;
     if (el('childName')) el('childName').value = '';
@@ -713,7 +666,6 @@ function resetForm() {
     applyLanguage();
     checkLimitAndMode();
 }
-
 async function deleteChild(id) {
     if (!(await showConfirm(tr('confirm_delete_child')))) return;
     try {
@@ -725,7 +677,6 @@ async function deleteChild(id) {
         showAlert(err.message || tr('error_generic'));
     }
 }
-
 async function saveData() {
     const nameInput = el('childName');
     const languageSelect = el('language');
@@ -755,7 +706,6 @@ async function saveData() {
         applyLanguage();
     }
 }
-
 // =====================================================================
 // НАВИГАЦИЯ
 // =====================================================================
@@ -773,7 +723,6 @@ function switchAppTab(tabId) {
     }
     window.scrollTo(0, 0);
 }
-
 // =====================================================================
 // СКАЗКИ И АРХИВ (закрытые сказки сервер отдаёт без текста)
 // =====================================================================
@@ -787,7 +736,6 @@ async function loadUserStories() {
         console.error('Ошибка загрузки сказок:', err);
     }
 }
-
 function renderStoriesList() {
     const todayContainer = el('todayStoriesList');
     const archiveContainer = el('archiveStoriesList');
@@ -809,7 +757,6 @@ function renderStoriesList() {
     archiveContainer.innerHTML = archive.map(createStoryCard).join('');
     paywall.style.display = archive.some(st => st.locked) ? 'flex' : 'none';
 }
-
 function createStoryCard(st) {
     const date = formatDate(st.created_at, { day: 'numeric', month: 'short' });
     const childName = st.child_name ? ` (${escapeHtml(st.child_name)})` : '';
@@ -822,14 +769,12 @@ function createStoryCard(st) {
             <div class="story-icon">${st.locked ? '🔒' : '📖'}</div>
         </div>`;
 }
-
 async function openReader(storyId) {
     const listed = userStories.find(s => String(s.id) === String(storyId));
     if (listed && listed.locked) {
         showAlert(tr('paywall_text'));
         return;
     }
-
     let story;
     try {
         const data = await api(`/api/app/stories/${encodeURIComponent(storyId)}`);
@@ -840,7 +785,6 @@ async function openReader(storyId) {
         return;
     }
     currentStory = story;
-
     setText('readerTitle', story.title || '');
     const image = el('readerImg');
     if (image) {
@@ -848,7 +792,6 @@ async function openReader(storyId) {
         image.src = src;
         image.style.display = src ? 'block' : 'none';
     }
-
     const text = el('readerText');
     if (text) {
         text.innerHTML = String(story.ready_text || '')
@@ -857,7 +800,6 @@ async function openReader(storyId) {
             .map(p => `<p>${escapeHtml(p)}</p>`)
             .join('');
     }
-
     const promoLink = el('readerPromoLink');
     const promoImage = el('readerPromoImg');
     if (promoLink && promoImage) {
@@ -872,7 +814,6 @@ async function openReader(storyId) {
             promoLink.style.display = 'none';
         }
     }
-
     const screen = el('readerScreen');
     if (screen) {
         screen.style.display = 'flex';
@@ -885,7 +826,6 @@ async function openReader(storyId) {
 
     renderFeedbackBlocks(story);
 }
-
 function closeReader() {
     hide('readerScreen');
     document.body.style.overflow = 'auto';
@@ -896,7 +836,6 @@ function closeReader() {
         if (tg && tg.BackButton) { tg.BackButton.offClick(closeReader); tg.BackButton.hide(); }
     } catch (e) { /* старые клиенты */ }
 }
-
 // =====================================================================
 // ОТЗЫВЫ
 // =====================================================================
@@ -917,7 +856,6 @@ function renderFeedbackBlocks(story) {
         if (ratingThanks) ratingThanks.style.display = 'none';
         document.querySelectorAll('#stars-container span').forEach(s => s.classList.remove('active'));
     }
-
     const input = el('story-comment');
     const button = el('submit-comment-btn');
     const commentThanks = el('comment-thanks');
@@ -934,14 +872,12 @@ function renderFeedbackBlocks(story) {
         if (commentThanks) commentThanks.style.display = 'none';
     }
 }
-
 // Запоминаем отзыв локально, чтобы при повторном открытии сказки он уже был виден
 function rememberFeedback(storyId, patch) {
     [currentStory, userStories.find(s => String(s.id) === String(storyId))].forEach(st => {
         if (st && String(st.id) === String(storyId)) Object.assign(st, patch);
     });
 }
-
 async function sendFeedbackData(rating, comment) {
     if (!currentStory) return false;
     try {
@@ -956,7 +892,6 @@ async function sendFeedbackData(rating, comment) {
         return false;
     }
 }
-
 document.addEventListener('click', async (event) => {
     const star = event.target.closest('#stars-container span');
     if (!star || !currentStory || currentStory.rating) return;
@@ -995,7 +930,6 @@ window.sendComment = async function () {
     rememberFeedback(storyId, { user_comment: comment });
     if (currentStory && String(currentStory.id) === String(storyId)) renderFeedbackBlocks(currentStory);
 };
-
 // =====================================================================
 // ЯНДЕКС АЛИСА
 // =====================================================================
@@ -1004,17 +938,14 @@ function openAliceModal() {
     if (input) input.value = '';
     show('aliceModal', 'flex');
 }
-
 function closeAliceModal() {
     hide('aliceModal');
 }
-
 window.updateAliceUI = updateAliceUI;
 function updateAliceUI(connected) {
     if (connected) { hide('alice-disconnected-state'); show('alice-connected-state'); }
     else { show('alice-disconnected-state'); hide('alice-connected-state'); }
 }
-
 async function submitAliceCode() {
     const input = el('aliceCodeInput');
     const code = (input ? input.value : '').replace(/\D/g, '');
@@ -1036,8 +967,90 @@ async function submitAliceCode() {
         if (button) { button.disabled = false; button.innerText = tr('aliceSubmitBtn'); }
     }
 }
+  // Функция обновления интерфейса аудио
+// Вызывай её, когда загружаешь данные сказки из БД (delivered_stories)
+function updateAudioInterface(storyId, audioUrl, voiceoversLeft) {
+    const container = document.getElementById('audio-dynamic-content');
+    if (!container) return;
+    // СОСТОЯНИЕ 1: Аудио уже сгенерировано -> Показываем красивый плеер
+    if (audioUrl) {
+        container.innerHTML = `
+            <div class="flex flex-col items-center gap-3">
+                <h4 class="text-sm font-bold text-indigo-600 dark:text-indigo-400">🎧 Аудиоспектакль готов</h4>
+                <audio controls class="w-full h-10 outline-none rounded-full">
+                    <source src="${audioUrl}" type="audio/mpeg">
+                </audio>
+            </div>
+        `;
+        return;
+    }
+    // СОСТОЯНИЕ 2: Аудио нет, но есть лимиты по тарифу -> Бесплатная генерация
+    if (voiceoversLeft > 0) {
+        container.innerHTML = `
+            <div class="flex flex-col items-center gap-2">
+                <p class="text-xs text-gray-500 dark:text-gray-400">Озвучить сказку профессиональными голосами?</p>
+                <button onclick="requestAudioGeneration('${storyId}')" id="btn-gen-audio" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2">
+                    <span>🎙️</span> Озвучить (Осталось: ${voiceoversLeft})
+                </button>
+            </div>
+        `;
+        return;
+    }
+    // СОСТОЯНИЕ 3: Аудио нет, лимиты исчерпаны -> Платная генерация
+    container.innerHTML = `
+        <div class="flex flex-col items-center gap-2">
+            <p class="text-xs text-gray-500 dark:text-gray-400">Лимит бесплатных озвучек исчерпан.</p>
+            <button onclick="buyAudioGeneration('${storyId}')" id="btn-buy-audio" class="w-full bg-orange-500 hover:bg-orange-400 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2">
+                <span>💳</span> Озвучить за 14 900 сум
+            </button>
+        </div>
+    `;
+}
+// =====================================================================
+// ОБРАБОТЧИКИ КЛИКОВ
+// =====================================================================
+// Если у пользователя есть лимиты
+async function requestAudioGeneration(storyId) {
+    const btn = document.getElementById('btn-gen-audio');
+    btn.innerHTML = '⏳ Создаем аудиоспектакль... (~30 сек)';
+    btn.disabled = true;
+    btn.classList.add('opacity-70');
 
-// =====================================================================
-// СТАРТ
-// =====================================================================
+    try {
+        // Здесь мы будем вызывать наш будущий бэкенд-роут (Шаг 4)
+        const response = await fetch('/api/user/generate-audio', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ story_id: storyId })
+        });
+        
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error);
+
+        // Обновляем интерфейс: передаем новую ссылку и уменьшенный лимит
+        updateAudioInterface(storyId, data.audioUrl, data.voiceoversLeft);
+        
+    } catch (error) {
+        console.error(error);
+        alert('Ошибка при озвучке: ' + error.message);
+        btn.innerHTML = '<span>🎙️</span> Ошибка. Попробовать снова';
+        btn.disabled = false;
+        btn.classList.remove('opacity-70');
+    }
+}
+// Если лимитов нет (Вызов платежной системы)
+function buyAudioGeneration(storyId) {
+    // В будущем здесь будет вызов Click / Payme / Telegram Stars
+    // Сейчас поставим заглушку:
+    
+    const confirmPay = confirm('Оплатить 14 900 сум за озвучку этой сказки?');
+    
+    if (confirmPay) {
+        // Имитируем успешную оплату и сразу запускаем процесс генерации
+        requestAudioGeneration(storyId); 
+    }
+}
+// =====================
+// ======= СТАРТ =======
+// =====================
 boot();
