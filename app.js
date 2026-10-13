@@ -825,6 +825,8 @@ async function openReader(storyId) {
     } catch (e) { /* старые клиенты */ }
 
     renderFeedbackBlocks(story);
+    await refreshVoiceoverBalance();
+updateAudioInterface(story.id, story.audio_url, voiceoversLeft);
 }
 function closeReader() {
     hide('readerScreen');
@@ -968,30 +970,31 @@ async function submitAliceCode() {
     }
 }
 // Функция обновления интерфейса аудио
-// 1. Узнаем лимит через НАШ СЕРВЕР (безопасно)
+// 1. Узнаём лимит через сервер
 let voiceoversLeft = 0;
-const tgId = window.Telegram.WebApp.initDataUnsafe?.user?.id;
 
-if (tgId) {
+async function refreshVoiceoverBalance() {
+    const tgUser = tg && tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user : null;
+    const tgId = tgUser ? tgUser.id : null;
+
+    if (!tgId) return;
+
     try {
-        const balRes = await fetch('/api/user/check-balance', {
+        const data = await api('/api/user/check-balance', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ telegram_id: telegram_id })
+            body: { telegram_id: tgId }
         });
-        const balData = await balRes.json();
-        voiceoversLeft = balData.voiceovers_left || 0;
+        voiceoversLeft = Number(data.voiceovers_left || 0);
     } catch (err) {
         console.error('Не удалось получить баланс с сервера', err);
     }
 }
-// 2. Запускаем отрисовку кнопок или плеера!
-updateAudioInterface(story.id, story.audio_url, voiceoversLeft);
-// Вызывай её, когда загружаешь данные сказки из БД (delivered_stories)
-function updateAudioInterface(plod_id, audioUrl, voiceoversLeft) {
+
+function updateAudioInterface(storyId, audioUrl, left) {
     const container = document.getElementById('audio-dynamic-content');
     if (!container) return;
-    // СОСТОЯНИЕ 1: Аудио уже сгенерировано -> Показываем красивый плеер
+
+    // Состояние 1: аудио уже сгенерировано
     if (audioUrl) {
         container.innerHTML = `
             <div class="flex flex-col items-center gap-3">
@@ -1003,19 +1006,21 @@ function updateAudioInterface(plod_id, audioUrl, voiceoversLeft) {
         `;
         return;
     }
-    // СОСТОЯНИЕ 2: Аудио нет, но есть лимиты по тарифу -> Бесплатная генерация
-    if (voiceoversLeft > 0) {
+
+    // Состояние 2: можно попробовать бесплатно
+    if (left > 0) {
         container.innerHTML = `
             <div class="flex flex-col items-center gap-2">
                 <p class="text-xs text-gray-500 dark:text-gray-400">Озвучить сказку профессиональными голосами?</p>
-                <button onclick="requestAudioGeneration('${plod_id}')" id="btn-gen-audio" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2">
-                    <span>🎙️</span> Озвучить (Осталось: ${voiceoversLeft})
+                <button onclick="requestAudioGeneration('${storyId}')" id="btn-gen-audio" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2">
+                    <span>🎙️</span> Озвучить (Осталось: ${left})
                 </button>
             </div>
         `;
         return;
     }
-    // СОСТОЯНИЕ 3: Аудио нет, лимиты исчерпаны -> Платная генерация
+
+    // Состояние 3: лимит исчерпан, платная генерация
     container.innerHTML = `
         <div class="flex flex-col items-center gap-2">
             <p class="text-xs text-gray-500 dark:text-gray-400">Лимит бесплатных озвучек исчерпан.</p>
@@ -1031,24 +1036,26 @@ function updateAudioInterface(plod_id, audioUrl, voiceoversLeft) {
 // Если у пользователя есть лимиты
 async function requestAudioGeneration(storyId) {
     const btn = document.getElementById('btn-gen-audio');
+    if (!btn) return;
+
     btn.innerHTML = '⏳ Создаем аудиоспектакль... (~30 сек)';
     btn.disabled = true;
     btn.classList.add('opacity-70');
 
     try {
-        // Здесь мы будем вызывать наш будущий бэкенд-роут (Шаг 4)
-        const response = await fetch('/api/user/generate-audio', {
+        const response = await fetch(API_BASE + '/api/user/generate-audio', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ plod_id: plod_id })
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Telegram-Init-Data': initData
+            },
+            body: JSON.stringify({ plod_id: storyId })
         });
-        
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error);
 
-        // Обновляем интерфейс: передаем новую ссылку и уменьшенный лимит
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Ошибка генерации аудио');
+
         updateAudioInterface(storyId, data.audioUrl, data.voiceoversLeft);
-        
     } catch (error) {
         console.error(error);
         alert('Ошибка при озвучке: ' + error.message);
@@ -1057,16 +1064,12 @@ async function requestAudioGeneration(storyId) {
         btn.classList.remove('opacity-70');
     }
 }
-// Если лимитов нет (Вызов платежной системы)
+
 function buyAudioGeneration(storyId) {
-    // В будущем здесь будет вызов Click / Payme / Telegram Stars
-    // Сейчас поставим заглушку:
-    
     const confirmPay = confirm('Оплатить 14 900 сум за озвучку этой сказки?');
-    
+
     if (confirmPay) {
-        // Имитируем успешную оплату и сразу запускаем процесс генерации
-        requestAudioGeneration(storyId); 
+        requestAudioGeneration(storyId);
     }
 }
 // =====================
