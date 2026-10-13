@@ -967,16 +967,24 @@ async function submitAliceCode() {
         if (button) { button.disabled = false; button.innerText = tr('aliceSubmitBtn'); }
     }
 }
-  // Функция обновления интерфейса аудио
-// 1. Узнаем, сколько лимитов осталось у юзера
-const { data: user } = await supabase
-    .from('users')
-    .select('voiceovers_left')
-    .eq('telegram_id', window.Telegram.WebApp.initDataUnsafe.user.id) // Или как ты получаешь ID
-    .single();
+// Функция обновления интерфейса аудио
+// 1. Узнаем лимит через НАШ СЕРВЕР (безопасно)
+let voiceoversLeft = 0;
+const tgId = window.Telegram.WebApp.initDataUnsafe?.user?.id;
 
-const voiceoversLeft = user ? user.voiceovers_left : 0;
-
+if (tgId) {
+    try {
+        const balRes = await fetch('/api/user/check-balance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ telegram_id: tgId })
+        });
+        const balData = await balRes.json();
+        voiceoversLeft = balData.voiceovers_left || 0;
+    } catch (err) {
+        console.error('Не удалось получить баланс с сервера', err);
+    }
+}
 // 2. Запускаем отрисовку кнопок или плеера!
 updateAudioInterface(story.id, story.audio_url, voiceoversLeft);
 // Вызывай её, когда загружаешь данные сказки из БД (delivered_stories)
