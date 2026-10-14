@@ -981,10 +981,21 @@ async function submitAliceCode() {
 // ОЗВУЧКА СКАЗКИ (аудиоспектакль)
 // Баланс и цену отдаёт сервер, пользователь определяется по подписи initData.
 // Оплата — через Payme (та же ссылка, что и у подписки, но на сумму одной озвучки).
+// Внешний вид — в style.css (блок «ОЗВУЧКА СКАЗКИ»).
 // =====================================================================
 let voiceoversLeft = 0;
 let voiceoverAmount = 0;              // цена одной озвучки в тийинах (приходит с сервера)
 let awaitingVoiceoverPayment = null;  // { balanceBefore } — пока пользователь платит в Payme
+let audioPlaybackRate = 1;            // скорость плеера помним, пока открыто приложение
+
+const AUDIO_RATES = [1, 1.25, 1.5, 0.75];
+const AUDIO_SKIP_SECONDS = 15;
+const AUDIO_ICONS = {
+    play: '<svg class="audio-icon audio-icon--play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.6v12.8a1 1 0 0 0 1.52.85l10.4-6.4a1 1 0 0 0 0-1.7L9.52 4.75A1 1 0 0 0 8 5.6z"/></svg>',
+    pause: '<svg class="audio-icon audio-icon--pause" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4.2" height="14" rx="1.3"/><rect x="13.8" y="5" width="4.2" height="14" rx="1.3"/></svg>',
+    back: '<svg class="audio-icon audio-icon--skip" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></g><text x="12" y="15.2" text-anchor="middle" font-size="7.5" font-weight="700" fill="currentColor">15</text></svg>',
+    forward: '<svg class="audio-icon audio-icon--skip" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></g><text x="12" y="15.2" text-anchor="middle" font-size="7.5" font-weight="700" fill="currentColor">15</text></svg>'
+};
 
 async function refreshVoiceoverBalance() {
     try {
@@ -1006,9 +1017,24 @@ function audioContainer() {
     return el('audio-dynamic-content');
 }
 
+function formatAudioTime(seconds) {
+    const total = Math.max(0, Math.floor(Number(seconds) || 0));
+    return Math.floor(total / 60) + ':' + String(total % 60).padStart(2, '0');
+}
+
+function formatAudioRate(rate) {
+    return rate + '×';
+}
+
 function setAudioLoading() {
     const container = audioContainer();
-    if (container) container.innerHTML = '⏳ ' + escapeHtml(tr('audio_loading'));
+    if (!container) return;
+    container.innerHTML = `
+        <div class="audio-card audio-card--loading" role="status">
+            <span class="audio-spinner" aria-hidden="true"></span>
+            <span class="audio-card__desc">${escapeHtml(tr('audio_loading'))}</span>
+        </div>
+    `;
 }
 
 // Загружает статус озвучки текущей сказки: готовое аудио, кнопка «Озвучить» или кнопка оплаты
@@ -1029,13 +1055,125 @@ function renderAudioLoadError(storyId) {
     const container = audioContainer();
     if (!container) return;
     container.innerHTML = `
-        <div class="audio-card audio-card--paid">
-            <div class="audio-card__desc">${escapeHtml(tr('audio_load_error'))}</div>
-            <button class="audio-btn audio-btn--secondary" type="button" data-audio-action="retry" data-story-id="${escapeHtml(storyId)}">
+        <div class="audio-card audio-card--error">
+            ${audioHeader('⚠️', tr('audio_load_error'))}
+            <button class="audio-btn audio-btn--ghost" type="button" data-audio-action="retry" data-story-id="${escapeHtml(storyId)}">
                 <span>${escapeHtml(tr('audio_retry'))}</span>
             </button>
         </div>
     `;
+}
+
+// Верхняя строка карточки: значок, заголовок, пояснение и (необязательно) плашка справа
+function audioHeader(icon, title, desc, chip) {
+    return `
+        <div class="audio-card__header">
+            <span class="audio-card__icon" aria-hidden="true">${icon}</span>
+            <div class="audio-card__text">
+                <div class="audio-card__title">${escapeHtml(title)}</div>
+                ${desc ? `<div class="audio-card__desc">${escapeHtml(desc)}</div>` : ''}
+            </div>
+            ${chip ? `<span class="audio-card__chip">${escapeHtml(chip)}</span>` : ''}
+        </div>
+    `;
+}
+
+function audioPlayerMarkup(url) {
+    const label = (key) => escapeHtml(tr(key));
+    return `
+        <div class="audio-player" data-audio-player>
+            <audio preload="metadata" src="${escapeHtml(url)}"></audio>
+            <div class="audio-player__seek">
+                <input class="audio-player__range" type="range" min="0" max="1000" step="1" value="0" data-player-seek aria-label="${label('audio_seek')}">
+                <div class="audio-player__times">
+                    <span data-player-current>0:00</span>
+                    <button class="audio-player__speed" type="button" data-player-action="speed" aria-label="${label('audio_speed')}">${formatAudioRate(audioPlaybackRate)}</button>
+                    <span data-player-duration>–:––</span>
+                </div>
+            </div>
+            <div class="audio-player__controls">
+                <button class="audio-player__skip" type="button" data-player-action="back" aria-label="${label('audio_back')}">${AUDIO_ICONS.back}</button>
+                <button class="audio-player__play" type="button" data-player-action="toggle" aria-label="${label('audio_play')}">${AUDIO_ICONS.play}${AUDIO_ICONS.pause}</button>
+                <button class="audio-player__skip" type="button" data-player-action="forward" aria-label="${label('audio_forward')}">${AUDIO_ICONS.forward}</button>
+            </div>
+            <p class="audio-player__error" role="alert">${label('audio_load_failed')}</p>
+        </div>
+    `;
+}
+
+// Подключает к нарисованному плееру настоящий <audio>: время, перемотка, состояние кнопки
+function bindAudioPlayer(root) {
+    const player = root.querySelector('[data-audio-player]');
+    if (!player) return;
+    const audio = player.querySelector('audio');
+    const seek = player.querySelector('[data-player-seek]');
+    const current = player.querySelector('[data-player-current]');
+    const duration = player.querySelector('[data-player-duration]');
+    const playButton = player.querySelector('[data-player-action="toggle"]');
+    if (!audio || !seek || !current || !duration || !playButton) return;
+
+    let scrubbing = false; // пользователь тянет ползунок — не двигаем его сами
+    audio.defaultPlaybackRate = audioPlaybackRate;
+    audio.playbackRate = audioPlaybackRate;
+
+    const hasDuration = () => Number.isFinite(audio.duration) && audio.duration > 0;
+    const paint = () => {
+        if (!scrubbing) seek.value = hasDuration() ? Math.round(audio.currentTime / audio.duration * 1000) : 0;
+        seek.style.setProperty('--progress', (seek.value / 10) + '%');
+        current.textContent = formatAudioTime(scrubbing && hasDuration() ? seek.value / 1000 * audio.duration : audio.currentTime);
+        duration.textContent = hasDuration() ? formatAudioTime(audio.duration) : '–:––';
+    };
+    const setPlaying = (playing) => {
+        player.classList.toggle('is-playing', playing);
+        playButton.setAttribute('aria-label', tr(playing ? 'audio_pause' : 'audio_play'));
+    };
+
+    ['loadedmetadata', 'durationchange', 'timeupdate', 'seeked'].forEach(name => audio.addEventListener(name, paint));
+    audio.addEventListener('play', () => setPlaying(true));
+    audio.addEventListener('pause', () => setPlaying(false));
+    audio.addEventListener('ended', () => { setPlaying(false); audio.currentTime = 0; paint(); });
+    audio.addEventListener('waiting', () => player.classList.add('is-buffering'));
+    ['playing', 'canplay'].forEach(name => audio.addEventListener(name, () => player.classList.remove('is-buffering')));
+    audio.addEventListener('error', () => {
+        player.classList.remove('is-buffering');
+        player.classList.add('is-error');
+        setPlaying(false);
+    });
+
+    seek.addEventListener('input', () => { scrubbing = true; paint(); });
+    seek.addEventListener('change', () => {
+        if (hasDuration()) audio.currentTime = seek.value / 1000 * audio.duration;
+        scrubbing = false;
+        paint();
+    });
+    paint();
+}
+
+// Кнопки плеера: пауза/пуск, ±15 секунд, скорость
+function handlePlayerAction(button) {
+    const player = button.closest('[data-audio-player]');
+    const audio = player && player.querySelector('audio');
+    if (!audio) return;
+
+    const action = button.getAttribute('data-player-action');
+    if (action === 'toggle') {
+        if (audio.paused) {
+            const started = audio.play();
+            if (started && started.catch) started.catch(err => console.error('Не удалось запустить аудио', err));
+        } else {
+            audio.pause();
+        }
+    } else if (action === 'back') {
+        audio.currentTime = Math.max(0, audio.currentTime - AUDIO_SKIP_SECONDS);
+    } else if (action === 'forward') {
+        const end = Number.isFinite(audio.duration) ? audio.duration : Infinity;
+        audio.currentTime = Math.min(end, audio.currentTime + AUDIO_SKIP_SECONDS);
+    } else if (action === 'speed') {
+        audioPlaybackRate = AUDIO_RATES[(AUDIO_RATES.indexOf(audioPlaybackRate) + 1) % AUDIO_RATES.length];
+        audio.defaultPlaybackRate = audioPlaybackRate;
+        audio.playbackRate = audioPlaybackRate;
+        button.textContent = formatAudioRate(audioPlaybackRate);
+    }
 }
 
 function updateAudioInterface(storyId, audioUrl, left) {
@@ -1047,23 +1185,18 @@ function updateAudioInterface(storyId, audioUrl, left) {
     if (url) {
         container.innerHTML = `
             <div class="audio-card audio-card--ready">
-                <div class="audio-card__badge">🎧 ${escapeHtml(tr('audio_ready'))}</div>
-                <audio controls preload="none" class="audio-player">
-                    <source src="${escapeHtml(url)}" type="audio/mpeg">
-                </audio>
+                ${audioHeader('🎧', tr('audio_ready'), tr('audio_ready_desc'))}
+                ${audioPlayerMarkup(url)}
             </div>
         `;
+        bindAudioPlayer(container);
         return;
     }
 
     if (left > 0) {
         container.innerHTML = `
             <div class="audio-card audio-card--free">
-                <div class="audio-card__meta">
-                    <span class="audio-card__icon">🎙️</span>
-                    <span class="audio-card__title">${escapeHtml(tr('audio_gen_title'))}</span>
-                </div>
-                <div class="audio-card__desc">${escapeHtml(tr('audio_gen_desc', { left }))}</div>
+                ${audioHeader('🎙️', tr('audio_gen_title'), tr('audio_gen_desc'), tr('audio_left_chip', { left }))}
                 <button id="btn-gen-audio" class="audio-btn audio-btn--primary" type="button" data-audio-action="generate" data-story-id="${id}">
                     <span class="audio-btn__icon">🎙️</span>
                     <span>${escapeHtml(tr('audio_gen_btn'))}</span>
@@ -1078,11 +1211,7 @@ function updateAudioInterface(storyId, audioUrl, left) {
         : tr('audio_buy_btn_plain');
     container.innerHTML = `
         <div class="audio-card audio-card--paid">
-            <div class="audio-card__meta">
-                <span class="audio-card__icon">🔒</span>
-                <span class="audio-card__title">${escapeHtml(tr('audio_limit_title'))}</span>
-            </div>
-            <div class="audio-card__desc">${escapeHtml(tr('audio_limit_desc'))}</div>
+            ${audioHeader('🔒', tr('audio_limit_title'), tr('audio_limit_desc'))}
             <button id="btn-buy-audio" class="audio-btn audio-btn--secondary" type="button" data-audio-action="buy" data-story-id="${id}">
                 <span class="audio-btn__icon">💳</span>
                 <span>${escapeHtml(buyLabel)}</span>
@@ -1162,8 +1291,11 @@ async function checkVoiceoverPayment(retryOnce) {
     }
 }
 
-// Кнопки озвучки рисуются из JS, поэтому слушаем клики на уровне документа (без onclick в разметке)
+// Кнопки озвучки и плеера рисуются из JS, поэтому слушаем клики на уровне документа (без onclick в разметке)
 document.addEventListener('click', (event) => {
+    const playerButton = event.target.closest('[data-player-action]');
+    if (playerButton) { handlePlayerAction(playerButton); return; }
+
     const button = event.target.closest('[data-audio-action]');
     if (!button) return;
     const storyId = button.getAttribute('data-story-id');
