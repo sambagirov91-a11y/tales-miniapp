@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Scheherezade</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css?v=4">
+    <link rel="stylesheet" href="style.css?v=5">
     
     <!-- Подключаем внешние файлы со словарями для 3 языков -->
-<script src="miniapp-ru.js?v=10"></script>
-<script src="miniapp-uz.js?v=10"></script>
-<script src="miniapp-en.js?v=10"></script>
+<script src="miniapp-ru.js?v=11"></script>
+<script src="miniapp-uz.js?v=11"></script>
+<script src="miniapp-en.js?v=11"></script>
 </head>
 <body>
 
@@ -91,26 +91,28 @@
         
         <!-- Вкладка: ГЛАВНАЯ -->
         <div id="tabHome" class="tab-page active">
-            <h1 id="pageTitleHome" class="top-title">Профили детей</h1>
+            <h1 id="pageTitleHome" class="top-title">Главная</h1>
             
             <!-- Слайдер баннеров -->
             <div class="slider-container" id="sliderContainer">
                 <div class="slider-track" id="sliderTrack"></div>
             </div>
 
-            <!-- Список детей -->
-            <div id="childrenList">
-                <div class="loader-container">
-                    <div class="spinner"></div>
-                </div>
+            <!-- ТАЙМЕР АКЦИИ (триал, первые 48 часов) -->
+            <div id="promoTimerContainer" class="promo-timer" style="display: none;">
+                <div id="promoTimerTitle" class="promo-timer__title"></div>
+                <div id="promoTimerCountdown" class="promo-timer__countdown">00:00:00</div>
+                <div id="promoTimerNote" class="promo-timer__note" style="display: none;"></div>
+                <button id="promoTimerCta" class="promo-timer__cta" type="button" data-tariff-action="open"></button>
             </div>
 
-            <!-- Лимит детей по тарифу достигнут -->
-            <div id="childrenLimitHint" class="limit-hint" style="display: none;">
-                <span class="limit-hint__icon" aria-hidden="true">👧</span>
-                <p id="childrenLimitText" class="limit-hint__text"></p>
-                <button id="childrenLimitBtn" class="limit-hint__btn" type="button" data-tariff-action="open"></button>
+            <!-- Статус подписки -->
+            <div id="statusSection" class="status-card">
+                <div id="statusBadge" class="status-badge">...</div>
+                <div id="statusText" class="status-text"></div>
+                <button id="renewBtn" class="primary-btn" style="display: none;" onclick="openTariffs()"></button>
             </div>
+
 <!-- УМНЫЙ БЛОК ИНТЕГРАЦИИ С АЛИСОЙ -->
 <div id="aliceIntegrationContainer" class="alice-integration">
     <!-- Состояние 1: КНОПКА (НЕ ПОДКЛЮЧЕНО) -->
@@ -133,29 +135,6 @@
         </div>
     </div>
 </div>
-            <!-- Форма добавления/редактирования -->
-            <div id="formContainer" style="display: none;">
-                <h2 id="formTitle">Добавить ребенка</h2>
-                
-                <label id="labelLang">Язык сказок</label>
-                <select id="language">
-                    <option value="ru">🇷🇺 Русский</option>
-                    <option value="uz">🇺🇿 O'zbekcha</option>
-                    <option value="en">🇬🇧 English</option>
-                </select>
-
-                <label id="labelName">Имя</label>
-                <input type="text" id="childName" placeholder="Например: Тимур" autocomplete="off" maxlength="40">
-
-                <label id="labelGender">Пол</label>
-                <div class="radio-group">
-                    <div class="radio-label selected" id="btn-M" onclick="selectGender('M')"><span id="txtBoy">Мальчик 👦</span></div>
-                    <div class="radio-label" id="btn-F" onclick="selectGender('F')"><span id="txtGirl">Девочка 👧</span></div>
-                </div>
-
-                <button class="primary-btn" id="saveBtn" onclick="saveData()">Добавить профиль</button>
-                <button class="cancel-edit" id="cancelBtn" onclick="resetForm()">Отменить</button>
-            </div>
         </div>
 
         <!-- Вкладка: ПРОФИЛЬ -->
@@ -178,19 +157,43 @@
                 </div>
             </div>
 
-            <!-- ТАЙМЕР АКЦИИ (триал, первые 48 часов) -->
-            <div id="promoTimerContainer" class="promo-timer" style="display: none;">
-                <div id="promoTimerTitle" class="promo-timer__title"></div>
-                <div id="promoTimerCountdown" class="promo-timer__countdown">00:00:00</div>
-                <div id="promoTimerNote" class="promo-timer__note" style="display: none;"></div>
-                <button id="promoTimerCta" class="promo-timer__cta" type="button" data-tariff-action="open"></button>
+            <!-- Профили детей -->
+            <h2 id="lblChildren" class="section-title" style="margin-top: 4px;">👶 Профили детей</h2>
+            <div id="childrenList">
+                <div class="loader-container">
+                    <div class="spinner"></div>
+                </div>
             </div>
 
-            <!-- Статус подписки -->
-            <div id="statusSection" class="status-card">
-                <div id="statusBadge" class="status-badge">...</div>
-                <div id="statusText" class="status-text"></div>
-                <button id="renewBtn" class="primary-btn" style="display: none;" onclick="openTariffs()"></button>
+            <!-- Лимит детей по тарифу достигнут -->
+            <div id="childrenLimitHint" class="limit-hint" style="display: none;">
+                <span class="limit-hint__icon" aria-hidden="true">👧</span>
+                <p id="childrenLimitText" class="limit-hint__text"></p>
+                <button id="childrenLimitBtn" class="limit-hint__btn" type="button" data-tariff-action="open"></button>
+            </div>
+
+            <!-- Форма добавления/редактирования -->
+            <div id="formContainer" style="display: none;">
+                <h2 id="formTitle">Добавить ребенка</h2>
+                
+                <label id="labelLang">Язык сказок</label>
+                <select id="language">
+                    <option value="ru">🇷🇺 Русский</option>
+                    <option value="uz">🇺🇿 O'zbekcha</option>
+                    <option value="en">🇬🇧 English</option>
+                </select>
+
+                <label id="labelName">Имя</label>
+                <input type="text" id="childName" placeholder="Например: Тимур" autocomplete="off" maxlength="40">
+
+                <label id="labelGender">Пол</label>
+                <div class="radio-group">
+                    <div class="radio-label selected" id="btn-M" onclick="selectGender('M')"><span id="txtBoy">Мальчик 👦</span></div>
+                    <div class="radio-label" id="btn-F" onclick="selectGender('F')"><span id="txtGirl">Девочка 👧</span></div>
+                </div>
+
+                <button class="primary-btn" id="saveBtn" onclick="saveData()">Добавить профиль</button>
+                <button class="cancel-edit" id="cancelBtn" onclick="resetForm()">Отменить</button>
             </div>
 
             <!-- Новые сказки -->
@@ -297,6 +300,6 @@
     </div>
 
     <!-- Основной скрипт логики Mini App -->
-    <script src="app.js?v=14"></script>
+    <script src="app.js?v=15"></script>
 </body>
 </html>

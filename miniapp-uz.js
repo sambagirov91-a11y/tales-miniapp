@@ -33,8 +33,9 @@ window.langUZ = {
 
     tab_home: "Bosh sahifa",
     tab_profile: "Mening profilim",
-    page_title_home: "Bolalar profillari",
+    page_title_home: "Bosh sahifa",
     page_title_profile: "Mening profilim",
+    lbl_children: "👶 Bolalar profillari",
 
     loading: "Yuklanmoqda...",
     open_in_telegram_title: "Ilovani Telegram orqali oching",
