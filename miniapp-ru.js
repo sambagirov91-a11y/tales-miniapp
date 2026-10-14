@@ -34,8 +34,10 @@ window.langRU = {
 
     // Вкладки и заголовки
     tab_home: "Главная",
+    tab_stories: "Сказки",
     tab_profile: "Мой профиль",
     page_title_home: "Главная",
+    page_title_stories: "Сказки",
     page_title_profile: "Мой профиль",
     lbl_children: "👶 Профили детей",
 

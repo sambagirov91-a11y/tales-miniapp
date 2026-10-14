@@ -32,8 +32,10 @@ window.langEN = {
     audio_no_voiceovers: "No voice-overs left. Please buy a new one.",
 
     tab_home: "Home",
+    tab_stories: "Tales",
     tab_profile: "My Profile",
     page_title_home: "Home",
+    page_title_stories: "Tales",
     page_title_profile: "My Profile",
     lbl_children: "👶 Children's profiles",
 

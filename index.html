@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Scheherezade</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css?v=5">
+    <link rel="stylesheet" href="style.css?v=6">
     
     <!-- Подключаем внешние файлы со словарями для 3 языков -->
-<script src="miniapp-ru.js?v=11"></script>
-<script src="miniapp-uz.js?v=11"></script>
-<script src="miniapp-en.js?v=11"></script>
+<script src="miniapp-ru.js?v=12"></script>
+<script src="miniapp-uz.js?v=12"></script>
+<script src="miniapp-en.js?v=12"></script>
 </head>
 <body>
 
@@ -137,6 +137,41 @@
 </div>
         </div>
 
+        <!-- Вкладка: СКАЗКИ -->
+        <div id="tabStories" class="tab-page">
+            <h1 id="pageTitleStories" class="top-title">Сказки</h1>
+
+            <!-- Слайдер баннеров (такой же, как на «Главной») -->
+            <div class="slider-container" id="storiesSliderContainer">
+                <div class="slider-track" id="storiesSliderTrack"></div>
+            </div>
+
+            <!-- Новые сказки -->
+            <h2 id="lblNewStories" class="section-title" style="margin-top: 0;">✨ Новые сказки!</h2>
+            <div id="todayStoriesList" class="stories-list">
+                <p id="emptyToday" style="color: #a0a0a0; font-size: 14px; text-align: center; padding: 10px;">Новая сказка появится в 21:00!</p>
+            </div>
+
+            <!-- Архив сказок -->
+            <h2 id="lblArchiveStories" class="section-title" style="margin-top: 24px;">📚 Мои сказки (Архив)</h2>
+            <div id="archiveContainer" class="archive-container" style="position: relative;">
+                <!-- Пейвол (Перекрытие Архива) -->
+                <div id="paywallOverlay" class="paywall-overlay" style="display: none;">
+                    <div class="paywall-content">
+                        <span class="paywall-icon">🔒</span>
+                        <p id="paywallText" class="paywall-text">Доступ к архиву прошлых сказок возможен только в платном тарифе.</p>
+                        <button id="paywallBtn" class="primary-btn paywall-btn" onclick="openTariffs()">Выбрать тариф</button>
+                    </div>
+                </div>
+                
+                <!-- Контейнер со скроллом -->
+                <div id="archiveStoriesList" class="stories-list archive-scroll-list"></div>
+            </div>
+
+            <!-- Рекламный баннер внизу (такой же, как в футере профиля) -->
+            <div id="storiesPromo" class="stories-promo"></div>
+        </div>
+
         <!-- Вкладка: ПРОФИЛЬ -->
         <div id="tabProfile" class="tab-page">
             <h1 id="pageTitleProfile" class="top-title">Мой профиль</h1>
@@ -196,28 +231,6 @@
                 <button class="cancel-edit" id="cancelBtn" onclick="resetForm()">Отменить</button>
             </div>
 
-            <!-- Новые сказки -->
-            <h2 id="lblNewStories" class="section-title">✨ Новые сказки!</h2>
-            <div id="todayStoriesList" class="stories-list">
-                <p id="emptyToday" style="color: #a0a0a0; font-size: 14px; text-align: center; padding: 10px;">Новая сказка появится в 21:00!</p>
-            </div>
-
-            <!-- Архив сказок -->
-            <h2 id="lblArchiveStories" class="section-title" style="margin-top: 24px;">📚 Мои сказки (Архив)</h2>
-            <div id="archiveContainer" class="archive-container" style="position: relative;">
-                <!-- Пейвол (Перекрытие Архива) -->
-                <div id="paywallOverlay" class="paywall-overlay" style="display: none;">
-                    <div class="paywall-content">
-                        <span class="paywall-icon">🔒</span>
-                        <p id="paywallText" class="paywall-text">Доступ к архиву прошлых сказок возможен только в платном тарифе.</p>
-                        <button id="paywallBtn" class="primary-btn paywall-btn" onclick="openTariffs()">Выбрать тариф</button>
-                    </div>
-                </div>
-                
-                <!-- Контейнер со скроллом -->
-                <div id="archiveStoriesList" class="stories-list archive-scroll-list"></div>
-            </div>
-            
             <!-- Глобальный баннер и ссылки футера -->
             <div class="footer-links" id="footerLinks"></div>
         </div>
@@ -275,6 +288,10 @@
             <span class="tab-icon">🏠</span>
             <span id="lblTabHome" class="tab-label">Главная</span>
         </div>
+        <div class="tab-item" id="btnTabStories" onclick="switchAppTab('stories')">
+            <span class="tab-icon">📖</span>
+            <span id="lblTabStories" class="tab-label">Сказки</span>
+        </div>
         <div class="tab-item" id="btnTabProfile" onclick="switchAppTab('profile')">
             <span class="tab-icon">👤</span>
             <span id="lblTabProfile" class="tab-label">Мой профиль</span>
@@ -300,6 +317,6 @@
     </div>
 
     <!-- Основной скрипт логики Mini App -->
-    <script src="app.js?v=15"></script>
+    <script src="app.js?v=16"></script>
 </body>
 </html>
