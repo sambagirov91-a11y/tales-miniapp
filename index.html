@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Scheherezade</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css?v=3">
+    <link rel="stylesheet" href="style.css?v=4">
     
     <!-- Подключаем внешние файлы со словарями для 3 языков -->
-<script src="miniapp-ru.js?v=9"></script>
-<script src="miniapp-uz.js?v=9"></script>
-<script src="miniapp-en.js?v=9"></script>
+<script src="miniapp-ru.js?v=10"></script>
+<script src="miniapp-uz.js?v=10"></script>
+<script src="miniapp-en.js?v=10"></script>
 </head>
 <body>
 
@@ -104,6 +104,13 @@
                     <div class="spinner"></div>
                 </div>
             </div>
+
+            <!-- Лимит детей по тарифу достигнут -->
+            <div id="childrenLimitHint" class="limit-hint" style="display: none;">
+                <span class="limit-hint__icon" aria-hidden="true">👧</span>
+                <p id="childrenLimitText" class="limit-hint__text"></p>
+                <button id="childrenLimitBtn" class="limit-hint__btn" type="button" data-tariff-action="open"></button>
+            </div>
 <!-- УМНЫЙ БЛОК ИНТЕГРАЦИИ С АЛИСОЙ -->
 <div id="aliceIntegrationContainer" class="alice-integration">
     <!-- Состояние 1: КНОПКА (НЕ ПОДКЛЮЧЕНО) -->
@@ -171,18 +178,19 @@
                 </div>
             </div>
 
-      <!-- ТАЙМЕР АКЦИИ -->
-            <div id="promoTimerContainer" class="glass-panel" style="display: none; text-align: center; margin-bottom: 16px; padding: 12px; border: 1px solid #facc15;">
-                <div id="promoTimerTitle" style="color: #facc15; font-size: 14px; font-weight: bold; margin-bottom: 8px;"></div>
-                <div id="promoTimerCountdown" style="color: #fff; font-size: 24px; font-family: monospace; font-weight: bold; letter-spacing: 2px;">00:00:00</div>
-                <div id="promoTimerNote" class="promo-timer-note" style="display: none;"></div>
+            <!-- ТАЙМЕР АКЦИИ (триал, первые 48 часов) -->
+            <div id="promoTimerContainer" class="promo-timer" style="display: none;">
+                <div id="promoTimerTitle" class="promo-timer__title"></div>
+                <div id="promoTimerCountdown" class="promo-timer__countdown">00:00:00</div>
+                <div id="promoTimerNote" class="promo-timer__note" style="display: none;"></div>
+                <button id="promoTimerCta" class="promo-timer__cta" type="button" data-tariff-action="open"></button>
             </div>
-            
+
             <!-- Статус подписки -->
             <div id="statusSection" class="status-card">
                 <div id="statusBadge" class="status-badge">...</div>
                 <div id="statusText" class="status-text"></div>
-                <button id="renewBtn" class="primary-btn" style="display: none;" onclick="initiatePayment()"></button>
+                <button id="renewBtn" class="primary-btn" style="display: none;" onclick="openTariffs()"></button>
             </div>
 
             <!-- Новые сказки -->
@@ -199,7 +207,7 @@
                     <div class="paywall-content">
                         <span class="paywall-icon">🔒</span>
                         <p id="paywallText" class="paywall-text">Доступ к архиву прошлых сказок возможен только в платном тарифе.</p>
-                        <button id="paywallBtn" class="primary-btn paywall-btn" onclick="initiatePayment()">Открыть доступ</button>
+                        <button id="paywallBtn" class="primary-btn paywall-btn" onclick="openTariffs()">Выбрать тариф</button>
                     </div>
                 </div>
                 
@@ -271,7 +279,24 @@
     </nav>
     </div> <!-- Конец mainAppContent -->
 
+    <!-- ОКНО ВЫБОРА ТАРИФА -->
+    <div id="tariffSheet" class="tariff-sheet" role="dialog" aria-modal="true" aria-labelledby="tariffSheetTitle" hidden>
+        <div class="tariff-sheet__backdrop" data-tariff-action="close"></div>
+        <div class="tariff-sheet__panel" tabindex="-1">
+            <div class="tariff-sheet__grab" aria-hidden="true"></div>
+            <header class="tariff-sheet__head">
+                <div class="tariff-sheet__heading">
+                    <h2 id="tariffSheetTitle" class="tariff-sheet__title">Выберите тариф</h2>
+                    <p id="tariffSheetSub" class="tariff-sheet__sub"></p>
+                </div>
+                <button id="tariffSheetClose" class="tariff-sheet__close" type="button" data-tariff-action="close" aria-label="Закрыть">✕</button>
+            </header>
+            <p id="tariffNote" class="tariff-note" style="display: none;"></p>
+            <div id="tariffCards" class="tariff-cards"></div>
+        </div>
+    </div>
+
     <!-- Основной скрипт логики Mini App -->
-    <script src="app.js?v=13"></script>
+    <script src="app.js?v=14"></script>
 </body>
 </html>

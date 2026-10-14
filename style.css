@@ -400,8 +400,6 @@ body.light-theme .success-title {
 /* Пустые списки */
 .empty-note { color: #a0a0a0; font-size: 13px; text-align: center; padding: 10px; margin: 0; }
 
-/* Пояснение под таймером акции */
-.promo-timer-note { margin-top: 10px; font-size: 13px; line-height: 1.4; color: var(--text-muted); }
 
 /* Закрытая сказка в архиве */
 .story-card.locked { opacity: 0.6; border-left-color: var(--text-muted); }
@@ -715,4 +713,176 @@ body.light-theme .audio-player__play { box-shadow: 0 8px 22px rgba(180, 83, 9, 0
 @media (prefers-reduced-motion: reduce) {
     .audio-btn.is-loading, .audio-spinner, .audio-player.is-buffering .audio-player__play { animation: none; }
     .audio-btn, .audio-player__skip, .audio-player__play { transition: none; }
+}
+
+/* =====================================================================
+   ТАРИФЫ: таймер акции, подсказка о лимите детей, окно выбора тарифа
+   Акцентный цвет карточки задаётся тройкой --tariff-accent: r, g, b
+   ===================================================================== */
+
+/* Таймер акции на странице профиля */
+.promo-timer {
+    box-sizing: border-box;
+    margin-bottom: 20px;
+    padding: 18px 16px 16px;
+    text-align: center;
+    border-radius: 20px;
+    border: 1px solid rgba(250, 204, 21, 0.55);
+    background:
+        linear-gradient(160deg, rgba(250, 204, 21, 0.2) 0%, rgba(249, 115, 22, 0.08) 70%),
+        var(--glass-bg);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+body.light-theme .promo-timer { border-color: rgba(180, 83, 9, 0.5); box-shadow: 0 8px 24px rgba(120, 53, 15, 0.12); }
+.promo-timer__title { color: var(--gold-main); font-size: 14px; font-weight: 700; line-height: 1.45; margin-bottom: 10px; }
+.promo-timer__countdown {
+    color: var(--text-main); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 30px; font-weight: 800; letter-spacing: 2px; font-variant-numeric: tabular-nums;
+}
+.promo-timer__note { margin-top: 10px; font-size: 13px; line-height: 1.4; color: var(--text-muted); }
+.promo-timer__cta {
+    margin-top: 14px; width: 100%; padding: 14px; border-radius: 12px; border: none; cursor: pointer;
+    background: linear-gradient(135deg, #facc15, #f59e0b); color: #451a03;
+    font-size: 14px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
+    box-shadow: 0 4px 15px rgba(217, 119, 6, 0.3); transition: transform 0.2s;
+}
+.promo-timer__cta:active { transform: scale(0.98); }
+
+/* Достигнут лимит детей по тарифу */
+.limit-hint {
+    box-sizing: border-box; align-items: center; flex-wrap: wrap; gap: 10px 12px;
+    margin: 4px 0 20px; padding: 14px 16px;
+    border-radius: 16px; border: 1px solid rgba(var(--tariff-accent, 250, 204, 21), 0.4);
+    border-left-width: 4px; background: var(--glass-bg);
+}
+.limit-hint__icon { font-size: 22px; }
+.limit-hint__text { flex: 1 1 180px; margin: 0; font-size: 14px; line-height: 1.45; color: var(--text-main); }
+.limit-hint__btn {
+    flex: 0 0 auto; padding: 10px 16px; border-radius: 10px; cursor: pointer;
+    border: 1px solid var(--gold-main); background: transparent; color: var(--gold-main);
+    font-size: 13px; font-weight: 700; transition: transform 0.2s, background 0.2s;
+}
+.limit-hint__btn:active { transform: scale(0.97); background: rgba(250, 204, 21, 0.12); }
+
+/* Окно выбора тарифа (нижняя шторка) */
+body.sheet-open { overflow: hidden; }
+.tariff-sheet { position: fixed; inset: 0; z-index: 200; display: flex; align-items: flex-end; justify-content: center; }
+.tariff-sheet[hidden] { display: none; }
+.tariff-sheet__backdrop { position: absolute; inset: 0; background: rgba(5, 10, 31, 0.66); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); animation: sheetFade 0.25s ease; }
+body.light-theme .tariff-sheet__backdrop { background: rgba(69, 26, 3, 0.45); }
+.tariff-sheet__panel {
+    position: relative; box-sizing: border-box; width: 100%; max-width: 520px; max-height: 94vh; max-height: 94dvh;
+    overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; outline: none;
+    padding: 10px 16px calc(24px + env(safe-area-inset-bottom));
+    border-radius: 28px 28px 0 0; border: 1px solid var(--glass-border); border-bottom: none;
+    background: linear-gradient(160deg, var(--bg-grad-1) 0%, var(--bg-grad-2) 100%);
+    box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.35);
+    animation: sheetUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.tariff-sheet__grab { width: 44px; height: 4px; border-radius: 4px; background: var(--glass-border); margin: 0 auto 14px; }
+.tariff-sheet__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.tariff-sheet__title { margin: 0 0 6px; font-size: 24px; font-weight: 800; color: var(--gold-main); }
+.tariff-sheet__sub { margin: 0; font-size: 14px; line-height: 1.45; color: var(--text-muted); }
+.tariff-sheet__close {
+    flex: 0 0 auto; width: 36px; height: 36px; border-radius: 12px; cursor: pointer;
+    border: 1px solid var(--glass-border); background: rgba(128, 128, 128, 0.15); color: var(--text-main); font-size: 15px;
+}
+.tariff-note {
+    margin: 0 0 14px; padding: 12px 14px; font-size: 13px; line-height: 1.45; color: var(--text-main);
+    border-radius: 14px; border: 1px dashed rgba(250, 204, 21, 0.5); background: rgba(250, 204, 21, 0.08);
+}
+body.light-theme .tariff-note { border-color: rgba(180, 83, 9, 0.45); background: rgba(180, 83, 9, 0.07); }
+@keyframes sheetUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes sheetFade { from { opacity: 0; } to { opacity: 1; } }
+
+.tariff-cards { display: flex; flex-direction: column; gap: 16px; }
+
+/* Карточка тарифа */
+.tariff-card {
+    --tariff-accent: 129, 140, 248;                 /* «Старт» — индиго */
+    position: relative; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px;
+    padding: 18px; border-radius: 22px;
+    border: 1px solid rgba(var(--tariff-accent), 0.38);
+    background:
+        linear-gradient(150deg, rgba(var(--tariff-accent), 0.2) 0%, rgba(var(--tariff-accent), 0.04) 62%),
+        var(--glass-bg);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+    color: var(--text-main);
+}
+.tariff-card--baby { --tariff-accent: 250, 204, 21; }   /* «Мой малыш» — золото */
+.tariff-card--kids { --tariff-accent: 192, 132, 252; }  /* «Кидс» — фиолетовый */
+.tariff-card.is-current { border-color: rgba(var(--tariff-accent), 0.9); box-shadow: 0 0 0 1px rgba(var(--tariff-accent), 0.5), 0 10px 30px rgba(0, 0, 0, 0.22); }
+body.light-theme .tariff-card { box-shadow: 0 8px 24px rgba(120, 53, 15, 0.12); }
+body.light-theme .tariff-card--start { --tariff-accent: 99, 102, 241; }
+body.light-theme .tariff-card--baby { --tariff-accent: 217, 119, 6; }
+body.light-theme .tariff-card--kids { --tariff-accent: 147, 51, 234; }
+
+.tariff-badge {
+    position: absolute; top: -11px; right: 16px; padding: 5px 12px; border-radius: 999px;
+    font-size: 11px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; white-space: nowrap;
+}
+.tariff-badge--current { background: #10b981; color: #fff; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4); }
+.tariff-badge--promo { background: linear-gradient(135deg, #f97316, #ef4444); color: #fff; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4); }
+
+.tariff-card__header { display: grid; grid-template-columns: 48px minmax(0, 1fr); column-gap: 14px; align-items: center; }
+.tariff-card__icon {
+    display: grid; place-items: center; width: 48px; height: 48px; border-radius: 16px; font-size: 26px;
+    background: rgba(var(--tariff-accent), 0.2); border: 1px solid rgba(var(--tariff-accent), 0.4);
+}
+.tariff-card__name { margin: 0 0 3px; font-size: 20px; font-weight: 800; line-height: 1.2; color: var(--text-main); }
+.tariff-card__tag { margin: 0; font-size: 13px; line-height: 1.35; color: var(--text-muted); }
+
+.tariff-price { display: flex; flex-direction: column; gap: 2px; }
+.tariff-price__old { align-self: flex-start; font-size: 14px; color: var(--text-muted); text-decoration: line-through; }
+.tariff-price__row { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px; }
+.tariff-price__num { font-size: 34px; font-weight: 800; line-height: 1.1; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; color: var(--text-main); }
+.tariff-card--baby .tariff-price__num { color: var(--gold-main); }
+.tariff-price__cur { font-size: 16px; font-weight: 700; color: var(--text-main); }
+.tariff-price__per { font-size: 13px; color: var(--text-muted); }
+
+.tariff-promo {
+    display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 10px;
+    padding: 9px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; color: var(--text-main);
+    background: rgba(249, 115, 22, 0.14); border: 1px dashed rgba(249, 115, 22, 0.6);
+}
+.tariff-promo__left b { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; color: #f97316; }
+body.light-theme .tariff-promo__left b { color: #c2410c; }
+
+.tariff-features { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.tariff-feature { display: flex; align-items: center; gap: 10px; font-size: 14px; line-height: 1.35; color: var(--text-main); }
+.tariff-feature__icon {
+    flex: 0 0 auto; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 10px; font-size: 15px;
+    background: rgba(var(--tariff-accent), 0.16);
+}
+
+.tariff-btn {
+    width: 100%; box-sizing: border-box; padding: 15px; border-radius: 14px; border: none; cursor: pointer;
+    font-size: 14px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase;
+    background: linear-gradient(135deg, rgba(var(--tariff-accent), 1), rgba(var(--tariff-accent), 0.78));
+    color: #1e1b4b; box-shadow: 0 6px 18px rgba(var(--tariff-accent), 0.35);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.tariff-card--baby .tariff-btn { color: #451a03; }
+.tariff-card--kids .tariff-btn { color: #2e1065; }
+body.light-theme .tariff-card--start .tariff-btn, body.light-theme .tariff-card--kids .tariff-btn { color: #fff; }
+body.light-theme .tariff-card--baby .tariff-btn { color: #fff; }
+.tariff-btn:active { transform: scale(0.98); box-shadow: 0 2px 8px rgba(var(--tariff-accent), 0.3); }
+.tariff-btn--ghost {
+    background: transparent; box-shadow: none; color: var(--text-main) !important;
+    border: 1px solid rgba(var(--tariff-accent), 0.6);
+}
+
+/* Тариф недоступен, пока детей больше, чем он разрешает */
+.tariff-card.is-blocked { border-color: var(--glass-border); }
+.tariff-card.is-blocked .tariff-card__header, .tariff-card.is-blocked .tariff-price, .tariff-card.is-blocked .tariff-features { opacity: 0.55; }
+.tariff-card__hint { margin: 0; padding: 10px 12px; font-size: 13px; line-height: 1.4; border-radius: 12px; color: var(--text-main); background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.4); }
+
+@media (max-width: 360px) {
+    .tariff-price__num { font-size: 30px; }
+    .tariff-card { padding: 16px 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .tariff-sheet__panel, .tariff-sheet__backdrop { animation: none; }
 }

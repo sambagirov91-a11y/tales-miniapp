@@ -43,7 +43,7 @@ function detectInitialLang() {
     if (code.startsWith('en')) return 'en';
     return 'ru';
 }
-// Перевод с подстановкой: tr('btn_renew_trial', { price: '34 900 сум' })
+// Перевод с подстановкой: tr('tariff_extra_voiceover', { price: '14 500 сум' })
 function tr(key, vars) {
     const dict = i18n_app[currentLang] || {};
     let text = dict[key] !== undefined ? dict[key] : (i18n_app.ru[key] !== undefined ? i18n_app.ru[key] : '');
@@ -77,7 +77,9 @@ function formatPrice(tiyin) {
 }
 function formatDate(iso, options) {
     try {
-        return new Date(iso).toLocaleDateString(localeTag(), options || { day: 'numeric', month: 'long', year: 'numeric' });
+        const text = new Date(iso).toLocaleDateString(localeTag(), options || { day: 'numeric', month: 'long', year: 'numeric' });
+        // В русском формате дата заканчивается на «г.», а в наших фразах после даты уже стоит точка
+        return options ? text : text.replace(/\s?г\.$/, '');
     } catch (e) {
         return new Date(iso).toLocaleDateString('ru-RU', options);
     }
@@ -130,6 +132,7 @@ class ApiError extends Error {
 const ERROR_TEXT_KEYS = {
     NO_INIT_DATA: 'error_session',
     CHILDREN_LIMIT: 'alert_children_limit',
+    TARIFF_CHILDREN_LIMIT: 'error_tariff_children',
     CHILD_NAME_REQUIRED: 'alert_enter_child_name',
     PARENT_NAME_REQUIRED: 'alert_enter_parent_name',
     PARENT_ROLE_AGE: 'alert_parent_role_age',
@@ -411,10 +414,8 @@ function applyLanguage() {
     const sendButton = el('submit-comment-btn');
     if (sendButton && !sendButton.disabled) sendButton.innerText = tr('feedback_send');
 
-    if (profileData && profileData.payment) {
-        setText('paywallBtn', tr('paywall_btn', { price: formatPrice(profileData.payment.standard_amount) }));
-    }
-
+    if (profileData) updateStatusUI();
+    updateChildrenLimitHint();
     renderFooterAndPromo();
 }
 function renderFooterAndPromo() {
@@ -485,9 +486,38 @@ function renderBanners() {
     }
 }
 // =====================================================================
-// СТАТУС ПОДПИСКИ, ЦЕНА И ТАЙМЕР АКЦИИ
-// Сумму и дедлайн акции решает сервер — здесь только показ.
+// СТАТУС ПОДПИСКИ, ТАРИФЫ И ТАЙМЕР АКЦИИ
+// Цены, лимиты и дедлайн акции решает сервер — здесь только показ.
 // =====================================================================
+const TARIFF_ICONS = { start: '🌱', baby: '🧸', kids: '🎈' };
+let tariffSheetOpen = false;
+let tariffTimerInterval = null;
+let payingTariff = false;
+
+function tariffName(id) { return tr('tariff_' + id + '_name') || id; }
+
+// Обратный отсчёт: каждую секунду paint('чч:мм:сс'), по окончании — onEnd(). Возвращает таймер.
+function runCountdown(deadlineMs, paint, onEnd) {
+    const tick = () => {
+        const diff = deadlineMs - serverNow();
+        if (diff <= 0) { clearInterval(timer); onEnd(); return; }
+        const h = String(Math.floor(diff / 3600000)).padStart(2, '0');
+        const m = String(Math.floor(diff / 60000) % 60).padStart(2, '0');
+        const s = String(Math.floor(diff / 1000) % 60).padStart(2, '0');
+        paint(`${h}:${m}:${s}`);
+    };
+    const timer = setInterval(tick, 1000);
+    tick();
+    return timer;
+}
+// Акция закончилась — перечитываем профиль (не чаще раза в 10 секунд), цены вернутся к обычным
+function reloadProfileAfterPromo() {
+    if (Date.now() - (window.lastPromoReload || 0) > 10000) {
+        window.lastPromoReload = Date.now();
+        loadProfile().catch(err => console.error(err));
+    }
+}
+
 function updateStatusUI() {
     const section = el('statusSection');
     if (!section) return;
@@ -500,13 +530,14 @@ function updateStatusUI() {
 
     const access = profileData.access || {};
     const payment = profileData.payment || {};
-    const standardPrice = formatPrice(payment.standard_amount);
-    const promoPrice = formatPrice(payment.promo_amount);
+    const currentId = profileData.tariffs ? profileData.tariffs.current : null;
 
     const badge = el('statusBadge');
     if (badge) {
         badge.className = `status-badge ${access.hasAccess ? (access.isTrial ? 'trial' : 'active') : 'inactive'}`;
-        badge.innerText = access.hasAccess ? (access.isTrial ? tr('status_trial') : tr('status_active')) : tr('status_inactive');
+        if (!access.hasAccess) badge.innerText = tr('status_inactive');
+        else if (access.isTrial) badge.innerText = tr('status_trial');
+        else badge.innerText = currentId ? tr('status_active_tariff', { name: tariffName(currentId) }) : tr('status_active');
     }
 
     if (access.hasAccess && access.endDate) {
@@ -516,65 +547,202 @@ function updateStatusUI() {
         setText('statusText', tr('status_inactive_text'));
     }
 
+    // Триал и истёкший доступ — «Оформить подписку», действующий тариф — «Сменить тариф».
+    // Продление текущего тарифа — кнопка на его карточке в окне выбора.
     const button = el('renewBtn');
     if (button) {
         button.style.display = 'block';
         button.disabled = false;
-        if (!access.hasAccess) button.innerText = tr('btn_renew_inactive', { price: standardPrice });
-        else if (!access.isTrial) button.innerText = tr('btn_renew_active', { price: standardPrice });
-        else if (payment.promo_active) button.innerText = tr('btn_renew_promo', { promo_price: promoPrice, price: standardPrice });
-        else button.innerText = tr('btn_renew_trial', { price: standardPrice });
+        if (access.hasAccess && !access.isTrial) button.innerText = tr(currentId ? 'btn_change_tariff' : 'btn_pick_tariff');
+        else button.innerText = tr('btn_subscribe');
     }
 
-    setText('paywallBtn', tr('paywall_btn', { price: standardPrice }));
+    setText('paywallBtn', tr('paywall_btn'));
 
     if (payment.promo_active && payment.promo_deadline) {
-        startPromoTimer(new Date(payment.promo_deadline).getTime(), standardPrice, payment.keeps_trial_days);
+        startPromoTimer(new Date(payment.promo_deadline).getTime(), payment.keeps_trial_days);
     }
+    if (tariffSheetOpen) renderTariffSheet();
 }
-function startPromoTimer(deadlineMs, standardPrice, keepsTrialDays) {
-    setText('promoTimerTitle', tr('timer_title', { price: standardPrice }));
+// Таймер акции на странице профиля: показываем только пока акция действует (триал, первые 48 часов)
+function startPromoTimer(deadlineMs, keepsTrialDays) {
+    const promoItem = ((profileData.tariffs && profileData.tariffs.items) || []).find(i => i.promo_amount);
+    if (!promoItem) return;
+    setText('promoTimerTitle', tr('timer_title', {
+        name: tariffName(promoItem.id),
+        promo_price: formatPrice(promoItem.promo_amount),
+        price: formatPrice(promoItem.price_amount)
+    }));
+    setText('promoTimerCta', tr('timer_cta'));
     const note = el('promoTimerNote');
     if (note) {
         note.innerText = keepsTrialDays ? tr('promo_keeps_trial') : '';
         note.style.display = keepsTrialDays ? 'block' : 'none';
     }
     show('promoTimerContainer');
-
-    const tick = () => {
-        const diff = deadlineMs - serverNow();
-        if (diff <= 0) {
-            clearInterval(promoTimerInterval);
-            promoTimerInterval = null;
-            hide('promoTimerContainer');
-            if (Date.now() - (window.lastPromoReload || 0) > 10000) {
-                window.lastPromoReload = Date.now();
-                loadProfile().catch(err => console.error(err));
-            }
-            return;
-        }
-        const h = String(Math.floor(diff / 3600000)).padStart(2, '0');
-        const m = String(Math.floor(diff / 60000) % 60).padStart(2, '0');
-        const s = String(Math.floor(diff / 1000) % 60).padStart(2, '0');
-        setText('promoTimerCountdown', `${h}:${m}:${s}`);
-    };
-    tick();
-    promoTimerInterval = setInterval(tick, 1000);
+    promoTimerInterval = runCountdown(deadlineMs,
+        text => setText('promoTimerCountdown', text),
+        () => { promoTimerInterval = null; hide('promoTimerContainer'); reloadProfileAfterPromo(); });
 }
-// =====================================================================
-// ОПЛАТА: ссылку собирает сервер
-// =====================================================================
-async function initiatePayment() {
-    if (!userExists) return;
 
-    const buttons = [el('renewBtn'), el('paywallBtn')].filter(Boolean);
-    buttons.forEach(b => { b.disabled = true; b.dataset.label = b.innerText; b.innerText = tr('payment_opening'); });
+// ---------------------------------------------------------------------
+// ОКНО ВЫБОРА ТАРИФА
+// ---------------------------------------------------------------------
+function openTariffs() {
+    if (!userExists || !profileData || !profileData.tariffs) return;
+    tariffSheetOpen = true;
+    renderTariffSheet();
+    const sheet = el('tariffSheet');
+    if (!sheet) return;
+    sheet.hidden = false;
+    document.body.classList.add('sheet-open');
+    const panel = sheet.querySelector('.tariff-sheet__panel');
+    if (panel) { panel.scrollTop = 0; try { panel.focus({ preventScroll: true }); } catch (e) { /* не страшно */ } }
+}
+function closeTariffs() {
+    tariffSheetOpen = false;
+    if (tariffTimerInterval) { clearInterval(tariffTimerInterval); tariffTimerInterval = null; }
+    const sheet = el('tariffSheet');
+    if (sheet) sheet.hidden = true;
+    document.body.classList.remove('sheet-open');
+}
+// Старое имя функции: на случай, если Telegram показал закэшированный index.html
+function initiatePayment() { openTariffs(); }
 
+function priceParts(tiyin) {
+    const sum = Math.round(Number(tiyin) / 100);
+    return { number: new Intl.NumberFormat(currentLang === 'en' ? 'en-GB' : 'ru-RU').format(sum), currency: tr('currency') };
+}
+function tariffCardMarkup(item, context) {
+    const id = escapeHtml(item.id);
+    const promo = item.promo_amount !== null && item.promo_amount !== undefined;
+    const current = item.state === 'current';
+    const blocked = item.state === 'blocked_children';
+    const price = priceParts(promo ? item.promo_amount : item.price_amount);
+
+    const features = [
+        ['👧', item.max_children === 1 ? tr('tariff_children_one') : tr('tariff_children_many', { n: item.max_children })],
+        ['🎙️', item.voiceovers > 0 ? tr('tariff_voiceovers_n', { n: item.voiceovers }) : tr('tariff_voiceovers_none')],
+        ['💳', tr('tariff_extra_voiceover', { price: formatPrice(item.extra_voiceover_amount) })]
+    ].map(([icon, text]) => `
+        <li class="tariff-feature"><span class="tariff-feature__icon" aria-hidden="true">${icon}</span><span>${escapeHtml(text)}</span></li>`).join('');
+
+    const badge = current ? `<span class="tariff-badge tariff-badge--current">${escapeHtml(tr('tariff_badge_current'))}</span>`
+        : (promo ? `<span class="tariff-badge tariff-badge--promo">${escapeHtml(tr('tariff_badge_promo'))}</span>` : '');
+
+    const oldPrice = promo ? `<span class="tariff-price__old">${escapeHtml(formatPrice(item.price_amount))}</span>` : '';
+    const promoLine = promo ? `
+        <div class="tariff-promo">
+            <span>${escapeHtml(tr('tariff_promo_first'))}</span>
+            <span class="tariff-promo__left">${escapeHtml(tr('tariff_promo_left'))} <b id="tariffPromoCountdown">--:--:--</b></span>
+        </div>` : '';
+
+    let action;
+    if (blocked) {
+        action = `
+            <p class="tariff-card__hint">${escapeHtml(tr('tariff_blocked', { count: context.t.children_count, max: item.max_children }))}</p>
+            <button class="tariff-btn tariff-btn--ghost" type="button" data-tariff-action="children">${escapeHtml(tr('tariff_btn_children'))}</button>`;
+    } else {
+        const label = current ? tr('tariff_btn_renew') : (context.switching ? tr('tariff_btn_switch') : tr('tariff_btn_choose'));
+        action = `<button class="tariff-btn" type="button" data-tariff-action="choose" data-tariff-id="${id}">${escapeHtml(label)}</button>`;
+    }
+
+    return `
+        <article class="tariff-card tariff-card--${id}${current ? ' is-current' : ''}${blocked ? ' is-blocked' : ''}${promo ? ' has-promo' : ''}">
+            ${badge}
+            <header class="tariff-card__header">
+                <span class="tariff-card__icon" aria-hidden="true">${TARIFF_ICONS[item.id] || '⭐'}</span>
+                <div class="tariff-card__title">
+                    <h3 class="tariff-card__name">${escapeHtml(tariffName(item.id))}</h3>
+                    <p class="tariff-card__tag">${escapeHtml(tr('tariff_' + item.id + '_tag'))}</p>
+                </div>
+            </header>
+            <div class="tariff-price">
+                ${oldPrice}
+                <div class="tariff-price__row">
+                    <span class="tariff-price__num">${escapeHtml(price.number)}</span>
+                    <span class="tariff-price__cur">${escapeHtml(price.currency)}</span>
+                    <span class="tariff-price__per">${escapeHtml(tr('tariff_per_period'))}</span>
+                </div>
+            </div>
+            ${promoLine}
+            <ul class="tariff-features">${features}</ul>
+            ${action}
+        </article>`;
+}
+function renderTariffSheet() {
+    const sheet = el('tariffSheet');
+    if (!sheet || !profileData || !profileData.tariffs) return;
+    const t = profileData.tariffs;
+    const access = profileData.access || {};
+    const payment = profileData.payment || {};
+    const activeSub = !!(access.hasAccess && !access.isTrial);
+    const switching = activeSub && !t.legacy;       // есть действующий тариф: смена начинается сразу
+
+    setText('tariffSheetTitle', tr(activeSub ? 'tariff_sheet_title_change' : 'tariff_sheet_title_choose'));
+    setText('tariffSheetSub', tr('tariff_sheet_sub'));
+    const closeBtn = el('tariffSheetClose');
+    if (closeBtn) closeBtn.setAttribute('aria-label', tr('tariff_sheet_close'));
+
+    let note = '';
+    if (activeSub && t.legacy) note = tr('tariff_note_legacy', { date: formatDate(access.endDate) });
+    else if (switching) note = tr('tariff_note_change');
+    else if (access.hasAccess && access.isTrial) note = tr('tariff_note_trial');
+    const noteNode = el('tariffNote');
+    if (noteNode) { noteNode.textContent = note; noteNode.style.display = note ? 'block' : 'none'; }
+
+    const cards = el('tariffCards');
+    if (cards) cards.innerHTML = t.items.map(item => tariffCardMarkup(item, { t, switching })).join('');
+
+    if (tariffTimerInterval) { clearInterval(tariffTimerInterval); tariffTimerInterval = null; }
+    if (payment.promo_active && payment.promo_deadline && t.items.some(i => i.promo_amount)) {
+        tariffTimerInterval = runCountdown(new Date(payment.promo_deadline).getTime(),
+            text => { const node = el('tariffPromoCountdown'); if (node) node.textContent = text; },
+            () => { tariffTimerInterval = null; reloadProfileAfterPromo(); });
+    }
+}
+// Кнопки окна: закрыть, выбрать/продлить тариф, перейти к профилям детей
+document.addEventListener('click', (event) => {
+    const node = event.target.closest('[data-tariff-action]');
+    if (!node) return;
+    const action = node.getAttribute('data-tariff-action');
+    if (action === 'close') closeTariffs();
+    else if (action === 'open') openTariffs();
+    else if (action === 'choose') payForTariff(node.getAttribute('data-tariff-id'), node);
+    else if (action === 'children') {
+        closeTariffs();
+        switchAppTab('home');
+        const list = el('childrenList');
+        if (list) list.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+});
+document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && tariffSheetOpen) closeTariffs(); });
+
+// =====================================================================
+// ОПЛАТА: ссылку собирает сервер (тариф и цену выбирает он же)
+// =====================================================================
+async function payForTariff(tariffId, button) {
+    if (!userExists || payingTariff || !profileData || !profileData.tariffs) return;
+    const t = profileData.tariffs;
+    const item = t.items.find(i => i.id === tariffId);
+    if (!item || item.state === 'blocked_children') return;
+
+    // Смена тарифа посреди оплаченного периода: остаток прежнего не сохраняется — спрашиваем
+    const access = profileData.access || {};
+    if (item.state !== 'current' && access.hasAccess && !access.isTrial && !t.legacy) {
+        const ok = await showConfirm(tr('tariff_change_confirm', { name: tariffName(item.id), date: formatDate(access.endDate) }));
+        if (!ok) return;
+    }
+
+    payingTariff = true;
+    const label = button ? button.innerHTML : '';
+    if (button) { button.disabled = true; button.innerText = tr('payment_opening'); }
     try {
-        const data = await api('/api/app/payment-link', { method: 'POST', body: { language: currentLang } });
+        const data = await api('/api/app/payment-link', { method: 'POST', body: { tariff: tariffId, language: currentLang } });
         paymentSnapshot = {
             status: profileData.user.subscription_status,
-            endDate: profileData.access ? profileData.access.endDate : null
+            endDate: access.endDate || null,
+            tariff: t.current || null
         };
         awaitingPayment = true;
         openLink(data.url);
@@ -582,7 +750,8 @@ async function initiatePayment() {
         console.error(err);
         showAlert(err.message || tr('error_generic'));
     } finally {
-        buttons.forEach(b => { b.disabled = false; b.innerText = b.dataset.label || b.innerText; });
+        payingTariff = false;
+        if (button && button.isConnected) { button.disabled = false; button.innerHTML = label; }
     }
 }
 function subscribeReturnFromPayment() {
@@ -602,12 +771,16 @@ async function checkPaymentResult(retryOnce) {
     try {
         await loadProfile();
         const access = profileData.access || {};
+        const currentId = profileData.tariffs ? profileData.tariffs.current : null;
         const paid = profileData.user && profileData.user.subscription_status === 'active' &&
-            (!paymentSnapshot || paymentSnapshot.status !== 'active' || access.endDate !== paymentSnapshot.endDate);
+            (!paymentSnapshot || paymentSnapshot.status !== 'active' || access.endDate !== paymentSnapshot.endDate ||
+                currentId !== paymentSnapshot.tariff);
         if (paid) {
             awaitingPayment = false;
             paymentSnapshot = null;
-            showAlert(tr('payment_success', { date: formatDate(access.endDate) }));
+            closeTariffs();
+            const date = formatDate(access.endDate);
+            showAlert(currentId ? tr('payment_success_tariff', { name: tariffName(currentId), date }) : tr('payment_success', { date }));
         } else if (retryOnce) {
             setTimeout(() => checkPaymentResult(false), 5000);
         }
@@ -655,6 +828,18 @@ function checkLimitAndMode() {
     form.style.display = (allChildren.length >= maxChildren && !editingChildId) ? 'none' : 'block';
     const cancel = el('cancelBtn');
     if (cancel) cancel.style.display = editingChildId ? 'block' : 'none';
+    updateChildrenLimitHint();
+}
+// Достигнут лимит детей по тарифу: объясняем и предлагаем сменить тариф
+function updateChildrenLimitHint() {
+    const hint = el('childrenLimitHint');
+    if (!hint) return;
+    const full = userExists && allChildren.length >= maxChildren && !editingChildId;
+    hint.style.display = full ? 'flex' : 'none';
+    if (!full) return;
+    const access = (profileData && profileData.access) || {};
+    setText('childrenLimitText', tr('children_limit_hint', { max: maxChildren }));
+    setText('childrenLimitBtn', tr(access.hasAccess && !access.isTrial ? 'btn_change_tariff' : 'btn_pick_tariff'));
 }
 function startEdit(id) {
     const child = allChildren.find(c => String(c.id) === String(id));
@@ -1209,9 +1394,13 @@ function updateAudioInterface(storyId, audioUrl, left) {
     const buyLabel = voiceoverAmount
         ? tr('audio_buy_btn', { price: formatPrice(voiceoverAmount) })
         : tr('audio_buy_btn_plain');
+    // В тарифе «Старт» озвучек нет вовсе — это не «закончились», а «оплатите одну»
+    const startPlan = !!(profileData && profileData.tariffs && profileData.tariffs.current === 'start');
     container.innerHTML = `
         <div class="audio-card audio-card--paid">
-            ${audioHeader('🔒', tr('audio_limit_title'), tr('audio_limit_desc'))}
+            ${startPlan
+                ? audioHeader('🎙️', tr('audio_pay_title'), tr('audio_pay_desc'))
+                : audioHeader('🔒', tr('audio_limit_title'), tr('audio_limit_desc'))}
             <button id="btn-buy-audio" class="audio-btn audio-btn--secondary" type="button" data-audio-action="buy" data-story-id="${id}">
                 <span class="audio-btn__icon">💳</span>
                 <span>${escapeHtml(buyLabel)}</span>
