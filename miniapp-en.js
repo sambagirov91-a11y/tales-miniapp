@@ -2,6 +2,26 @@
 window.langEN = {
     currency: "UZS",
 
+    // Voice-over of a tale (audio play). The price comes from the server response.
+    audio_loading: "Loading audio...",
+    audio_ready: "Audio play is ready",
+    audio_gen_title: "Voice this tale",
+    audio_gen_desc: "Professional voices • left: {left}",
+    audio_gen_btn: "Voice it",
+    audio_gen_progress: "Creating the voice-over...",
+    audio_gen_retry: "Error. Try again",
+    audio_limit_title: "No voice-overs left",
+    audio_limit_desc: "Pay for one voice-over to turn this tale into an audio play.",
+    audio_buy_btn: "Voice it for {price}",
+    audio_buy_btn_plain: "Pay for a voice-over",
+    audio_pay_opening: "Opening payment...",
+    audio_pay_success: "Payment received! Now tap \u201cVoice it\u201d.",
+    audio_load_error: "Couldn't load voice-over info.",
+    audio_retry: "Retry",
+    audio_busy: "This tale is already being voiced. Please wait a moment.",
+    audio_error: "Couldn't create the voice-over. Your voice-over was returned, please try again.",
+    audio_no_voiceovers: "No voice-overs left. Please buy a new one.",
+
     tab_home: "Home",
     tab_profile: "My Profile",
     page_title_home: "Children's Profiles",

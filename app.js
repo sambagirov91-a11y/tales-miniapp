@@ -136,6 +136,9 @@ const ERROR_TEXT_KEYS = {
     TERMS_REQUIRED: 'alert_accept_terms',
     LOCKED: 'paywall_text',
     ALICE_CODE_NOT_FOUND: 'alice_code_not_found',
+    NO_VOICEOVERS: 'audio_no_voiceovers',
+    AUDIO_BUSY: 'audio_busy',
+    AUDIO_FAILED: 'audio_error',
     NETWORK: 'error_network'
 };
 async function api(path, options) {
@@ -586,7 +589,10 @@ function subscribeReturnFromPayment() {
     if (window.paymentReturnBound) return;
     window.paymentReturnBound = true;
 
-    const onReturn = () => { if (awaitingPayment) checkPaymentResult(true); };
+    const onReturn = () => {
+        if (awaitingPayment) checkPaymentResult(true);
+        if (awaitingVoiceoverPayment) checkVoiceoverPayment(true);
+    };
     try { if (tg && tg.onEvent) tg.onEvent('activated', onReturn); } catch (e) { /* старые клиенты */ }
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') onReturn();
@@ -828,10 +834,11 @@ async function openReader(storyId) {
     } catch (e) { /* старые клиенты */ }
 
     renderFeedbackBlocks(story);
-    await refreshVoiceoverBalance();
-    updateAudioInterface(story.id, story.audio_url, voiceoversLeft);
+    setAudioLoading();
+    await loadAudioInterface();
 }
 function closeReader() {
+    stopReaderAudio(); // иначе озвучка продолжает играть за закрытой сказкой
     hide('readerScreen');
     document.body.style.overflow = 'auto';
     if (el('readerImg')) el('readerImg').src = '';
@@ -970,36 +977,79 @@ async function submitAliceCode() {
         if (button) { button.disabled = false; button.innerText = tr('aliceSubmitBtn'); }
     }
 }
-// Функция обновления интерфейса аудио
+// =====================================================================
+// ОЗВУЧКА СКАЗКИ (аудиоспектакль)
+// Баланс и цену отдаёт сервер, пользователь определяется по подписи initData.
+// Оплата — через Payme (та же ссылка, что и у подписки, но на сумму одной озвучки).
+// =====================================================================
 let voiceoversLeft = 0;
+let voiceoverAmount = 0;              // цена одной озвучки в тийинах (приходит с сервера)
+let awaitingVoiceoverPayment = null;  // { balanceBefore } — пока пользователь платит в Payme
 
 async function refreshVoiceoverBalance() {
-    const tgUser = tg && tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user : null;
-    const tgId = tgUser ? tgUser.id : null;
-
-    if (!tgId) return;
-
     try {
-        const data = await api('/api/user/check-balance', {
-            method: 'POST',
-            body: { telegram_id: tgId }
-        });
+        const data = await api('/api/user/check-balance', { method: 'POST', body: {} });
         voiceoversLeft = Number(data.voiceovers_left || 0);
+        if (data.voiceover_amount) voiceoverAmount = Number(data.voiceover_amount);
+        return true;
     } catch (err) {
-        console.error('Не удалось получить баланс с сервера', err);
+        console.error('Не удалось получить баланс озвучек', err);
+        return false;
     }
 }
 
-function updateAudioInterface(storyId, audioUrl, left) {
-    const container = document.getElementById('audio-dynamic-content');
-    if (!container) return;
+function isCurrentStory(storyId) {
+    return !!currentStory && String(currentStory.id) === String(storyId);
+}
 
-    if (audioUrl) {
+function audioContainer() {
+    return el('audio-dynamic-content');
+}
+
+function setAudioLoading() {
+    const container = audioContainer();
+    if (container) container.innerHTML = '⏳ ' + escapeHtml(tr('audio_loading'));
+}
+
+// Загружает статус озвучки текущей сказки: готовое аудио, кнопка «Озвучить» или кнопка оплаты
+async function loadAudioInterface() {
+    const story = currentStory;
+    if (!story) return;
+
+    // У готовой озвучки баланс не нужен — лишний запрос не делаем
+    if (!story.audio_url) {
+        const ok = await refreshVoiceoverBalance();
+        if (!isCurrentStory(story.id)) return; // пока ждали, закрыли или открыли другую сказку
+        if (!ok) { renderAudioLoadError(story.id); return; }
+    }
+    updateAudioInterface(story.id, story.audio_url, voiceoversLeft);
+}
+
+function renderAudioLoadError(storyId) {
+    const container = audioContainer();
+    if (!container) return;
+    container.innerHTML = `
+        <div class="audio-card audio-card--paid">
+            <div class="audio-card__desc">${escapeHtml(tr('audio_load_error'))}</div>
+            <button class="audio-btn audio-btn--secondary" type="button" data-audio-action="retry" data-story-id="${escapeHtml(storyId)}">
+                <span>${escapeHtml(tr('audio_retry'))}</span>
+            </button>
+        </div>
+    `;
+}
+
+function updateAudioInterface(storyId, audioUrl, left) {
+    const container = audioContainer();
+    if (!container) return;
+    const id = escapeHtml(storyId);
+
+    const url = safeUrl(audioUrl);
+    if (url) {
         container.innerHTML = `
             <div class="audio-card audio-card--ready">
-                <div class="audio-card__badge">🎧 Аудиоспектакль готов</div>
-                <audio controls class="audio-player">
-                    <source src="${audioUrl}" type="audio/mpeg">
+                <div class="audio-card__badge">🎧 ${escapeHtml(tr('audio_ready'))}</div>
+                <audio controls preload="none" class="audio-player">
+                    <source src="${escapeHtml(url)}" type="audio/mpeg">
                 </audio>
             </div>
         `;
@@ -1011,62 +1061,123 @@ function updateAudioInterface(storyId, audioUrl, left) {
             <div class="audio-card audio-card--free">
                 <div class="audio-card__meta">
                     <span class="audio-card__icon">🎙️</span>
-                    <span class="audio-card__title">Озвучить сказку</span>
+                    <span class="audio-card__title">${escapeHtml(tr('audio_gen_title'))}</span>
                 </div>
-                <div class="audio-card__desc">Профессиональные голоса • осталось: ${left}</div>
-                <button onclick="requestAudioGeneration('${storyId}')" id="btn-gen-audio" class="audio-btn audio-btn--primary" type="button">
+                <div class="audio-card__desc">${escapeHtml(tr('audio_gen_desc', { left }))}</div>
+                <button id="btn-gen-audio" class="audio-btn audio-btn--primary" type="button" data-audio-action="generate" data-story-id="${id}">
                     <span class="audio-btn__icon">🎙️</span>
-                    <span>Озвучить</span>
+                    <span>${escapeHtml(tr('audio_gen_btn'))}</span>
                 </button>
             </div>
         `;
         return;
     }
 
+    const buyLabel = voiceoverAmount
+        ? tr('audio_buy_btn', { price: formatPrice(voiceoverAmount) })
+        : tr('audio_buy_btn_plain');
     container.innerHTML = `
         <div class="audio-card audio-card--paid">
             <div class="audio-card__meta">
                 <span class="audio-card__icon">🔒</span>
-                <span class="audio-card__title">Лимит исчерпан</span>
+                <span class="audio-card__title">${escapeHtml(tr('audio_limit_title'))}</span>
             </div>
-            <div class="audio-card__desc">Завершите оплату, чтобы озвучить сказку.</div>
-            <button onclick="buyAudioGeneration('${storyId}')" id="btn-buy-audio" class="audio-btn audio-btn--secondary" type="button">
+            <div class="audio-card__desc">${escapeHtml(tr('audio_limit_desc'))}</div>
+            <button id="btn-buy-audio" class="audio-btn audio-btn--secondary" type="button" data-audio-action="buy" data-story-id="${id}">
                 <span class="audio-btn__icon">💳</span>
-                <span>Озвучить за 14 900 сум</span>
+                <span>${escapeHtml(buyLabel)}</span>
             </button>
         </div>
     `;
 }
 
 async function requestAudioGeneration(storyId) {
-    const btn = document.getElementById('btn-gen-audio');
-    if (!btn) return;
+    const btn = el('btn-gen-audio');
+    if (!btn || btn.disabled) return;
 
-    btn.innerHTML = '<span class="audio-btn__icon">⏳</span><span>Создаем...</span>';
+    btn.innerHTML = `<span class="audio-btn__icon">⏳</span><span>${escapeHtml(tr('audio_gen_progress'))}</span>`;
     btn.disabled = true;
     btn.classList.add('is-loading');
 
     try {
-        const data = await api('/api/user/generate-audio', {
-            method: 'POST',
-            body: { plod_id: storyId }
-        });
-
-        updateAudioInterface(storyId, data.audioUrl, data.voiceoversLeft);
-    } catch (error) {
-        console.error(error);
-        alert('Ошибка при озвучке: ' + error.message);
-        btn.innerHTML = '<span class="audio-btn__icon">🎙️</span><span>Ошибка. Попробовать снова</span>';
-        btn.disabled = false;
-        btn.classList.remove('is-loading');
+        const data = await api('/api/user/generate-audio', { method: 'POST', body: { plod_id: storyId } });
+        if (data.voiceoversLeft !== undefined) voiceoversLeft = Number(data.voiceoversLeft) || 0;
+        rememberFeedback(storyId, { audio_url: data.audioUrl });
+        if (isCurrentStory(storyId)) updateAudioInterface(storyId, data.audioUrl, voiceoversLeft);
+    } catch (err) {
+        console.error(err);
+        if (err.code === 'NO_VOICEOVERS') {
+            // Баланс на сервере меньше, чем показывал экран — показываем кнопку оплаты
+            voiceoversLeft = 0;
+            if (isCurrentStory(storyId)) updateAudioInterface(storyId, null, 0);
+            return;
+        }
+        showAlert(err.message || tr('audio_error'));
+        if (btn.isConnected) {
+            btn.innerHTML = `<span class="audio-btn__icon">🎙️</span><span>${escapeHtml(tr('audio_gen_retry'))}</span>`;
+            btn.disabled = false;
+            btn.classList.remove('is-loading');
+        }
     }
 }
 
-function buyAudioGeneration(storyId) {
-    const confirmPay = confirm('Оплатить 14 900 сум за озвучку этой сказки?');
-    if (confirmPay) {
-        requestAudioGeneration(storyId);
+// Оплата одной озвучки: ссылку на Payme собирает сервер. Когда пользователь вернётся
+// из Payme, checkVoiceoverPayment() увидит новый баланс (см. subscribeReturnFromPayment).
+async function buyAudioGeneration(storyId) {
+    const btn = el('btn-buy-audio');
+    if (btn) {
+        if (btn.disabled) return;
+        btn.dataset.label = btn.innerHTML;
+        btn.innerHTML = `<span class="audio-btn__icon">⏳</span><span>${escapeHtml(tr('audio_pay_opening'))}</span>`;
+        btn.disabled = true;
     }
+
+    try {
+        const data = await api('/api/user/voiceover-payment-link', { method: 'POST', body: { language: currentLang } });
+        awaitingVoiceoverPayment = { balanceBefore: voiceoversLeft };
+        openLink(data.url);
+    } catch (err) {
+        console.error(err);
+        showAlert(err.message || tr('error_generic'));
+    } finally {
+        if (btn && btn.isConnected) {
+            btn.innerHTML = btn.dataset.label || btn.innerHTML;
+            btn.disabled = false;
+        }
+    }
+}
+
+async function checkVoiceoverPayment(retryOnce) {
+    const pending = awaitingVoiceoverPayment;
+    if (!pending) return;
+
+    const ok = await refreshVoiceoverBalance();
+    if (ok && voiceoversLeft > pending.balanceBefore) {
+        awaitingVoiceoverPayment = null;
+        if (currentStory) updateAudioInterface(currentStory.id, currentStory.audio_url, voiceoversLeft);
+        showAlert(tr('audio_pay_success'));
+    } else if (retryOnce) {
+        // Payme мог ещё не прислать подтверждение — проверим ещё раз через несколько секунд
+        setTimeout(() => checkVoiceoverPayment(false), 5000);
+    }
+}
+
+// Кнопки озвучки рисуются из JS, поэтому слушаем клики на уровне документа (без onclick в разметке)
+document.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-audio-action]');
+    if (!button) return;
+    const storyId = button.getAttribute('data-story-id');
+    const action = button.getAttribute('data-audio-action');
+    if (action === 'generate') requestAudioGeneration(storyId);
+    else if (action === 'buy') buyAudioGeneration(storyId);
+    else if (action === 'retry') { setAudioLoading(); loadAudioInterface(); }
+});
+
+function stopReaderAudio() {
+    const container = audioContainer();
+    const player = container ? container.querySelector('audio') : null;
+    if (player) { try { player.pause(); } catch (e) { /* ничего страшного */ } }
+    if (container) container.innerHTML = '';
 }
 // =====================
 // ======= СТАРТ =======

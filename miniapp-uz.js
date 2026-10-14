@@ -2,6 +2,26 @@
 window.langUZ = {
     currency: "so'm",
 
+    // Ertakni ovozlashtirish (audiospektakl). Narx server javobidan olinadi.
+    audio_loading: "Audio yuklanmoqda...",
+    audio_ready: "Audiospektakl tayyor",
+    audio_gen_title: "Ertakni ovozlashtirish",
+    audio_gen_desc: "Professional ovozlar • qoldi: {left}",
+    audio_gen_btn: "Ovozlashtirish",
+    audio_gen_progress: "Ovozli ertak yaratilmoqda...",
+    audio_gen_retry: "Xatolik. Qayta urinib ko'ring",
+    audio_limit_title: "Ovozlashtirishlar tugadi",
+    audio_limit_desc: "Bu ertakni audiospektaklga aylantirish uchun bitta ovozlashtirish uchun to'lang.",
+    audio_buy_btn: "{price} ga ovozlashtirish",
+    audio_buy_btn_plain: "Ovozlashtirish uchun to'lash",
+    audio_pay_opening: "To'lov ochilmoqda...",
+    audio_pay_success: "To'lov qabul qilindi! Endi «Ovozlashtirish» tugmasini bosing.",
+    audio_load_error: "Ovozlashtirish ma'lumotlarini yuklab bo'lmadi.",
+    audio_retry: "Qayta urinish",
+    audio_busy: "Bu ertak ovozlashtirilmoqda. Biroz kuting.",
+    audio_error: "Ovozlashtirishni yaratib bo'lmadi. Limit qaytarildi, qayta urinib ko'ring.",
+    audio_no_voiceovers: "Ovozlashtirishlar tugadi. Yangisi uchun to'lang.",
+
     tab_home: "Bosh sahifa",
     tab_profile: "Mening profilim",
     page_title_home: "Bolalar profillari",
