@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Политика конфиденциальности — Сказки Шахерезады / Privacy Policy</title>
+<style>
+  :root { --bg:#fbf7f0; --fg:#2b2433; --muted:#6b6275; --card:#ffffff; --line:#e7dfd2; --accent:#7a4fb5; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#16121c; --fg:#ece7f3; --muted:#a79fb4; --card:#1f1a28; --line:#33293f; --accent:#b99cf0; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  main { max-width:720px; margin:0 auto; padding:32px 16px 56px; overflow-wrap:anywhere; }
+  h1 { font-size:26px; line-height:1.25; margin:0 0 4px; }
+  h2 { font-size:18px; margin:28px 0 8px; }
+  .lead { color:var(--muted); margin:0 0 24px; }
+  section { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:8px 20px 20px; margin-bottom:20px; }
+  ul { padding-left:20px; margin:8px 0; }
+  a { color:var(--accent); }
+  code { overflow-wrap: anywhere; font-size: 14px; }
+  .updated { color:var(--muted); font-size:14px; }
+</style>
+</head>
+<body>
+<main>
+  <section lang="ru">
+    <h1>Политика конфиденциальности</h1>
+    <p class="lead">Сказки Шахерезады — служебная интеграция с Google Диском</p>
+
+    <h2>Что это за приложение</h2>
+    <p>«Сказки Шахерезады» — это Telegram-бот и мини-приложение с персонализированными сказками для детей. Для работы редакции у проекта есть закрытая админка. Через неё владелец проекта собирает видеоролики к сказкам. Интеграция с Google Диском нужна только для того, чтобы сохранять эти ролики в папку на Google Диске самого владельца.</p>
+
+    <h2>Какие данные и доступы используются</h2>
+    <ul>
+      <li>Запрашивается один доступ Google: <code>https://www.googleapis.com/auth/drive.file</code>. Он позволяет приложению работать только с теми файлами, которые оно само создало на Диске (видеоролики и папка для них). Остальные файлы на Диске приложению недоступны.</li>
+      <li>Доступом пользуется только владелец проекта. Обычные пользователи бота и мини-приложения в Google не входят и своих данных Google нам не передают.</li>
+      <li>Ключи доступа (токены) хранятся в защищённых переменных окружения сервера и нигде не публикуются.</li>
+    </ul>
+
+    <h2>Что мы не делаем</h2>
+    <ul>
+      <li>Не читаем, не изменяем и не удаляем другие файлы на Google Диске.</li>
+      <li>Не продаём данные, не передаём их третьим лицам и не используем для рекламы.</li>
+      <li>Данные Google не используются для обучения моделей искусственного интеллекта.</li>
+    </ul>
+
+    <h2>Как отозвать доступ</h2>
+    <p>Доступ можно отозвать в любой момент на странице <a href="https://myaccount.google.com/permissions" rel="noopener">myaccount.google.com/permissions</a>. После этого сохранение видео на Диск прекратится.</p>
+
+    <h2>Контакты</h2>
+    <p>По вопросам о данных напишите в службу поддержки в Telegram-боте «Сказки Шахерезады» (кнопка «О проекте»).</p>
+    <p class="updated">Обновлено: 14 октября 2026</p>
+  </section>
+
+  <section lang="en">
+    <h1>Privacy Policy</h1>
+    <p class="lead">Scheherazade Tales — internal Google Drive integration</p>
+
+    <h2>What this app is</h2>
+    <p>“Scheherazade Tales” is a Telegram bot and mini app with personalized bedtime stories for children. The project has a private admin panel where the project owner assembles short videos for the stories. The Google Drive integration exists only to save those videos into a folder on the project owner's own Google Drive.</p>
+
+    <h2>Data and permissions used</h2>
+    <ul>
+      <li>The app requests a single Google scope: <code>https://www.googleapis.com/auth/drive.file</code>. It lets the app access only the files it created itself (the videos and their folder). The app cannot see any other files in Drive.</li>
+      <li>Only the project owner uses this access. Users of the bot and mini app do not sign in with Google and do not share any Google data with us.</li>
+      <li>Access tokens are stored in protected server environment variables and are never published.</li>
+    </ul>
+
+    <h2>What we do not do</h2>
+    <ul>
+      <li>We do not read, modify or delete other files in Google Drive.</li>
+      <li>We do not sell data, share it with third parties, or use it for advertising.</li>
+      <li>Google user data is not used to train artificial intelligence models.</li>
+    </ul>
+
+    <h2>Revoking access</h2>
+    <p>You can revoke access at any time at <a href="https://myaccount.google.com/permissions" rel="noopener">myaccount.google.com/permissions</a>. Saving videos to Drive will stop.</p>
+
+    <h2>Contact</h2>
+    <p>For questions about data, contact support via the “Scheherazade Tales” Telegram bot (the “About” button).</p>
+    <p class="updated">Updated: October 14, 2026</p>
+  </section>
+</main>
+</body>
+</html>
