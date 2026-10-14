@@ -33,8 +33,9 @@ window.langEN = {
 
     tab_home: "Home",
     tab_profile: "My Profile",
-    page_title_home: "Children's Profiles",
+    page_title_home: "Home",
     page_title_profile: "My Profile",
+    lbl_children: "👶 Children's profiles",
 
     loading: "Loading...",
     open_in_telegram_title: "Open the app in Telegram",

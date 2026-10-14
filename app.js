@@ -222,6 +222,8 @@ async function boot() {
     if (storyId && profileData && profileData.user && profileData.user.profile_complete) {
         switchAppTab('profile');
         openReader(storyId);
+    } else {
+        openChildrenIfEmpty();
     }
     subscribeReturnFromPayment();
 }
@@ -322,6 +324,7 @@ async function saveParentInfo() {
             body: { parentName, role, age, agreedPrivacy, agreedOffer, language: currentLang }
         });
         await loadProfile();
+        openChildrenIfEmpty();
     } catch (err) {
         console.error(err);
         showAlert(err.message || tr('error_generic'));
@@ -402,6 +405,7 @@ function applyLanguage() {
     const offerText = el('textOffer');
     if (offerText) offerText.innerHTML = tr('textOffer');
     setText('saveParentBtn', tr('saveParentBtn'));
+    setText('lblChildren', tr('lbl_children'));
     setText('lblNewStories', tr('lbl_new_stories'));
     setText('lblArchiveStories', tr('lbl_archive_stories'));
     setText('paywallText', tr('paywall_text'));
@@ -711,9 +715,7 @@ document.addEventListener('click', (event) => {
     else if (action === 'choose') payForTariff(node.getAttribute('data-tariff-id'), node);
     else if (action === 'children') {
         closeTariffs();
-        switchAppTab('home');
-        const list = el('childrenList');
-        if (list) list.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        showChildrenSection();
     }
 });
 document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && tariffSheetOpen) closeTariffs(); });
@@ -916,6 +918,17 @@ function switchAppTab(tabId) {
         loadUserStories();
     }
     window.scrollTo(0, 0);
+}
+// Профили детей живут во вкладке «Мой профиль»: открываем её и показываем этот раздел
+function showChildrenSection() {
+    switchAppTab('profile');
+    const title = el('lblChildren');
+    if (title) title.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+// Новому пользователю без детей сразу открываем раздел, где их добавляют
+function openChildrenIfEmpty() {
+    if (!userExists || !profileData || !profileData.user || !profileData.user.profile_complete) return;
+    if (!allChildren.length) showChildrenSection();
 }
 // =====================================================================
 // СКАЗКИ И АРХИВ (закрытые сказки сервер отдаёт без текста)

@@ -886,3 +886,6 @@ body.light-theme .tariff-card--baby .tariff-btn { color: #fff; }
 @media (prefers-reduced-motion: reduce) {
     .tariff-sheet__panel, .tariff-sheet__backdrop { animation: none; }
 }
+
+/* Раздел «Профили детей» во вкладке профиля: при прокрутке к нему оставляем воздух сверху */
+#lblChildren { scroll-margin-top: 20px; }

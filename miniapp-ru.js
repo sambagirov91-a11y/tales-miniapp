@@ -35,8 +35,9 @@ window.langRU = {
     // Вкладки и заголовки
     tab_home: "Главная",
     tab_profile: "Мой профиль",
-    page_title_home: "Профили детей",
+    page_title_home: "Главная",
     page_title_profile: "Мой профиль",
+    lbl_children: "👶 Профили детей",
 
     // Загрузка и ошибки
     loading: "Загрузка...",
