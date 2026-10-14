@@ -32,8 +32,10 @@ window.langUZ = {
     audio_no_voiceovers: "Ovozlashtirishlar tugadi. Yangisi uchun to'lang.",
 
     tab_home: "Bosh sahifa",
+    tab_stories: "Ertaklar",
     tab_profile: "Mening profilim",
     page_title_home: "Bosh sahifa",
+    page_title_stories: "Ertaklar",
     page_title_profile: "Mening profilim",
     lbl_children: "👶 Bolalar profillari",
 

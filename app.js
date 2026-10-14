@@ -220,7 +220,7 @@ async function boot() {
     }
     const storyId = new URLSearchParams(window.location.search).get('story_id');
     if (storyId && profileData && profileData.user && profileData.user.profile_complete) {
-        switchAppTab('profile');
+        switchAppTab('stories');
         openReader(storyId);
     } else {
         openChildrenIfEmpty();
@@ -356,8 +356,10 @@ function applyLanguage() {
     document.documentElement.lang = currentLang;
 
     setText('lblTabHome', tr('tab_home'));
+    setText('lblTabStories', tr('tab_stories'));
     setText('lblTabProfile', tr('tab_profile'));
     setText('pageTitleHome', tr('page_title_home'));
+    setText('pageTitleStories', tr('page_title_stories'));
     setText('pageTitleProfile', tr('page_title_profile'));
 
     setText('appLoaderText', tr('loading'));
@@ -421,6 +423,7 @@ function applyLanguage() {
     if (profileData) updateStatusUI();
     updateChildrenLimitHint();
     renderFooterAndPromo();
+    renderStoriesPromo();
 }
 function renderFooterAndPromo() {
     const footer = el('footerLinks');
@@ -441,6 +444,16 @@ function renderFooterAndPromo() {
         <a href="#" data-config-link="about_url">${escapeHtml(tr('footer_about'))}</a>`;
     footer.innerHTML = html;
 }
+// Тот же рекламный баннер — внизу вкладки «Сказки» (без ссылок футера)
+function renderStoriesPromo() {
+    const box = el('storiesPromo');
+    if (!box) return;
+    const promoImage = safeUrl(configUrls.promo_image_url);
+    const promoLink = safeUrl(configUrls.promo_link_url);
+    box.innerHTML = (promoImage && promoLink)
+        ? `<a href="#" data-config-link="promo_link_url" class="footer-promo"><img src="${escapeHtml(promoImage)}" alt="Promo"></a>`
+        : '';
+}
 // =====================================================================
 // НАСТРОЙКИ И СЛАЙДЕР БАННЕРОВ
 // =====================================================================
@@ -455,36 +468,45 @@ async function loadAppConfig() {
         console.error('Не удалось загрузить баннеры и ссылки:', err);
     }
 }
+// Один набор баннеров показываем в двух каруселях: на «Главной» и во вкладке «Сказки»
+const BANNER_SLIDERS = [['sliderContainer', 'sliderTrack'], ['storiesSliderContainer', 'storiesSliderTrack']];
 function renderBanners() {
-    const track = el('sliderTrack');
-    const container = el('sliderContainer');
-    if (!track || !container) return;
-
     if (window.sliderIntervalId) {
         clearInterval(window.sliderIntervalId);
         window.sliderIntervalId = null;
     }
-    if (!banners.length) { container.style.display = 'none'; return; }
+    const tracks = [];
+    BANNER_SLIDERS.forEach(([containerId, trackId]) => {
+        const container = el(containerId);
+        const track = el(trackId);
+        if (!track || !container) return;
+        if (!banners.length) { container.style.display = 'none'; return; }
 
-    container.style.display = 'block';
-    track.style.transform = 'translateX(0)';
-    track.innerHTML = banners.map(b => {
-        const title = (currentLang === 'uz' && b.title_uz) ? b.title_uz : ((currentLang === 'en' && b.title_en) ? b.title_en : b.title);
-        return `
-            <div class="slide">
-                <img src="${escapeHtml(safeUrl(b.image_url))}" class="slide-bg" loading="lazy" alt="">
-                <div class="slide-title">${escapeHtml(title)}</div>
-            </div>`;
-    }).join('');
+        container.style.display = 'block';
+        track.style.transform = 'translateX(0)';
+        track.innerHTML = banners.map(b => {
+            const title = (currentLang === 'uz' && b.title_uz) ? b.title_uz : ((currentLang === 'en' && b.title_en) ? b.title_en : b.title);
+            return `
+                <div class="slide">
+                    <img src="${escapeHtml(safeUrl(b.image_url))}" class="slide-bg" loading="lazy" alt="">
+                    <div class="slide-title">${escapeHtml(title)}</div>
+                </div>`;
+        }).join('');
+        tracks.push(track);
+    });
 
-    if (banners.length > 1) {
+    if (banners.length > 1 && tracks.length) {
         window.sliderIntervalId = setInterval(() => {
-            track.style.transition = 'transform 0.5s ease-in-out';
-            track.style.transform = 'translateX(-100%)';
+            tracks.forEach(track => {
+                track.style.transition = 'transform 0.5s ease-in-out';
+                track.style.transform = 'translateX(-100%)';
+            });
             setTimeout(() => {
-                track.style.transition = 'none';
-                track.appendChild(track.firstElementChild);
-                track.style.transform = 'translateX(0)';
+                tracks.forEach(track => {
+                    track.style.transition = 'none';
+                    track.appendChild(track.firstElementChild);
+                    track.style.transform = 'translateX(0)';
+                });
             }, 500);
         }, 5000);
     }
@@ -781,6 +803,7 @@ async function checkPaymentResult(retryOnce) {
             awaitingPayment = false;
             paymentSnapshot = null;
             closeTariffs();
+            loadUserStories();   // закрытые сказки архива открываются сразу после оплаты
             const date = formatDate(access.endDate);
             showAlert(currentId ? tr('payment_success_tariff', { name: tariffName(currentId), date }) : tr('payment_success', { date }));
         } else if (retryOnce) {
@@ -905,18 +928,18 @@ async function saveData() {
 // =====================================================================
 // НАВИГАЦИЯ
 // =====================================================================
+const APP_TABS = {
+    home: ['tabHome', 'btnTabHome'],
+    stories: ['tabStories', 'btnTabStories'],
+    profile: ['tabProfile', 'btnTabProfile']
+};
 function switchAppTab(tabId) {
+    const [pageId, buttonId] = APP_TABS[tabId] || APP_TABS.home;
     document.querySelectorAll('.tab-page').forEach(node => node.classList.remove('active'));
     document.querySelectorAll('.tab-item').forEach(node => node.classList.remove('active'));
-
-    if (tabId === 'home') {
-        if (el('tabHome')) el('tabHome').classList.add('active');
-        if (el('btnTabHome')) el('btnTabHome').classList.add('active');
-    } else {
-        if (el('tabProfile')) el('tabProfile').classList.add('active');
-        if (el('btnTabProfile')) el('btnTabProfile').classList.add('active');
-        loadUserStories();
-    }
+    if (el(pageId)) el(pageId).classList.add('active');
+    if (el(buttonId)) el(buttonId).classList.add('active');
+    if (tabId === 'stories') loadUserStories();
     window.scrollTo(0, 0);
 }
 // Профили детей живут во вкладке «Мой профиль»: открываем её и показываем этот раздел
