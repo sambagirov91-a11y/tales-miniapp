@@ -142,6 +142,9 @@ const ERROR_TEXT_KEYS = {
     NO_VOICEOVERS: 'audio_no_voiceovers',
     AUDIO_BUSY: 'audio_busy',
     AUDIO_FAILED: 'audio_error',
+    FIRST_STORY_DONE: 'first_story_err_done',
+    NO_CHILDREN: 'first_story_need_child',
+    NO_STORY: 'first_story_err_none',
     NETWORK: 'error_network'
 };
 async function api(path, options) {
@@ -275,6 +278,7 @@ async function loadProfile() {
     updateStatusUI();
     updateAliceUI(!!(data.user && data.user.alice_connected));
     renderChildren();
+    renderFirstStory();
     checkLimitAndMode();
 }
 // =====================================================================
@@ -422,6 +426,7 @@ function applyLanguage() {
 
     if (profileData) updateStatusUI();
     updateChildrenLimitHint();
+    renderFirstStory();
     renderFooterAndPromo();
     renderStoriesPromo();
 }
@@ -925,6 +930,138 @@ async function saveData() {
         applyLanguage();
     }
 }
+// =====================================================================
+// ПЕРВАЯ СКАЗКА СРАЗУ (пробный период)
+// Карточка с кнопкой «Получить первую сказку сейчас» — на «Главной» и под профилями детей.
+// Один ребёнок в профиле — сказка уходит сразу; несколько — спрашиваем «Для кого прислать сказку?».
+// Нет детей — отправляем добавлять профиль. Показываем, пока сервер говорит first_story.available.
+// Вечерняя сказка в 21:00 приходит как обычно.
+// =====================================================================
+let firstStoryBusy = false;
+let firstStoryResult = null;     // { storyId, childName, childNameGen, sent } — после успешной отправки
+let firstStorySheetOpen = false;
+
+function firstStoryState() {
+    if (firstStoryResult) return 'done';
+    if (firstStoryBusy) return 'busy';
+    return profileData && profileData.first_story && profileData.first_story.available ? 'ready' : 'hidden';
+}
+function firstStoryMarkup(state) {
+    if (state === 'done') {
+        // По-русски «Сказка для Тимура» — родительный падеж даёт сервер; на других языках имя остаётся как есть
+        const name = escapeHtml(currentLang === 'ru' && firstStoryResult.childNameGen ? firstStoryResult.childNameGen : firstStoryResult.childName);
+        const text = tr(firstStoryResult.sent ? 'first_story_done_text' : 'first_story_done_unsent', { name });
+        return `
+        <div class="first-story first-story--done" data-first-story-state="done">
+            <div class="first-story__head"><span class="first-story__icon" aria-hidden="true">✅</span><span class="first-story__title">${escapeHtml(tr('first_story_done_title'))}</span></div>
+            <p class="first-story__text">${text}</p>
+            <button type="button" class="first-story__btn" data-first-story-action="read">${escapeHtml(tr('first_story_read_btn'))}</button>
+        </div>`;
+    }
+    const busy = state === 'busy';
+    return `
+        <div class="first-story" data-first-story-state="${state}">
+            <div class="first-story__head"><span class="first-story__icon" aria-hidden="true">🌙</span><span class="first-story__title">${escapeHtml(tr('first_story_title'))}</span></div>
+            <p class="first-story__text">${escapeHtml(tr('first_story_text'))}</p>
+            <button type="button" class="first-story__btn" data-first-story-action="start"${busy ? ' disabled aria-busy="true"' : ''}>${busy ? '<span class="first-story__spin" aria-hidden="true"></span>' + escapeHtml(tr('first_story_sending')) : escapeHtml(tr('first_story_btn'))}</button>
+        </div>`;
+}
+function renderFirstStory() {
+    const state = firstStoryState();
+    document.querySelectorAll('[data-first-story-slot]').forEach(slot => {
+        const inProfile = slot.getAttribute('data-first-story-slot') === 'profile';
+        // Под профилями детей кнопка нужна, когда уже есть кого выбирать. Итог «Сказка отправлена» показываем в обоих местах:
+        // нажали на вкладке «Мой профиль» — ответ должен появиться там же (вкладки открыты по одной, дубля на экране нет)
+        const hidden = state === 'hidden' || (inProfile && !allChildren.length);
+        if (hidden) {
+            slot.style.display = 'none';
+            slot.innerHTML = '';
+            slot.removeAttribute('data-rendered');
+            return;
+        }
+        const html = firstStoryMarkup(state);
+        slot.style.display = 'block';
+        if (slot.getAttribute('data-rendered') !== html) {      // не перерисовываем то же самое: иначе теряется фокус кнопки
+            slot.innerHTML = html;
+            slot.setAttribute('data-rendered', html);
+        }
+    });
+}
+function startFirstStory() {
+    if (firstStoryBusy || !userExists) return;
+    if (!allChildren.length) {
+        showAlert(tr('first_story_need_child'));
+        showChildrenSection();
+        return;
+    }
+    if (allChildren.length === 1) {
+        sendFirstStory(allChildren[0].id);
+        return;
+    }
+    openFirstStorySheet();
+}
+function openFirstStorySheet() {
+    const sheet = el('firstStorySheet');
+    if (!sheet) return;
+    setText('firstStorySheetTitle', tr('first_story_pick_title'));
+    setText('firstStorySheetSub', tr('first_story_pick_sub'));
+    const close = el('firstStorySheetClose');
+    if (close) close.setAttribute('aria-label', tr('first_story_close'));
+    const list = el('firstStoryChoices');
+    if (list) {
+        list.innerHTML = allChildren.map(child => `
+            <button type="button" class="first-story-choice" data-first-story-action="pick" data-child-id="${escapeHtml(child.id)}">
+                <span class="first-story-choice__name">${escapeHtml(child.name)} ${child.gender === 'M' ? '👦' : '👧'}</span>
+                <span class="first-story-choice__meta">${languageBadge(child.language)}</span>
+            </button>`).join('');
+    }
+    firstStorySheetOpen = true;
+    sheet.hidden = false;
+    document.body.classList.add('sheet-open');
+    const panel = sheet.querySelector('.tariff-sheet__panel');
+    if (panel) { panel.scrollTop = 0; try { panel.focus({ preventScroll: true }); } catch (e) { /* не страшно */ } }
+}
+function closeFirstStorySheet() {
+    firstStorySheetOpen = false;
+    const sheet = el('firstStorySheet');
+    if (sheet) sheet.hidden = true;
+    if (!tariffSheetOpen) document.body.classList.remove('sheet-open');
+}
+async function sendFirstStory(childId) {
+    if (firstStoryBusy) return;
+    firstStoryBusy = true;
+    closeFirstStorySheet();
+    renderFirstStory();
+    try {
+        const data = await api('/api/app/first-story', { method: 'POST', body: { childId } });
+        firstStoryResult = { storyId: data.story_id, childName: data.child_name || '', childNameGen: data.child_name_genitive || '', sent: data.sent !== false };
+        if (profileData) profileData.first_story = { available: false };
+    } catch (err) {
+        console.error(err);
+        // Сказка уже выдана — кнопка больше не нужна
+        if (err.code === 'FIRST_STORY_DONE' && profileData) profileData.first_story = { available: false };
+        showAlert(err.message || tr('error_generic'));
+    } finally {
+        firstStoryBusy = false;
+        renderFirstStory();
+    }
+}
+function readFirstStory() {
+    if (!firstStoryResult) return;
+    switchAppTab('stories');
+    openReader(firstStoryResult.storyId);
+}
+document.addEventListener('click', (event) => {
+    const node = event.target.closest('[data-first-story-action]');
+    if (!node) return;
+    const action = node.getAttribute('data-first-story-action');
+    if (action === 'start') startFirstStory();
+    else if (action === 'pick') sendFirstStory(node.getAttribute('data-child-id'));
+    else if (action === 'read') readFirstStory();
+    else if (action === 'close') closeFirstStorySheet();
+});
+document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && firstStorySheetOpen) closeFirstStorySheet(); });
+
 // =====================================================================
 // НАВИГАЦИЯ
 // =====================================================================

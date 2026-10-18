@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Scheherezade</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css?v=6">
+    <link rel="stylesheet" href="style.css?v=7">
     
     <!-- Подключаем внешние файлы со словарями для 3 языков -->
-<script src="miniapp-ru.js?v=12"></script>
-<script src="miniapp-uz.js?v=12"></script>
-<script src="miniapp-en.js?v=12"></script>
+<script src="miniapp-ru.js?v=13"></script>
+<script src="miniapp-uz.js?v=13"></script>
+<script src="miniapp-en.js?v=13"></script>
 </head>
 <body>
 
@@ -97,6 +97,9 @@
             <div class="slider-container" id="sliderContainer">
                 <div class="slider-track" id="sliderTrack"></div>
             </div>
+
+            <!-- ПЕРВАЯ СКАЗКА СРАЗУ (пробный период): кнопку рисует JS -->
+            <div class="first-story-slot" data-first-story-slot="home" style="display: none;"></div>
 
             <!-- ТАЙМЕР АКЦИИ (триал, первые 48 часов) -->
             <div id="promoTimerContainer" class="promo-timer" style="display: none;">
@@ -199,6 +202,9 @@
                     <div class="spinner"></div>
                 </div>
             </div>
+
+            <!-- Та же кнопка «Первая сказка» — сразу под профилями детей -->
+            <div class="first-story-slot" data-first-story-slot="profile" style="display: none;"></div>
 
             <!-- Лимит детей по тарифу достигнут -->
             <div id="childrenLimitHint" class="limit-hint" style="display: none;">
@@ -316,7 +322,23 @@
         </div>
     </div>
 
+    <!-- ОКНО «ДЛЯ КОГО ПРИСЛАТЬ СКАЗКУ?» (когда в профиле несколько детей) -->
+    <div id="firstStorySheet" class="tariff-sheet" role="dialog" aria-modal="true" aria-labelledby="firstStorySheetTitle" hidden>
+        <div class="tariff-sheet__backdrop" data-first-story-action="close"></div>
+        <div class="tariff-sheet__panel" tabindex="-1">
+            <div class="tariff-sheet__grab" aria-hidden="true"></div>
+            <header class="tariff-sheet__head">
+                <div class="tariff-sheet__heading">
+                    <h2 id="firstStorySheetTitle" class="tariff-sheet__title">Для кого прислать сказку?</h2>
+                    <p id="firstStorySheetSub" class="tariff-sheet__sub"></p>
+                </div>
+                <button id="firstStorySheetClose" class="tariff-sheet__close" type="button" data-first-story-action="close" aria-label="Закрыть">✕</button>
+            </header>
+            <div id="firstStoryChoices" class="first-story-choices"></div>
+        </div>
+    </div>
+
     <!-- Основной скрипт логики Mini App -->
-    <script src="app.js?v=16"></script>
+    <script src="app.js?v=17"></script>
 </body>
 </html>

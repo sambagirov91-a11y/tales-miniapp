@@ -899,3 +899,44 @@ body.light-theme .tariff-card--baby .tariff-btn { color: #fff; }
 @media (max-width: 360px) {
     .tab-label { font-size: 10px; letter-spacing: 0.1px; }
 }
+
+/* ----------------- ПЕРВАЯ СКАЗКА СРАЗУ (пробный период) ----------------- */
+.first-story-slot { margin-bottom: 20px; }
+.first-story {
+    box-sizing: border-box; padding: 18px 16px 16px; border-radius: 20px;
+    border: 1px solid rgba(var(--audio-accent, 129, 140, 248), 0.45);
+    background:
+        linear-gradient(155deg, rgba(139, 92, 246, 0.26) 0%, rgba(250, 204, 21, 0.1) 100%),
+        var(--glass-bg);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+}
+body.light-theme .first-story { border-color: rgba(124, 58, 237, 0.4); box-shadow: 0 8px 24px rgba(120, 53, 15, 0.12); }
+.first-story--done { border-color: rgba(16, 185, 129, 0.5); background: linear-gradient(155deg, rgba(16, 185, 129, 0.2) 0%, rgba(250, 204, 21, 0.06) 100%), var(--glass-bg); }
+.first-story__head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.first-story__icon { font-size: 24px; line-height: 1; }
+.first-story__title { font-size: 18px; font-weight: 800; line-height: 1.25; color: var(--gold-main); }
+.first-story__text { margin: 0 0 14px; font-size: 14px; line-height: 1.5; color: var(--text-main); }
+.first-story__btn {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; box-sizing: border-box; padding: 15px 14px; border: none; border-radius: 12px; cursor: pointer;
+    background: linear-gradient(135deg, #facc15, #f59e0b); color: #451a03;
+    font-size: 14px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase;
+    box-shadow: 0 4px 15px rgba(217, 119, 6, 0.3); transition: transform 0.2s, opacity 0.2s;
+}
+.first-story__btn:active { transform: scale(0.98); }
+.first-story__btn[disabled] { opacity: 0.75; cursor: default; transform: none; }
+.first-story__spin {
+    width: 16px; height: 16px; flex: 0 0 auto; border-radius: 50%;
+    border: 2px solid rgba(69, 26, 3, 0.25); border-top-color: #451a03; animation: audioSpin 0.9s linear infinite;
+}
+.first-story-choices { display: flex; flex-direction: column; gap: 12px; }
+.first-story-choice {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    width: 100%; box-sizing: border-box; padding: 18px 18px; border-radius: 16px; cursor: pointer; text-align: left;
+    border: 1px solid var(--glass-border); border-left: 4px solid var(--gold-main);
+    background: var(--glass-bg); color: var(--text-main); font: inherit; transition: transform 0.2s, background 0.2s;
+}
+.first-story-choice:active { transform: scale(0.98); background: rgba(250, 204, 21, 0.12); }
+.first-story-choice__name { font-size: 18px; font-weight: 700; overflow-wrap: anywhere; }
+.first-story-choice__meta { flex: 0 0 auto; font-size: 13px; color: var(--text-muted); }

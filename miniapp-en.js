@@ -176,6 +176,22 @@ window.langEN = {
     alice_enter_4_digits: "Enter 4 digits",
     alice_code_not_found: "Code not found or expired. Ask Alice for a new one.",
 
+    // First tale right away (trial)
+    first_story_title: "Your first tale — right now",
+    first_story_text: "No need to wait for the evening: we'll send a tale right away. And at 21:00 another one arrives, as usual.",
+    first_story_btn: "Get the first tale now",
+    first_story_sending: "Sending the tale...",
+    first_story_pick_title: "Who is the tale for?",
+    first_story_pick_sub: "Pick your child — a tale with their name arrives right away.",
+    first_story_close: "Close",
+    first_story_done_title: "Tale sent!",
+    first_story_done_text: "The tale for {name} is already in the bot chat and in the “Tales” tab. New tales arrive every evening at 21:00.",
+    first_story_done_unsent: "The tale for {name} is ready and waiting in the “Tales” tab. We couldn't send it to the bot chat: open the bot and press /start so the evening tales arrive too.",
+    first_story_read_btn: "Read now",
+    first_story_need_child: "First add your child's profile — then you can get the first tale right away.",
+    first_story_err_done: "The first tale has already been sent. The next one arrives at 21:00.",
+    first_story_err_none: "There is no suitable tale yet. An evening tale will arrive on schedule.",
+
     footer_privacy: "Privacy Policy",
     footer_offer: "Terms of Service",
     footer_about: "About the project"
