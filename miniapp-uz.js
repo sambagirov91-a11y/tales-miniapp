@@ -176,6 +176,22 @@ window.langUZ = {
     alice_enter_4_digits: "4 ta raqam kiriting",
     alice_code_not_found: "Kod topilmadi yoki eskirgan. Alisadan yangi kod so'rang.",
 
+    // Birinchi ertak darhol (sinov muddati)
+    first_story_title: "Birinchi ertak — hoziroq",
+    first_story_text: "Kechgacha kutib o'tirmang: ertakni darhol yuboramiz. Soat 21:00 da esa odatdagidek yana bittasi keladi.",
+    first_story_btn: "Birinchi ertakni hozir olish",
+    first_story_sending: "Ertak yuborilmoqda...",
+    first_story_pick_title: "Ertakni kimga yuboramiz?",
+    first_story_pick_sub: "Farzandingizni tanlang — uning ismi bilan ertak darhol keladi.",
+    first_story_close: "Yopish",
+    first_story_done_title: "Ertak yuborildi!",
+    first_story_done_text: "{name} uchun ertak bot chatida va «Ertaklar» bo'limida. Keyingi ertaklar har oqshom soat 21:00 da keladi.",
+    first_story_done_unsent: "{name} uchun ertak tayyor va «Ertaklar» bo'limida turibdi. Bot chatiga yuborib bo'lmadi: botni oching va /start ni bosing, shunda kechki ertaklar ham keladi.",
+    first_story_read_btn: "Hozir o'qish",
+    first_story_need_child: "Avval farzandingiz profilini qo'shing — shundan keyin birinchi ertakni darhol olishingiz mumkin.",
+    first_story_err_done: "Birinchi ertak allaqachon yuborilgan. Keyingisi soat 21:00 da keladi.",
+    first_story_err_none: "Hozircha mos ertak yo'q. Kechqurun ertak jadval bo'yicha keladi.",
+
     footer_privacy: "Maxfiylik siyosati",
     footer_offer: "Ommaviy oferta",
     footer_about: "Loyiha haqida"
