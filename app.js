@@ -1638,7 +1638,7 @@ async function loadAudioInterface() {
     // Озвучка уже в очереди или создаётся — показываем это и ждём, вместо кнопки «Озвучить»
     const vo = story.voiceover;
     if (!story.audio_url && vo && (vo.status === 'queued' || vo.status === 'processing')) {
-        renderAudioQueued(story.id, vo);
+        renderAudioQueued(story.id);
         startVoiceoverPolling(story.id);
         return;
     }
@@ -1659,19 +1659,13 @@ async function loadAudioInterface() {
 const VOICEOVER_POLL_MS = 5000;
 let voiceoverPoll = null; // { storyId, timer }
 
-function renderAudioQueued(storyId, info) {
+function renderAudioQueued(storyId) {
     const container = audioContainer();
     if (!container) return;
-    const processing = info && info.status === 'processing';
-    const ahead = Number(info && info.ahead) || 0;
-    const minutes = Math.max(1, Math.ceil((Number(info && info.etaSeconds) || 75) / 60));
-    const details = [];
-    if (!processing && ahead > 0) details.push(tr('audio_queue_ahead', { n: ahead }));
-    details.push(tr('audio_eta', { min: minutes }));
-    details.push(tr('audio_queued_desc'));
+    // Одна карточка и для «в очереди», и для «озвучивается»: место в очереди и время ожидания не показываем
     container.innerHTML = `
         <div class="audio-card audio-card--loading" role="status" data-story-id="${escapeHtml(storyId)}">
-            ${audioHeader('⏳', tr(processing ? 'audio_processing_title' : 'audio_queued_title'), details.join(' '))}
+            ${audioHeader('⏳', tr('audio_processing_title'), tr('audio_queued_desc'))}
             <span class="audio-spinner" aria-hidden="true"></span>
         </div>
     `;
@@ -1705,7 +1699,7 @@ function startVoiceoverPolling(storyId) {
                 updateAudioInterface(storyId, null, voiceoversLeft);
                 return;
             }
-            renderAudioQueued(storyId, data);
+            renderAudioQueued(storyId);
         } catch (err) {
             console.error('Не удалось узнать статус озвучки', err); // попробуем ещё раз
         }
@@ -1906,7 +1900,7 @@ async function requestAudioGeneration(storyId) {
         }
         rememberFeedback(storyId, { voiceover: { status: data.status || 'queued' } });
         if (isCurrentStory(storyId)) {
-            renderAudioQueued(storyId, data);
+            renderAudioQueued(storyId);
             startVoiceoverPolling(storyId);
         }
     } catch (err) {
