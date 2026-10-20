@@ -142,6 +142,9 @@ const ERROR_TEXT_KEYS = {
     NO_VOICEOVERS: 'audio_no_voiceovers',
     AUDIO_BUSY: 'audio_busy',
     AUDIO_FAILED: 'audio_error',
+    AUDIO_QUEUED: 'audio_queued_desc',
+    ACCOUNT_DELETED: 'account_deleted_error',
+    RESTORE_TOO_LATE: 'account_restore_too_late',
     FIRST_STORY_DONE: 'first_story_err_done',
     NO_CHILDREN: 'first_story_need_child',
     NO_STORY: 'first_story_err_none',
@@ -194,10 +197,11 @@ async function api(path, options) {
 // ЭКРАНЫ: загрузка / «откройте в Telegram» / ошибка / анкета / приложение
 // =====================================================================
 function showScreen(name) {
-    ['appLoader', 'openInTelegram', 'appError', 'parentModal', 'mainAppContent'].forEach(hide);
+    ['appLoader', 'openInTelegram', 'appError', 'accountDeleted', 'parentModal', 'mainAppContent'].forEach(hide);
     if (name === 'loading') show('appLoader', 'flex');
     if (name === 'openInTelegram') show('openInTelegram', 'flex');
     if (name === 'error') show('appError', 'flex');
+    if (name === 'deleted') show('accountDeleted', 'flex');
     if (name === 'parent') show('parentModal');
     if (name === 'main') show('mainAppContent');
 }
@@ -224,6 +228,7 @@ async function boot() {
         showLoadError(err);
         return;
     }
+    if (isAccountDeleted()) return; // экран «Аккаунт удалён» уже показан (loadProfile)
     const storyId = new URLSearchParams(window.location.search).get('story_id');
     if (storyId && profileData && profileData.user && profileData.user.profile_complete) {
         switchAppTab('stories');
@@ -271,6 +276,12 @@ async function loadProfile() {
 
     applyLanguage();
 
+    // Аккаунт удалён по просьбе пользователя: только срок и кнопка «Восстановить аккаунт»
+    if (isAccountDeleted()) {
+        renderAccountDeleted();
+        return;
+    }
+
     if (!data.user || !data.user.profile_complete) {
         prefillParentForm(data.user);
         showScreen('parent');
@@ -284,6 +295,44 @@ async function loadProfile() {
     renderFirstStory();
     checkLimitAndMode();
 }
+// =====================================================================
+// АККАУНТ УДАЛЁН (кнопка «Удалить мои данные аккаунта» в боте)
+// 10 дней аккаунт можно восстановить — здесь или в боте; потом данные удаляются навсегда.
+// =====================================================================
+function isAccountDeleted() {
+    return !!(profileData && profileData.account && profileData.account.deleted);
+}
+
+function formatRestoreDate(value) {
+    const locale = currentLang === 'uz' ? 'uz-Latn-UZ' : currentLang === 'en' ? 'en-GB' : 'ru-RU';
+    try {
+        return new Date(value).toLocaleDateString(locale, { day: 'numeric', month: 'long', timeZone: 'Asia/Tashkent' });
+    } catch (e) {
+        return String(value || '').slice(0, 10);
+    }
+}
+
+function renderAccountDeleted() {
+    setText('accountDeletedTitle', tr('account_deleted_title'));
+    setText('accountDeletedText', tr('account_deleted_text', { date: formatRestoreDate(profileData.account.purge_after) }));
+    const button = el('accountRestoreBtn');
+    if (button) { button.innerText = tr('account_restore_btn'); button.disabled = false; }
+    showScreen('deleted');
+}
+
+async function restoreAccount() {
+    const button = el('accountRestoreBtn');
+    if (button) { button.innerText = tr('account_restoring'); button.disabled = true; }
+    try {
+        await api('/api/app/restore-account', { method: 'POST', body: {} });
+        await boot();
+    } catch (err) {
+        console.error(err);
+        showAlert(err.message || tr('error_generic'));
+        if (button) { button.innerText = tr('account_restore_btn'); button.disabled = false; }
+    }
+}
+
 // =====================================================================
 // АНКЕТА РОДИТЕЛЯ
 // =====================================================================
@@ -1586,6 +1635,13 @@ async function loadAudioInterface() {
     const story = currentStory;
     if (!story) return;
 
+    // Озвучка уже в очереди или создаётся — показываем это и ждём, вместо кнопки «Озвучить»
+    const vo = story.voiceover;
+    if (!story.audio_url && vo && (vo.status === 'queued' || vo.status === 'processing')) {
+        renderAudioQueued(story.id, vo);
+        startVoiceoverPolling(story.id);
+        return;
+    }
     // У готовой озвучки баланс не нужен — лишний запрос не делаем
     if (!story.audio_url) {
         const ok = await refreshVoiceoverBalance();
@@ -1593,6 +1649,69 @@ async function loadAudioInterface() {
         if (!ok) { renderAudioLoadError(story.id); return; }
     }
     updateAudioInterface(story.id, story.audio_url, voiceoversLeft);
+}
+
+// =====================================================================
+// ОЧЕРЕДЬ ОЗВУЧЕК: «Озвучить» ставит сказку в очередь, сервер отвечает сразу.
+// Пока сказка открыта, раз в 5 секунд спрашиваем статус; готово — показываем плеер.
+// Можно закрыть приложение: когда озвучка будет готова, бот пришлёт сообщение.
+// =====================================================================
+const VOICEOVER_POLL_MS = 5000;
+let voiceoverPoll = null; // { storyId, timer }
+
+function renderAudioQueued(storyId, info) {
+    const container = audioContainer();
+    if (!container) return;
+    const processing = info && info.status === 'processing';
+    const ahead = Number(info && info.ahead) || 0;
+    const minutes = Math.max(1, Math.ceil((Number(info && info.etaSeconds) || 75) / 60));
+    const details = [];
+    if (!processing && ahead > 0) details.push(tr('audio_queue_ahead', { n: ahead }));
+    details.push(tr('audio_eta', { min: minutes }));
+    details.push(tr('audio_queued_desc'));
+    container.innerHTML = `
+        <div class="audio-card audio-card--loading" role="status" data-story-id="${escapeHtml(storyId)}">
+            ${audioHeader('⏳', tr(processing ? 'audio_processing_title' : 'audio_queued_title'), details.join(' '))}
+            <span class="audio-spinner" aria-hidden="true"></span>
+        </div>
+    `;
+}
+
+function stopVoiceoverPolling() {
+    if (voiceoverPoll) clearTimeout(voiceoverPoll.timer);
+    voiceoverPoll = null;
+}
+
+function startVoiceoverPolling(storyId) {
+    stopVoiceoverPolling();
+    const poll = { storyId: String(storyId), timer: null };
+    voiceoverPoll = poll;
+    const step = async () => {
+        if (voiceoverPoll !== poll || !isCurrentStory(storyId)) return;
+        try {
+            const data = await api(`/api/user/voiceover-status?story_id=${encodeURIComponent(storyId)}`);
+            if (voiceoverPoll !== poll || !isCurrentStory(storyId)) return;
+            if (data.voiceoversLeft !== undefined) voiceoversLeft = Number(data.voiceoversLeft) || 0;
+            if (data.status === 'done' && data.audioUrl) {
+                stopVoiceoverPolling();
+                rememberFeedback(storyId, { audio_url: data.audioUrl, voiceover: { status: 'done' } });
+                updateAudioInterface(storyId, data.audioUrl, voiceoversLeft);
+                return;
+            }
+            if (data.status === 'failed' || data.status === 'none') {
+                stopVoiceoverPolling();
+                rememberFeedback(storyId, { voiceover: { status: data.status } });
+                if (data.status === 'failed') showAlert(tr('audio_error'));
+                updateAudioInterface(storyId, null, voiceoversLeft);
+                return;
+            }
+            renderAudioQueued(storyId, data);
+        } catch (err) {
+            console.error('Не удалось узнать статус озвучки', err); // попробуем ещё раз
+        }
+        if (voiceoverPoll === poll) poll.timer = setTimeout(step, VOICEOVER_POLL_MS);
+    };
+    poll.timer = setTimeout(step, VOICEOVER_POLL_MS);
 }
 
 function renderAudioLoadError(storyId) {
@@ -1777,10 +1896,19 @@ async function requestAudioGeneration(storyId) {
     btn.classList.add('is-loading');
 
     try {
-        const data = await api('/api/user/generate-audio', { method: 'POST', body: { plod_id: storyId } });
+        // async: сервер ставит озвучку в очередь и отвечает сразу (старый вариант ждал ~70 секунд)
+        const data = await api('/api/user/generate-audio', { method: 'POST', body: { plod_id: storyId, async: true } });
         if (data.voiceoversLeft !== undefined) voiceoversLeft = Number(data.voiceoversLeft) || 0;
-        rememberFeedback(storyId, { audio_url: data.audioUrl });
-        if (isCurrentStory(storyId)) updateAudioInterface(storyId, data.audioUrl, voiceoversLeft);
+        if (data.audioUrl) {
+            rememberFeedback(storyId, { audio_url: data.audioUrl, voiceover: { status: 'done' } });
+            if (isCurrentStory(storyId)) updateAudioInterface(storyId, data.audioUrl, voiceoversLeft);
+            return;
+        }
+        rememberFeedback(storyId, { voiceover: { status: data.status || 'queued' } });
+        if (isCurrentStory(storyId)) {
+            renderAudioQueued(storyId, data);
+            startVoiceoverPolling(storyId);
+        }
     } catch (err) {
         console.error(err);
         if (err.code === 'NO_VOICEOVERS') {
@@ -1854,6 +1982,7 @@ document.addEventListener('click', (event) => {
 });
 
 function stopReaderAudio() {
+    stopVoiceoverPolling();
     const container = audioContainer();
     const player = container ? container.querySelector('audio') : null;
     if (player) { try { player.pause(); } catch (e) { /* ничего страшного */ } }
