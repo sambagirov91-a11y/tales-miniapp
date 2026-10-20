@@ -8,9 +8,9 @@
     <link rel="stylesheet" href="style.css?v=8">
     
     <!-- Подключаем внешние файлы со словарями для 3 языков -->
-<script src="miniapp-ru.js?v=14"></script>
-<script src="miniapp-uz.js?v=14"></script>
-<script src="miniapp-en.js?v=14"></script>
+<script src="miniapp-ru.js?v=15"></script>
+<script src="miniapp-uz.js?v=15"></script>
+<script src="miniapp-en.js?v=15"></script>
 </head>
 <body>
 
@@ -28,6 +28,12 @@
     <div class="app-state-icon">🌙</div>
     <p id="appErrorText">Не удалось загрузить данные. Проверьте интернет и попробуйте ещё раз.</p>
     <button id="appErrorRetry" class="primary-btn" onclick="retryBoot()">Попробовать снова</button>
+</div>
+<div id="accountDeleted" class="app-state" style="display: none;">
+    <div class="app-state-icon">🗑</div>
+    <h2 id="accountDeletedTitle">Аккаунт удалён</h2>
+    <p id="accountDeletedText"></p>
+    <button id="accountRestoreBtn" class="primary-btn" onclick="restoreAccount()">♻️ Восстановить аккаунт</button>
 </div>
 
 <!-- МОДАЛЬНОЕ ОКНО РОДИТЕЛЯ (Анкета) -->
@@ -374,6 +380,6 @@
     </div>
 
     <!-- Основной скрипт логики Mini App -->
-    <script src="app.js?v=18"></script>
+    <script src="app.js?v=19"></script>
 </body>
 </html>

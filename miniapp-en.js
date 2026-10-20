@@ -28,8 +28,21 @@ window.langEN = {
     audio_load_error: "Couldn't load voice-over info.",
     audio_retry: "Retry",
     audio_busy: "This tale is already being voiced. Please wait a moment.",
-    audio_error: "Couldn't create the voice-over. Your voice-over was returned, please try again.",
+    audio_error: "Couldn't create the voice-over. No voice-over was charged, please try again.",
     audio_no_voiceovers: "No voice-overs left. Please buy a new one.",
+    // Voice-over queue
+    audio_queued_title: "Voice-over is in the queue",
+    audio_processing_title: "Voicing the tale…",
+    audio_queued_desc: "You can close the app — we'll message you in the bot when the voice-over is ready.",
+    audio_queue_ahead: "Ahead of you in the queue: {n}.",
+    audio_eta: "About {min} min.",
+    // Account deleted (the "Delete my account data" button in the bot)
+    account_deleted_title: "Account deleted",
+    account_deleted_text: "You asked us to delete your data. You can restore the account until the end of {date} — your children, tales and subscription will come back. After that the data will be deleted permanently.",
+    account_restore_btn: "♻️ Restore account",
+    account_restoring: "Restoring...",
+    account_restore_too_late: "The restore period has ended and the data has already been deleted.",
+    account_deleted_error: "Your account was deleted. Restore it to continue.",
 
     tab_home: "Home",
     tab_stories: "Tales",

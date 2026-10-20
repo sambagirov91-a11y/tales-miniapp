@@ -28,8 +28,21 @@ window.langUZ = {
     audio_load_error: "Ovozlashtirish ma'lumotlarini yuklab bo'lmadi.",
     audio_retry: "Qayta urinish",
     audio_busy: "Bu ertak ovozlashtirilmoqda. Biroz kuting.",
-    audio_error: "Ovozlashtirishni yaratib bo'lmadi. Limit qaytarildi, qayta urinib ko'ring.",
+    audio_error: "Ovozlashtirishni yaratib bo'lmadi. Ovozlashtirish hisobdan yechilmadi, qayta urinib ko'ring.",
     audio_no_voiceovers: "Ovozlashtirishlar tugadi. Yangisi uchun to'lang.",
+    // Ovozlashtirish navbati
+    audio_queued_title: "Ovozlashtirish navbatda",
+    audio_processing_title: "Ertak ovozlashtirilmoqda…",
+    audio_queued_desc: "Ilovani yopishingiz mumkin — ovozli ertak tayyor bo'lgach, botga xabar yuboramiz.",
+    audio_queue_ahead: "Navbatda sizdan oldin: {n}.",
+    audio_eta: "Taxminan {min} daqiqa.",
+    // Akkaunt o'chirildi (botdagi «Akkaunt ma'lumotlarimni o'chirish» tugmasi)
+    account_deleted_title: "Akkaunt o'chirildi",
+    account_deleted_text: "Siz ma'lumotlaringizni o'chirishni so'radingiz. {date} kuni oxirigacha akkauntni tiklash mumkin — bolalar, ertaklar va obuna qaytadi. Shundan so'ng ma'lumotlar butunlay o'chiriladi.",
+    account_restore_btn: "♻️ Akkauntni tiklash",
+    account_restoring: "Tiklanmoqda...",
+    account_restore_too_late: "Tiklash muddati o'tdi, ma'lumotlar allaqachon o'chirilgan.",
+    account_deleted_error: "Akkaunt o'chirilgan. Davom etish uchun uni tiklang.",
 
     tab_home: "Bosh sahifa",
     tab_stories: "Ertaklar",
