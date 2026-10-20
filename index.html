@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Scheherezade</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css?v=7">
+    <link rel="stylesheet" href="style.css?v=8">
     
     <!-- Подключаем внешние файлы со словарями для 3 языков -->
-<script src="miniapp-ru.js?v=13"></script>
-<script src="miniapp-uz.js?v=13"></script>
-<script src="miniapp-en.js?v=13"></script>
+<script src="miniapp-ru.js?v=14"></script>
+<script src="miniapp-uz.js?v=14"></script>
+<script src="miniapp-en.js?v=14"></script>
 </head>
 <body>
 
@@ -248,6 +248,8 @@
         <div class="reader-header glass-panel">
             <button id="readerBackBtn" onclick="closeReader()" class="back-btn">⬅ Назад</button>
             <span id="readerHeaderTitle" class="reader-header-title">Сказка</span>
+            <!-- «Нашли ошибку?»: родитель отмечает фразу, админ получает сигнал (логика в app.js → ОШИБКИ В ТЕКСТЕ) -->
+            <button id="readerReportBtn" class="report-btn" type="button" data-report-action="start">Нашли ошибку?</button>
         </div>
         
         <div class="reader-content" id="readerContentArea">
@@ -258,6 +260,7 @@
                 <div id="audio-dynamic-content"></div>
             </div>
             <div id="readerText" class="reader-text"></div>
+            <button id="readerReportEndBtn" class="report-end-btn" type="button" data-report-action="start">✏️ Нашли ошибку в тексте? Отметьте её</button>
             
             <!-- БЛОК ОЦЕНКИ -->
             <div id="rating-block" class="feedback-container" style="display: none;">
@@ -287,6 +290,17 @@
             </a>
             
         </div> <!-- Конец readerContentArea -->
+        <!-- Подсказка в режиме выбора фразы: появляется внизу читалки -->
+        <div id="reportHint" class="report-hint" role="status" aria-live="polite" hidden>
+            <div class="report-hint__text">
+                <div id="reportHintTitle" class="report-hint__title">Нажмите на предложение с ошибкой</div>
+                <div id="reportHintSub" class="report-hint__sub">Можно и выделить слова пальцем</div>
+            </div>
+            <div class="report-hint__actions">
+                <button id="reportUseSelectionBtn" class="report-hint__use" type="button" data-report-action="use-selection" hidden>Отправить выделенное</button>
+                <button id="reportCancelBtn" class="report-hint__cancel" type="button" data-report-action="cancel">Отмена</button>
+            </div>
+        </div>
     </div> <!-- Конец readerScreen -->
     <!-- НИЖНЯЯ ПАНЕЛЬ НАВИГАЦИИ (TAB BAR) -->
     <nav class="bottom-tab-bar glass-panel">
@@ -322,6 +336,27 @@
         </div>
     </div>
 
+    <!-- ОКНО «ОШИБКА В ТЕКСТЕ»: выбранная фраза, комментарий, отправка -->
+    <div id="reportSheet" class="tariff-sheet" role="dialog" aria-modal="true" aria-labelledby="reportSheetTitle" hidden>
+        <div class="tariff-sheet__backdrop" data-report-action="close"></div>
+        <div class="tariff-sheet__panel" tabindex="-1">
+            <div class="tariff-sheet__grab" aria-hidden="true"></div>
+            <header class="tariff-sheet__head">
+                <div class="tariff-sheet__heading">
+                    <h2 id="reportSheetTitle" class="tariff-sheet__title">Ошибка в тексте</h2>
+                    <p id="reportSheetSub" class="tariff-sheet__sub"></p>
+                </div>
+                <button id="reportSheetClose" class="tariff-sheet__close" type="button" data-report-action="close" aria-label="Закрыть">✕</button>
+            </header>
+            <div id="reportFragmentLabel" class="report-label">Фраза с ошибкой</div>
+            <blockquote id="reportFragment" class="report-fragment"></blockquote>
+            <label id="reportCommentLabel" for="reportComment" class="report-label">Что не так? (необязательно)</label>
+            <textarea id="reportComment" class="report-comment" rows="3" maxlength="1000"></textarea>
+            <button id="reportSendBtn" class="first-story__btn report-send" type="button" data-report-action="send">Отправить</button>
+            <button id="reportOtherBtn" class="report-other" type="button" data-report-action="other">Выбрать другую фразу</button>
+        </div>
+    </div>
+
     <!-- ОКНО «ДЛЯ КОГО ПРИСЛАТЬ СКАЗКУ?» (когда в профиле несколько детей) -->
     <div id="firstStorySheet" class="tariff-sheet" role="dialog" aria-modal="true" aria-labelledby="firstStorySheetTitle" hidden>
         <div class="tariff-sheet__backdrop" data-first-story-action="close"></div>
@@ -339,6 +374,6 @@
     </div>
 
     <!-- Основной скрипт логики Mini App -->
-    <script src="app.js?v=17"></script>
+    <script src="app.js?v=18"></script>
 </body>
 </html>
