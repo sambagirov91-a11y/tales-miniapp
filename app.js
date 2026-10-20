@@ -145,6 +145,9 @@ const ERROR_TEXT_KEYS = {
     FIRST_STORY_DONE: 'first_story_err_done',
     NO_CHILDREN: 'first_story_need_child',
     NO_STORY: 'first_story_err_none',
+    TOO_MANY: 'report_too_many',
+    TOO_LONG: 'report_too_long',
+    EMPTY_FRAGMENT: 'report_hint',
     NETWORK: 'error_network'
 };
 async function api(path, options) {
@@ -418,6 +421,7 @@ function applyLanguage() {
     setText('readerHeaderTitle', tr('reader_header'));
     setText('readerBackBtn', tr('reader_back'));
     setText('readerPromoCta', tr('reader_promo_cta'));
+    applyReportTexts();
     setText('feedbackRatingTitle', tr('feedback_rating_title'));
     setText('feedbackCommentTitle', tr('feedback_comment_title'));
     setPlaceholder('story-comment', tr('feedback_placeholder'));
@@ -1164,7 +1168,7 @@ async function openReader(storyId) {
         text.innerHTML = String(story.ready_text || '')
             .split('\n')
             .filter(p => p.trim())
-            .map(p => `<p>${escapeHtml(p)}</p>`)
+            .map(p => `<p>${sentencesHtml(p)}</p>`)
             .join('');
     }
     const promoLink = el('readerPromoLink');
@@ -1197,6 +1201,8 @@ async function openReader(storyId) {
 }
 function closeReader() {
     stopReaderAudio(); // иначе озвучка продолжает играть за закрытой сказкой
+    closeReportSheet();
+    exitReportMode();
     hide('readerScreen');
     document.body.style.overflow = 'auto';
     if (el('readerImg')) el('readerImg').src = '';
@@ -1206,6 +1212,186 @@ function closeReader() {
         if (tg && tg.BackButton) { tg.BackButton.offClick(closeReader); tg.BackButton.hide(); }
     } catch (e) { /* старые клиенты */ }
 }
+// =====================================================================
+// ОШИБКИ В ТЕКСТЕ («Нашли ошибку?»)
+// Кнопка в шапке читалки и под текстом. Нажали — предложения становятся нажимаемыми,
+// а внизу появляется подсказка. Родитель нажимает предложение (или выделяет слова пальцем),
+// видит фразу, по желанию пишет, что не так, и отправляет. Сервер проверяет, что сказка его,
+// сохраняет жалобу (таблица story_error_reports) и пишет админу в бот поддержки.
+// =====================================================================
+// Конец предложения: знак препинания, пробел и заглавная буква (или реплика «— Заглавная»).
+// «— Привет! — сказал он.» не режется: после «!» идёт тире и строчная буква.
+// Без lookbehind: старые iOS его не понимают.
+const SENTENCE_END = /[.!?…]+["»”)]*\s+(?=[«"„(]?[A-ZА-ЯЁЎҚҒҲ0-9]|—\s?[A-ZА-ЯЁЎҚҒҲ])/g;
+function splitSentences(paragraph) {
+    const parts = [];
+    let start = 0;
+    let match;
+    SENTENCE_END.lastIndex = 0;
+    while ((match = SENTENCE_END.exec(paragraph)) !== null) {
+        const end = match.index + match[0].length;
+        parts.push(paragraph.slice(start, end));
+        start = end;
+    }
+    if (start < paragraph.length) parts.push(paragraph.slice(start));
+    return parts;
+}
+function sentencesHtml(paragraph) {
+    return splitSentences(paragraph).map(part => `<span class="sent">${escapeHtml(part)}</span>`).join('');
+}
+
+const REPORT_FRAGMENT_MAX = 1000;
+const reportState = { marking: false, open: false, sending: false, fragment: '', selection: '', selectionAt: 0 };
+
+function applyReportTexts() {
+    setText('readerReportBtn', tr('report_btn'));
+    setText('readerReportEndBtn', tr('report_end_btn'));
+    setText('reportHintTitle', tr('report_hint'));
+    setText('reportHintSub', tr('report_hint_sub'));
+    setText('reportUseSelectionBtn', tr('report_use_selection'));
+    setText('reportCancelBtn', tr('report_cancel'));
+    setText('reportSheetTitle', tr('report_title'));
+    setText('reportSheetSub', tr('report_sub'));
+    setText('reportFragmentLabel', tr('report_fragment_label'));
+    setText('reportCommentLabel', tr('report_comment_label'));
+    setPlaceholder('reportComment', tr('report_comment_placeholder'));
+    setText('reportOtherBtn', tr('report_other'));
+    const close = el('reportSheetClose');
+    if (close) close.setAttribute('aria-label', tr('report_close'));
+    const send = el('reportSendBtn');
+    if (send && !reportState.sending) send.innerText = tr('report_send');
+}
+
+function haptic(kind) {
+    try {
+        if (!tg || !tg.HapticFeedback) return;
+        if (kind === 'select') tg.HapticFeedback.selectionChanged();
+        else tg.HapticFeedback.notificationOccurred(kind);
+    } catch (e) { /* старые клиенты */ }
+}
+
+// Выделенный пальцем текст внутри сказки (пусто — если выделения нет или оно вне текста)
+function readerSelectionText() {
+    const selection = window.getSelection ? window.getSelection() : null;
+    const container = el('readerText');
+    if (!selection || selection.isCollapsed || !selection.rangeCount || !container) return '';
+    if (!container.contains(selection.getRangeAt(0).commonAncestorContainer)) return '';
+    return selection.toString().replace(/\s+/g, ' ').trim();
+}
+function updateUseSelectionButton() {
+    const button = el('reportUseSelectionBtn');
+    if (button) button.hidden = !(reportState.marking && readerSelectionText().length >= 2);
+}
+// На телефоне нажатие на кнопку снимает выделение раньше, чем срабатывает клик, — запоминаем его заранее
+document.addEventListener('selectionchange', () => {
+    const text = readerSelectionText();
+    if (text) { reportState.selection = text; reportState.selectionAt = Date.now(); }
+    updateUseSelectionButton();
+});
+
+function clearPicked() {
+    document.querySelectorAll('#readerText .sent.is-picked').forEach(node => node.classList.remove('is-picked'));
+}
+function enterReportMode() {
+    reportState.marking = true;
+    const screen = el('readerScreen');
+    if (screen) screen.classList.add('is-marking');
+    const hint = el('reportHint');
+    if (hint) hint.hidden = false;
+    updateUseSelectionButton();
+    haptic('select');
+}
+function exitReportMode() {
+    reportState.marking = false;
+    const screen = el('readerScreen');
+    if (screen) screen.classList.remove('is-marking');
+    const hint = el('reportHint');
+    if (hint) hint.hidden = true;
+    clearPicked();
+}
+function startErrorReport() {
+    if (!currentStory) return;
+    // Родитель уже выделил слова и нажал кнопку — сразу к отправке
+    const selected = readerSelectionText() || (Date.now() - reportState.selectionAt < 5000 ? reportState.selection : '');
+    if (selected.length >= 2) { openReportSheet(selected); return; }
+    enterReportMode();
+}
+function openReportSheet(fragment) {
+    if (fragment.length > REPORT_FRAGMENT_MAX) { showAlert(tr('report_too_long')); return; }
+    reportState.fragment = fragment;
+    reportState.selection = '';
+    reportState.selectionAt = 0;
+    const hint = el('reportHint');
+    if (hint) hint.hidden = true;
+    setText('reportFragment', fragment);
+    const comment = el('reportComment');
+    if (comment) comment.value = '';
+    const send = el('reportSendBtn');
+    if (send) { send.disabled = false; send.innerText = tr('report_send'); }
+    const sheet = el('reportSheet');
+    if (!sheet) return;
+    sheet.hidden = false;
+    reportState.open = true;
+    document.body.classList.add('sheet-open');
+    try { window.getSelection().removeAllRanges(); } catch (e) { /* не страшно */ }
+}
+function closeReportSheet() {
+    const sheet = el('reportSheet');
+    if (sheet) sheet.hidden = true;
+    reportState.open = false;
+    document.body.classList.remove('sheet-open');
+}
+async function sendErrorReport() {
+    if (!currentStory || !reportState.fragment || reportState.sending) return;
+    const send = el('reportSendBtn');
+    reportState.sending = true;
+    if (send) { send.disabled = true; send.innerText = tr('report_sending'); }
+    try {
+        await api(`/api/app/stories/${encodeURIComponent(currentStory.id)}/error-report`, {
+            method: 'POST',
+            body: { fragment: reportState.fragment, comment: (el('reportComment') || {}).value || '', language: currentLang }
+        });
+        closeReportSheet();
+        exitReportMode();
+        haptic('success');
+        showAlert(tr('report_thanks'));
+    } catch (err) {
+        console.error('Ошибка отправки сообщения об ошибке:', err);
+        haptic('error');
+        showAlert(err.message || tr('error_generic'));
+    } finally {
+        reportState.sending = false;
+        if (send && send.isConnected) { send.disabled = false; send.innerText = tr('report_send'); }
+    }
+}
+document.addEventListener('click', (event) => {
+    const action = event.target.closest('[data-report-action]');
+    if (action) {
+        const name = action.getAttribute('data-report-action');
+        if (name === 'start') startErrorReport();
+        else if (name === 'cancel') exitReportMode();
+        else if (name === 'use-selection') { const text = readerSelectionText() || reportState.selection; if (text) openReportSheet(text); }
+        else if (name === 'close') { closeReportSheet(); exitReportMode(); }
+        else if (name === 'other') { closeReportSheet(); clearPicked(); enterReportMode(); }
+        else if (name === 'send') sendErrorReport();
+        return;
+    }
+    // В режиме выбора нажатие на предложение отмечает его
+    if (!reportState.marking || reportState.open) return;
+    const sentence = event.target.closest('#readerText .sent');
+    if (!sentence) return;
+    if (readerSelectionText()) return; // родитель выделяет слова — не мешаем
+    clearPicked();
+    sentence.classList.add('is-picked');
+    haptic('select');
+    const fragment = sentence.textContent.replace(/\s+/g, ' ').trim();
+    if (fragment.length >= 2) openReportSheet(fragment);
+});
+document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    if (reportState.open) { closeReportSheet(); exitReportMode(); } else if (reportState.marking) exitReportMode();
+});
+
 // =====================================================================
 // ОТЗЫВЫ
 // =====================================================================
