@@ -1013,6 +1013,16 @@ async function saveData() {
         }
         resetForm();
         await loadProfile();
+        // Пользователь мог добавить ребёнка уже после первого открытия Mini App.
+        siteDemoClaimChecked = false;
+        const claimedDemo = await claimPendingSiteDemo();
+        if (claimedDemo && claimedDemo.storyId) {
+            const nextUrl = new URL(window.location.href);
+            nextUrl.searchParams.set('story_id', claimedDemo.storyId);
+            window.history.replaceState({}, '', nextUrl.toString());
+            switchAppTab('stories');
+            await openReader(claimedDemo.storyId);
+        }
     } catch (err) {
         console.error(err);
         showAlert(err.message || tr('error_generic'));
