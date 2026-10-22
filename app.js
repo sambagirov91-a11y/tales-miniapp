@@ -229,6 +229,14 @@ async function boot() {
         return;
     }
     if (isAccountDeleted()) return; // экран «Аккаунт удалён» уже показан (loadProfile)
+    // Если бот передал демо-сказку, после настройки профиля автоматически привязываем её
+    // к совпадающему профилю ребёнка и запускаем штатную озвучку.
+    const claimedDemo = await claimPendingSiteDemo();
+    if (claimedDemo && claimedDemo.storyId) {
+        const nextUrl = new URL(window.location.href);
+        nextUrl.searchParams.set('story_id', claimedDemo.storyId);
+        window.history.replaceState({}, '', nextUrl.toString());
+    }
     const storyId = new URLSearchParams(window.location.search).get('story_id');
     if (storyId && profileData && profileData.user && profileData.user.profile_complete) {
         switchAppTab('stories');
@@ -295,6 +303,36 @@ async function loadProfile() {
     renderFirstStory();
     checkLimitAndMode();
 }
+// Привязка сказки, созданной на сайте. Токен не нужен: сервер связывает pending-сессию
+// с Telegram ID из проверенного initData и разрешает только принадлежащие пользователю профили.
+let siteDemoClaimChecked = false;
+async function claimPendingSiteDemo() {
+    if (siteDemoClaimChecked || !initData || !profileData || !profileData.user ||
+        !profileData.user.profile_complete || !Array.isArray(allChildren) || !allChildren.length) return null;
+    siteDemoClaimChecked = true;
+    let hadMismatch = false;
+    for (const child of allChildren) {
+        try {
+            const result = await api('/api/site-story-demo/claim', {
+                method: 'POST',
+                body: { childId: child.id }
+            });
+            if (result && result.success && result.story_id) {
+                showAlert(tr('site_demo_audio_queued'));
+                return { storyId: result.story_id, status: result.voiceover_status };
+            }
+        } catch (err) {
+            if (err && err.code === 'DEMO_NOT_FOUND') return null;
+            if (err && err.code === 'CHILD_MISMATCH') { hadMismatch = true; continue; }
+            if (err && err.code === 'ALREADY_CLAIMED') return null;
+            console.error('Не удалось привязать сказку с сайта:', err);
+            return null;
+        }
+    }
+    if (hadMismatch) showAlert(tr('site_demo_profile_mismatch'));
+    return null;
+}
+
 // =====================================================================
 // АККАУНТ УДАЛЁН (кнопка «Удалить мои данные аккаунта» в боте)
 // 10 дней аккаунт можно восстановить — здесь или в боте; потом данные удаляются навсегда.
