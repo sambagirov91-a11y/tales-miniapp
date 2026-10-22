@@ -318,7 +318,12 @@ async function claimPendingSiteDemo() {
                 body: { childId: child.id }
             });
             if (result && result.success && result.story_id) {
-                showAlert(tr('site_demo_audio_queued'));
+                const statusKey = result.voiceover_status === 'no_balance'
+                    ? 'site_demo_no_voiceovers'
+                    : result.voiceover_status === 'retry_needed'
+                        ? 'site_demo_audio_retry'
+                        : 'site_demo_audio_queued';
+                showAlert(tr(statusKey));
                 return { storyId: result.story_id, status: result.voiceover_status };
             }
         } catch (err) {
