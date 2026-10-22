@@ -30,9 +30,9 @@ window.langUZ = {
     audio_busy: "Bu ertak ovozlashtirilmoqda. Biroz kuting.",
     audio_error: "Ertakni ovozlashtirib bo'lmadi. Bir daqiqadan so'ng qayta urinib ko'ring — ovozlashtirish hisobdan yechilmadi.",
     site_demo_no_voiceovers: "Ertak saqlandi, ammo bepul ovozlashtirish ishlatib bo'lingan. Mavjud variantlarni ko'rish uchun ertaklar arxivini oching.",
-    site_demo_audio_retry: "Ertak saqlandi, ammo ovozlashtirish boshlanmadi. Ilovada ertakni ochib, «Ovozlashtirish» tugmasini yana bosing."
+    site_demo_audio_retry: "Ertak saqlandi, ammo ovozlashtirish boshlanmadi. Ilovada ertakni ochib, «Ovozlashtirish» tugmasini yana bosing.",
     site_demo_audio_queued: "Ertagingiz saqlandi va ovozlashtirishga yuborildi. Audio tayyor bo'lganda bot xabar yuboradi.",
-    site_demo_profile_mismatch: "Bola profili saytdagi ertak ma'lumotlariga mos kelmaydi. Ism va jinsni yangilang yoki yangi ertak yarating."
+    site_demo_profile_mismatch: "Bola profili saytdagi ertak ma'lumotlariga mos kelmaydi. Ism va jinsni yangilang yoki yangi ertak yarating.",
     audio_no_voiceovers: "Ovozlashtirishlar tugadi. Yangisi uchun to'lang.",
     // Ovozlashtirish navbati
     audio_processing_title: "Ertak ovozlashtirilmoqda…",
