@@ -127,6 +127,7 @@ class ApiError extends Error {
         super(message);
         this.status = status;
         this.code = code;
+        this.data = null;
     }
 }
 const ERROR_TEXT_KEYS = {
@@ -188,7 +189,9 @@ async function api(path, options) {
         const code = (data && data.code) || ('HTTP_' + (response.status || 0));
         const key = ERROR_TEXT_KEYS[code];
         const message = key ? tr(key, { max: maxChildren }) : tr('error_generic');
-        throw new ApiError(message, response.status, code);
+        const apiError = new ApiError(message, response.status, code);
+        apiError.data = data || null;
+        throw apiError;
     }
 
     return data || {};
@@ -311,6 +314,7 @@ async function claimPendingSiteDemo() {
         !profileData.user.profile_complete || !Array.isArray(allChildren) || !allChildren.length) return null;
     siteDemoClaimChecked = true;
     let hadMismatch = false;
+    let mismatchSessionId = null;
     for (const child of allChildren) {
         try {
             const result = await api('/api/site-story-demo/claim', {
@@ -328,13 +332,30 @@ async function claimPendingSiteDemo() {
             }
         } catch (err) {
             if (err && err.code === 'DEMO_NOT_FOUND') return null;
-            if (err && err.code === 'CHILD_MISMATCH') { hadMismatch = true; continue; }
+            if (err && err.code === 'CHILD_MISMATCH') {
+                hadMismatch = true;
+                mismatchSessionId = (err.data && err.data.demo_session_id) || mismatchSessionId;
+                continue;
+            }
             if (err && err.code === 'ALREADY_CLAIMED') return null;
             console.error('Не удалось привязать сказку с сайта:', err);
             return null;
         }
     }
-    if (hadMismatch) showAlert(tr('site_demo_profile_mismatch'));
+    if (hadMismatch) {
+        // Не показываем модальное предупреждение при каждом открытии Mini App для одной и той же старой демо-сказки.
+        const mismatchKey = mismatchSessionId ? 'site_demo_mismatch_notified_' + mismatchSessionId : null;
+        let alreadyNotified = false;
+        if (mismatchKey) {
+            try { alreadyNotified = localStorage.getItem(mismatchKey) === '1'; } catch (_) {}
+        }
+        if (!alreadyNotified) {
+            if (mismatchKey) {
+                try { localStorage.setItem(mismatchKey, '1'); } catch (_) {}
+            }
+            showAlert(tr('site_demo_profile_mismatch'));
+        }
+    }
     return null;
 }
 
