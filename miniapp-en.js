@@ -29,6 +29,8 @@ window.langEN = {
     audio_retry: "Retry",
     audio_busy: "This tale is already being voiced. Please wait a moment.",
     audio_error: "We couldn't voice the tale. Please try again in a minute — no voice-over was charged.",
+    site_demo_audio_queued: "Your story is saved and sent for voice-over. The bot will message you when the audio is ready.",
+    site_demo_profile_mismatch: "The child profile does not match the website story. Update the child's name and gender or create a new story."
     audio_no_voiceovers: "No voice-overs left. Please buy a new one.",
     // Voice-over queue
     audio_processing_title: "Voicing the tale…",
