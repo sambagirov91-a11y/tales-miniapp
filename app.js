@@ -338,6 +338,21 @@ async function claimPendingSiteDemo() {
     return null;
 }
 
+// Если Mini App остался открытым, а пользователь переключился в бот и вернулся, проверяем ожидающую сказку ещё раз.
+document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState !== 'visible' || !initData || !profileData ||
+        !profileData.user || !profileData.user.profile_complete || !allChildren.length) return;
+    siteDemoClaimChecked = false;
+    const claimedDemo = await claimPendingSiteDemo();
+    if (claimedDemo && claimedDemo.storyId) {
+        const nextUrl = new URL(window.location.href);
+        nextUrl.searchParams.set('story_id', claimedDemo.storyId);
+        window.history.replaceState({}, '', nextUrl.toString());
+        switchAppTab('stories');
+        await openReader(claimedDemo.storyId);
+    }
+});
+
 // =====================================================================
 // АККАУНТ УДАЛЁН (кнопка «Удалить мои данные аккаунта» в боте)
 // 10 дней аккаунт можно восстановить — здесь или в боте; потом данные удаляются навсегда.
