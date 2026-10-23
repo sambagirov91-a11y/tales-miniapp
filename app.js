@@ -327,7 +327,7 @@ async function claimPendingSiteDemo() {
                     : result.voiceover_status === 'retry_needed'
                         ? 'site_demo_audio_retry'
                         : 'site_demo_audio_queued';
-                showAlert(tr(statusKey));
+                showAlert(result.voiceover_status === 'not_requested' ? 'Сказка сохранена в архив без озвучки.' : tr(statusKey));
                 return { storyId: result.story_id, status: result.voiceover_status };
             }
         } catch (err) {
