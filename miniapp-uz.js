@@ -32,6 +32,8 @@ window.langUZ = {
     site_demo_no_voiceovers: "Ertak saqlandi, ammo bepul ovozlashtirish ishlatib bo'lingan. Mavjud variantlarni ko'rish uchun ertaklar arxivini oching.",
     site_demo_audio_retry: "Ertak saqlandi, ammo ovozlashtirish boshlanmadi. Ilovada ertakni ochib, «Ovozlashtirish» tugmasini yana bosing.",
     site_demo_audio_queued: "Ertagingiz saqlandi va ovozlashtirishga yuborildi. Audio tayyor bo'lganda bot xabar yuboradi.",
+    site_demo_saved: "✨ Ertagingiz arxivda sizni kutmoqda 💖",
+    site_demo_children_limit: "💖 Tarifingizda {max} tagacha bola profili bor, profilingizda esa allaqachon {count} ta. Yangi ertakni saqlash uchun tarifni almashtiring yoki bolalardan birining profilini o'chirib joy bo'shating ✨",
     site_demo_profile_mismatch: "Bola profili saytdagi ertak ma'lumotlariga mos kelmaydi. Ism va jinsni yangilang yoki yangi ertak yarating.",
     audio_no_voiceovers: "Ovozlashtirishlar tugadi. Yangisi uchun to'lang.",
     // Ovozlashtirish navbati

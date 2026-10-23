@@ -328,7 +328,7 @@ async function claimPendingSiteDemo() {
                     : result.voiceover_status === 'retry_needed'
                         ? 'site_demo_audio_retry'
                         : 'site_demo_audio_queued';
-                showAlert(result.voiceover_status === 'not_requested' ? '✨ Ваша сказка уже ждёт вас в архиве 💖' : tr(statusKey));
+                showAlert(result.voiceover_status === 'not_requested' ? tr('site_demo_saved') : tr(statusKey));
                 return { storyId: result.story_id, status: result.voiceover_status };
             }
         } catch (err) {
@@ -337,7 +337,7 @@ async function claimPendingSiteDemo() {
                 const max = Number(err.data && err.data.max_children) || maxChildren;
                 const current = Number(err.data && err.data.current_children);
                 const currentText = Number.isFinite(current) ? current : allChildren.length;
-                showAlert(`💖 В вашем тарифе предусмотрено до ${max} детей, а в профиле уже ${currentText}. Чтобы сохранить новую сказку, смените тариф или освободите место в профиле, удалив одного из детей ✨`);
+                showAlert(tr('site_demo_children_limit', { max, count: currentText }));
                 return null;
             }
             if (err && err.code === 'CHILD_MISMATCH') {
