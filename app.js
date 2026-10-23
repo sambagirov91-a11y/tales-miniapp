@@ -311,15 +311,16 @@ async function loadProfile() {
 let siteDemoClaimChecked = false;
 async function claimPendingSiteDemo() {
     if (siteDemoClaimChecked || !initData || !profileData || !profileData.user ||
-        !profileData.user.profile_complete || !Array.isArray(allChildren) || !allChildren.length) return null;
+        !profileData.user.profile_complete || !Array.isArray(allChildren)) return null;
     siteDemoClaimChecked = true;
     let hadMismatch = false;
     let mismatchSessionId = null;
-    for (const child of allChildren) {
+    const childrenToTry = allChildren.length ? allChildren : [null];
+    for (const child of childrenToTry) {
         try {
             const result = await api('/api/site-story-demo/claim', {
                 method: 'POST',
-                body: { childId: child.id }
+                body: child ? { childId: child.id } : {}
             });
             if (result && result.success && result.story_id) {
                 const statusKey = result.voiceover_status === 'no_balance'
