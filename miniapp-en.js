@@ -32,6 +32,8 @@ window.langEN = {
     site_demo_no_voiceovers: "Your story is saved, but your free voice-over has already been used. Open the story archive to see available options.",
     site_demo_audio_retry: "Your story is saved, but voice-over did not start. Open the story in the app and tap “Voice-over” again.",
     site_demo_audio_queued: "Your story is saved and sent for voice-over. The bot will message you when the audio is ready.",
+    site_demo_saved: "✨ Your story is already waiting for you in the archive 💖",
+    site_demo_children_limit: "💖 Your plan allows up to {max} children, and your profile already has {count}. To save the new story, change your plan or free up a spot by removing one of the children ✨",
     site_demo_profile_mismatch: "The child profile does not match the website story. Update the child's name and gender or create a new story.",
     audio_no_voiceovers: "No voice-overs left. Please buy a new one.",
     // Voice-over queue
