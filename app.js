@@ -333,6 +333,13 @@ async function claimPendingSiteDemo() {
             }
         } catch (err) {
             if (err && err.code === 'DEMO_NOT_FOUND') return null;
+            if (err && err.code === 'CHILDREN_LIMIT') {
+                const max = Number(err.data && err.data.max_children) || maxChildren;
+                const current = Number(err.data && err.data.current_children);
+                const currentText = Number.isFinite(current) ? current : allChildren.length;
+                showAlert(`💖 В вашем тарифе предусмотрено до ${max} детей, а в профиле уже ${currentText}. Чтобы сохранить новую сказку, смените тариф или освободите место в профиле, удалив одного из детей ✨`);
+                return null;
+            }
             if (err && err.code === 'CHILD_MISMATCH') {
                 hadMismatch = true;
                 mismatchSessionId = (err.data && err.data.demo_session_id) || mismatchSessionId;
