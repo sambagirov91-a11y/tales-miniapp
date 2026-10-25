@@ -240,10 +240,19 @@ async function boot() {
         nextUrl.searchParams.set('story_id', claimedDemo.storyId);
         window.history.replaceState({}, '', nextUrl.toString());
     }
-    const storyId = new URLSearchParams(window.location.search).get('story_id');
+    const params = new URLSearchParams(window.location.search);
+    const storyId = params.get('story_id');
     if (storyId && profileData && profileData.user && profileData.user.profile_complete) {
         switchAppTab('stories');
-        openReader(storyId);
+        // Кнопка «Поделиться» под сказкой в боте открывает читалку сразу с окном «Поделиться» (share=1).
+        // Параметр убираем, чтобы при перезагрузке окно не открывалось снова.
+        const wantShare = params.get('share') === '1';
+        if (wantShare) {
+            const cleanUrl = new URL(window.location.href);
+            cleanUrl.searchParams.delete('share');
+            window.history.replaceState({}, '', cleanUrl.toString());
+        }
+        openReader(storyId, { share: wantShare });
     } else {
         openChildrenIfEmpty();
     }
@@ -1287,7 +1296,8 @@ function createStoryCard(st) {
             <div class="story-icon">${st.locked ? '🔒' : '📖'}</div>
         </div>`;
 }
-async function openReader(storyId) {
+async function openReader(storyId, options) {
+    const opts = options && typeof options === 'object' ? options : {};
     const listed = userStories.find(s => String(s.id) === String(storyId));
     if (listed && listed.locked) {
         showAlert(tr('paywall_text'));
@@ -1312,11 +1322,7 @@ async function openReader(storyId) {
     }
     const text = el('readerText');
     if (text) {
-        text.innerHTML = String(story.ready_text || '')
-            .split('\n')
-            .filter(p => p.trim())
-            .map(p => `<p>${sentencesHtml(p)}</p>`)
-            .join('');
+        text.innerHTML = readerTextHtml(story.ready_text);
     }
     const promoLink = el('readerPromoLink');
     const promoImage = el('readerPromoImg');
@@ -1343,6 +1349,7 @@ async function openReader(storyId) {
     } catch (e) { /* старые клиенты */ }
 
     renderFeedbackBlocks(story);
+    if (opts.share) openShareSheet();
     setAudioLoading();
     await loadAudioInterface();
 }
@@ -1386,6 +1393,31 @@ function splitSentences(paragraph) {
 }
 function sentencesHtml(paragraph) {
     return splitSentences(paragraph).map(part => `<span class="sent">${escapeHtml(part)}</span>`).join('');
+}
+// Текст сказки по абзацам. Кнопка «Поделиться» встаёт и внутрь текста — после первого абзаца,
+// где набралось SHARE_INLINE_AFTER знаков, если после неё остаётся ещё заметная часть сказки
+// (иначе рядом и так кнопка в конце). Подпись кнопки — в data-label и рисуется CSS (::after),
+// поэтому при выделении текста пальцем («Нашли ошибку?») она не попадает в выделенную фразу.
+const SHARE_INLINE_AFTER = 200;
+const SHARE_INLINE_MIN_REST = 300;
+function shareInlineIndex(paragraphs) {
+    let total = 0;
+    for (let i = 0; i < paragraphs.length - 1; i++) {
+        total += paragraphs[i].trim().length;
+        if (total < SHARE_INLINE_AFTER) continue;
+        const rest = paragraphs.slice(i + 1).reduce((sum, p) => sum + p.trim().length, 0);
+        return rest >= SHARE_INLINE_MIN_REST ? i : -1;
+    }
+    return -1;
+}
+function shareInlineHtml() {
+    const label = escapeHtml(tr('share_btn'));
+    return `<div class="share-inline"><button type="button" class="share-btn share-btn--inline" data-share-action="open" data-label="${label}" aria-label="${label}"></button></div>`;
+}
+function readerTextHtml(rawText) {
+    const paragraphs = String(rawText || '').split('\n').filter(p => p.trim());
+    const shareAfter = shareInlineIndex(paragraphs);
+    return paragraphs.map((p, i) => `<p>${sentencesHtml(p)}</p>` + (i === shareAfter ? shareInlineHtml() : '')).join('');
 }
 
 const REPORT_FRAGMENT_MAX = 1000;
@@ -1560,6 +1592,10 @@ function canTelegramCard() {
 }
 function applyShareTexts() {
     setText('readerShareBtn', tr('share_btn'));
+    document.querySelectorAll('.share-btn--inline').forEach((button) => {
+        button.setAttribute('data-label', tr('share_btn'));
+        button.setAttribute('aria-label', tr('share_btn'));
+    });
     setText('shareSheetTitle', tr('share_title'));
     setText('shareNote', tr('share_note'));
     setText('shareStopBtn', tr('share_stop'));

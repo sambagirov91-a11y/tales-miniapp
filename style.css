@@ -205,6 +205,10 @@ body.light-theme .reader-text .sent.is-picked { background: rgba(217, 119, 6, 0.
 }
 body.light-theme .share-btn { background: rgba(217, 119, 6, 0.08); border-color: rgba(180, 83, 9, 0.5); }
 .share-btn:active { transform: scale(0.98); }
+/* «Поделиться» внутри текста (после первого абзаца): компактная, по центру, не выделяется вместе с текстом */
+.share-inline { margin: -4px 0 18px; text-align: center; -webkit-user-select: none; user-select: none; }
+.share-btn--inline { display: inline-block; width: auto; margin: 0; padding: 9px 18px; border-radius: 999px; font-size: 14px; font-weight: 700; line-height: 1.3; }
+.share-btn--inline::after { content: attr(data-label); }
 .share-sheet__main { margin-bottom: 10px; }
 .share-sheet__link { margin-bottom: 12px; }
 .share-sheet__main[disabled], .share-sheet__link[disabled] { opacity: 0.6; cursor: default; }
