@@ -1651,6 +1651,13 @@ function closeShareSheet() {
 function markShared() {
     if (currentStory && String(currentStory.id) === String(shareState.storyId)) currentStory.shared = true;
 }
+// «Отправили»: сообщаем серверу, что сказкой поделились (счётчик «Поделились» в админке).
+// Фоном: если не дошло — родителю это не мешает.
+function reportShareSent(storyId, channel) {
+    if (!storyId) return;
+    api(`/api/app/stories/${encodeURIComponent(storyId)}/share/sent`, { method: 'POST', body: { channel } })
+        .catch((err) => console.warn('Поделиться сказкой: отметка «отправили» не записана:', err));
+}
 function shareViaTelegramLink(data) {
     const link = 'https://t.me/share/url?url=' + encodeURIComponent(data.url_telegram) + '&text=' + encodeURIComponent(data.share_text || '');
     try {
@@ -1661,18 +1668,21 @@ function shareViaTelegramLink(data) {
 function shareToTelegram() {
     const data = shareState.data;
     if (!data) return;
+    const storyId = shareState.storyId;
     markShared();
     if (data.prepared_message_id && canTelegramCard()) {
         try {
             tg.shareMessage(data.prepared_message_id, (sent) => {
-                if (sent) { haptic('success'); closeShareSheet(); }
+                if (sent) { haptic('success'); reportShareSent(storyId, 'telegram'); closeShareSheet(); }
             });
             return;
         } catch (err) {
             console.warn('shareMessage недоступен, делимся ссылкой:', err);
         }
     }
+    // Старый Telegram: открываем выбор чата; дошло ли сообщение, он не сообщает — считаем отправкой
     shareViaTelegramLink(data);
+    reportShareSent(storyId, 'telegram');
     closeShareSheet();
 }
 function copyText(text) {
@@ -1699,18 +1709,20 @@ function legacyCopy(text) {
 function shareAsLink() {
     const data = shareState.data;
     if (!data) return;
+    const storyId = shareState.storyId;
     markShared();
     if (canNativeShare()) {
         // navigator.share вызываем сразу по нажатию: ссылка уже готова
         navigator.share({ title: (currentStory && currentStory.title) || '', text: data.share_text || '', url: data.url_link })
-            .then(() => { haptic('success'); closeShareSheet(); })
-            .catch((err) => { if (!err || err.name !== 'AbortError') copyAndTell(data.url_link); });
+            .then(() => { haptic('success'); reportShareSent(storyId, 'link'); closeShareSheet(); })
+            .catch((err) => { if (!err || err.name !== 'AbortError') copyAndTell(data.url_link, storyId); });
         return;
     }
-    copyAndTell(data.url_link);
+    copyAndTell(data.url_link, storyId);
 }
-function copyAndTell(url) {
+function copyAndTell(url, storyId) {
     copyText(url).then((ok) => {
+        if (ok) reportShareSent(storyId, 'copy');
         closeShareSheet();
         showAlert(ok ? tr('share_copied') : tr('share_copy_manual') + '\n' + url);
     });
