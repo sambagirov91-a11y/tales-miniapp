@@ -196,7 +196,24 @@ body.light-theme .report-btn { border-color: rgba(180, 83, 9, 0.5); }
 body.light-theme .reader-screen.is-marking .reader-text .sent { text-decoration-color: rgba(180, 83, 9, 0.55); }
 .reader-text .sent.is-picked { background: rgba(250, 204, 21, 0.3); box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.3); text-decoration: none; }
 body.light-theme .reader-text .sent.is-picked { background: rgba(217, 119, 6, 0.22); box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.22); }
-.reader-screen.is-marking .report-end-btn, .reader-screen.is-marking .report-btn { visibility: hidden; }
+.reader-screen.is-marking .report-end-btn, .reader-screen.is-marking .report-btn, .reader-screen.is-marking .share-btn { visibility: hidden; }
+/* «Поделиться сказкой» */
+.share-btn {
+    display: block; width: 100%; margin: 6px 0 6px; padding: 14px 16px; border-radius: 14px; cursor: pointer;
+    font: inherit; font-size: 15px; font-weight: 800; color: var(--gold-main);
+    background: rgba(250, 204, 21, 0.08); border: 1px solid rgba(250, 204, 21, 0.55);
+}
+body.light-theme .share-btn { background: rgba(217, 119, 6, 0.08); border-color: rgba(180, 83, 9, 0.5); }
+.share-btn:active { transform: scale(0.98); }
+.share-sheet__main { margin-bottom: 10px; }
+.share-sheet__link { margin-bottom: 12px; }
+.share-sheet__main[disabled], .share-sheet__link[disabled] { opacity: 0.6; cursor: default; }
+.share-note { margin: 0 0 6px; font-size: 13px; line-height: 1.45; color: var(--text-muted); text-align: center; }
+.share-stop {
+    display: block; margin: 8px auto 0; padding: 8px 12px; border: none; background: transparent; cursor: pointer;
+    font: inherit; font-size: 13px; color: var(--text-muted); text-decoration: underline; text-underline-offset: 3px;
+}
+.share-stop[hidden] { display: none; }
 .report-hint {
     position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 150;
     display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 18px;

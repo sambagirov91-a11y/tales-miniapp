@@ -558,6 +558,7 @@ function applyLanguage() {
     setText('readerBackBtn', tr('reader_back'));
     setText('readerPromoCta', tr('reader_promo_cta'));
     applyReportTexts();
+    applyShareTexts();
     setText('feedbackRatingTitle', tr('feedback_rating_title'));
     setText('feedbackCommentTitle', tr('feedback_comment_title'));
     setPlaceholder('story-comment', tr('feedback_placeholder'));
@@ -1348,6 +1349,7 @@ async function openReader(storyId) {
 function closeReader() {
     stopReaderAudio(); // иначе озвучка продолжает играть за закрытой сказкой
     closeReportSheet();
+    closeShareSheet();
     exitReportMode();
     hide('readerScreen');
     document.body.style.overflow = 'auto';
@@ -1536,6 +1538,172 @@ document.addEventListener('click', (event) => {
 document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
     if (reportState.open) { closeReportSheet(); exitReportMode(); } else if (reportState.marking) exitReportMode();
+});
+
+// =====================================================================
+// ПОДЕЛИТЬСЯ СКАЗКОЙ
+// Кнопка под текстом сказки открывает окно с двумя вариантами:
+//   • «Отправить в Telegram» — стандартное окно Telegram «выбрать чат» с карточкой сказки
+//     (WebApp.shareMessage, Telegram 8.0+); в старых версиях — t.me/share/url со ссылкой;
+//   • «Поделиться ссылкой» — системное «Поделиться» телефона (WhatsApp, Instagram…) или копирование.
+// Ссылку и карточку сервер готовит, когда окно открывается: тогда нажатие сразу вызывает
+// shareMessage / navigator.share — иначе телефон может не разрешить окно после ожидания сети.
+// Ссылка ведёт на страницу сказки scheherezade.uz/s/<код>; «Перестать делиться» отключает её.
+// =====================================================================
+const shareState = { open: false, loading: false, data: null, storyId: null, wasShared: false };
+
+function canNativeShare() {
+    try { return !!(navigator.share && (!navigator.canShare || navigator.canShare({ url: 'https://scheherezade.uz/' }))); } catch (e) { return false; }
+}
+function canTelegramCard() {
+    try { return !!(tg && typeof tg.shareMessage === 'function' && (!tg.isVersionAtLeast || tg.isVersionAtLeast('8.0'))); } catch (e) { return false; }
+}
+function applyShareTexts() {
+    setText('readerShareBtn', tr('share_btn'));
+    setText('shareSheetTitle', tr('share_title'));
+    setText('shareNote', tr('share_note'));
+    setText('shareStopBtn', tr('share_stop'));
+    const close = el('shareSheetClose');
+    if (close) close.setAttribute('aria-label', tr('report_close'));
+    updateShareButtons();
+}
+function updateShareButtons() {
+    const telegram = el('shareTelegramBtn');
+    const link = el('shareLinkBtn');
+    const ready = !!shareState.data && !shareState.loading;
+    if (telegram) { telegram.innerText = shareState.loading ? tr('share_loading') : tr('share_telegram'); telegram.disabled = !ready; }
+    if (link) { link.innerText = canNativeShare() ? tr('share_link') : tr('share_copy'); link.disabled = !ready; }
+    const stop = el('shareStopBtn');
+    if (stop) stop.hidden = !shareState.wasShared;
+}
+async function openShareSheet() {
+    if (!currentStory) return;
+    const sheet = el('shareSheet');
+    if (!sheet) return;
+    const storyId = currentStory.id;
+    shareState.open = true;
+    shareState.storyId = storyId;
+    shareState.wasShared = !!currentStory.shared;
+    shareState.data = null;
+    shareState.loading = true;
+    setText('shareSheetSub', tr('share_sub', { name: currentStory.child_name || '' }));
+    updateShareButtons();
+    sheet.hidden = false;
+    document.body.classList.add('sheet-open');
+    haptic('select');
+    try {
+        const data = await api(`/api/app/stories/${encodeURIComponent(storyId)}/share`, { method: 'POST', body: {} });
+        if (!shareState.open || shareState.storyId !== storyId) return; // окно уже закрыли
+        shareState.data = data;
+    } catch (err) {
+        console.error('Поделиться сказкой: ссылка не получена:', err);
+        closeShareSheet();
+        showAlert(err.message || tr('error_generic'));
+        return;
+    } finally {
+        if (shareState.storyId === storyId) { shareState.loading = false; updateShareButtons(); }
+    }
+}
+function closeShareSheet() {
+    const sheet = el('shareSheet');
+    if (sheet) sheet.hidden = true;
+    if (shareState.open) document.body.classList.remove('sheet-open');
+    shareState.open = false;
+    shareState.data = null;
+    shareState.loading = false;
+}
+function markShared() {
+    if (currentStory && String(currentStory.id) === String(shareState.storyId)) currentStory.shared = true;
+}
+function shareViaTelegramLink(data) {
+    const link = 'https://t.me/share/url?url=' + encodeURIComponent(data.url_telegram) + '&text=' + encodeURIComponent(data.share_text || '');
+    try {
+        if (tg && tg.openTelegramLink) { tg.openTelegramLink(link); return; }
+    } catch (e) { /* ниже — обычное окно */ }
+    window.open(link, '_blank');
+}
+function shareToTelegram() {
+    const data = shareState.data;
+    if (!data) return;
+    markShared();
+    if (data.prepared_message_id && canTelegramCard()) {
+        try {
+            tg.shareMessage(data.prepared_message_id, (sent) => {
+                if (sent) { haptic('success'); closeShareSheet(); }
+            });
+            return;
+        } catch (err) {
+            console.warn('shareMessage недоступен, делимся ссылкой:', err);
+        }
+    }
+    shareViaTelegramLink(data);
+    closeShareSheet();
+}
+function copyText(text) {
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text).then(() => true, () => legacyCopy(text));
+    } catch (e) { /* ниже — запасной способ */ }
+    return Promise.resolve(legacyCopy(text));
+}
+function legacyCopy(text) {
+    try {
+        const area = document.createElement('textarea');
+        area.value = text;
+        area.setAttribute('readonly', '');
+        area.style.position = 'fixed'; area.style.opacity = '0';
+        document.body.appendChild(area);
+        area.select();
+        const ok = document.execCommand('copy');
+        area.remove();
+        return ok;
+    } catch (e) {
+        return false;
+    }
+}
+function shareAsLink() {
+    const data = shareState.data;
+    if (!data) return;
+    markShared();
+    if (canNativeShare()) {
+        // navigator.share вызываем сразу по нажатию: ссылка уже готова
+        navigator.share({ title: (currentStory && currentStory.title) || '', text: data.share_text || '', url: data.url_link })
+            .then(() => { haptic('success'); closeShareSheet(); })
+            .catch((err) => { if (!err || err.name !== 'AbortError') copyAndTell(data.url_link); });
+        return;
+    }
+    copyAndTell(data.url_link);
+}
+function copyAndTell(url) {
+    copyText(url).then((ok) => {
+        closeShareSheet();
+        showAlert(ok ? tr('share_copied') : tr('share_copy_manual') + '\n' + url);
+    });
+}
+async function stopSharing() {
+    if (!currentStory) return;
+    if (!(await showConfirm(tr('share_stop_confirm')))) return;
+    try {
+        await api(`/api/app/stories/${encodeURIComponent(currentStory.id)}/share`, { method: 'DELETE' });
+        currentStory.shared = false;
+        closeShareSheet();
+        showAlert(tr('share_stopped'));
+    } catch (err) {
+        console.error('Не удалось отключить ссылку:', err);
+        showAlert(err.message || tr('error_generic'));
+    }
+}
+document.addEventListener('click', (event) => {
+    const action = event.target.closest('[data-share-action]');
+    if (!action) return;
+    const name = action.getAttribute('data-share-action');
+    if (name === 'open') openShareSheet();
+    else if (name === 'close') closeShareSheet();
+    else if (name === 'telegram') shareToTelegram();
+    else if (name === 'link') shareAsLink();
+    else if (name === 'stop') stopSharing();
+});
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && shareState.open) closeShareSheet();
 });
 
 // =====================================================================

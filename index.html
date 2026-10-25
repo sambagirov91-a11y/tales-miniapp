@@ -6,12 +6,12 @@
     <title>Scheherezade</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="preload" as="image" href="logo.webp" type="image/webp">
-    <link rel="stylesheet" href="style.css?v=10">
+    <link rel="stylesheet" href="style.css?v=11">
     
     <!-- Подключаем внешние файлы со словарями для 3 языков -->
-<script src="miniapp-ru.js?v=17"></script>
-<script src="miniapp-uz.js?v=17"></script>
-<script src="miniapp-en.js?v=17"></script>
+<script src="miniapp-ru.js?v=18"></script>
+<script src="miniapp-uz.js?v=18"></script>
+<script src="miniapp-en.js?v=18"></script>
 </head>
 <body>
 
@@ -267,6 +267,8 @@
                 <div id="audio-dynamic-content"></div>
             </div>
             <div id="readerText" class="reader-text"></div>
+            <!-- «Поделиться сказкой»: карточка в Telegram или ссылка на страницу сказки на сайте (app.js → ПОДЕЛИТЬСЯ) -->
+            <button id="readerShareBtn" class="share-btn" type="button" data-share-action="open">💌 Поделиться сказкой</button>
             <button id="readerReportEndBtn" class="report-end-btn" type="button" data-report-action="start">✏️ Нашли ошибку в тексте? Отметьте её</button>
             
             <!-- БЛОК ОЦЕНКИ -->
@@ -364,6 +366,25 @@
         </div>
     </div>
 
+    <!-- ОКНО «ПОДЕЛИТЬСЯ СКАЗКОЙ»: в Telegram (карточка) или ссылкой (WhatsApp, Instagram и др.) -->
+    <div id="shareSheet" class="tariff-sheet" role="dialog" aria-modal="true" aria-labelledby="shareSheetTitle" hidden>
+        <div class="tariff-sheet__backdrop" data-share-action="close"></div>
+        <div class="tariff-sheet__panel" tabindex="-1">
+            <div class="tariff-sheet__grab" aria-hidden="true"></div>
+            <header class="tariff-sheet__head">
+                <div class="tariff-sheet__heading">
+                    <h2 id="shareSheetTitle" class="tariff-sheet__title">Поделиться сказкой</h2>
+                    <p id="shareSheetSub" class="tariff-sheet__sub"></p>
+                </div>
+                <button id="shareSheetClose" class="tariff-sheet__close" type="button" data-share-action="close" aria-label="Закрыть">✕</button>
+            </header>
+            <button id="shareTelegramBtn" class="first-story__btn share-sheet__main" type="button" data-share-action="telegram">✈️ Отправить в Telegram</button>
+            <button id="shareLinkBtn" class="report-other share-sheet__link" type="button" data-share-action="link">🔗 Поделиться ссылкой</button>
+            <p id="shareNote" class="share-note"></p>
+            <button id="shareStopBtn" class="share-stop" type="button" data-share-action="stop" hidden>Перестать делиться</button>
+        </div>
+    </div>
+
     <!-- ОКНО «ДЛЯ КОГО ПРИСЛАТЬ СКАЗКУ?» (когда в профиле несколько детей) -->
     <div id="firstStorySheet" class="tariff-sheet" role="dialog" aria-modal="true" aria-labelledby="firstStorySheetTitle" hidden>
         <div class="tariff-sheet__backdrop" data-first-story-action="close"></div>
@@ -381,6 +402,6 @@
     </div>
 
     <!-- Основной скрипт логики Mini App -->
-    <script src="app.js?v=22"></script>
+    <script src="app.js?v=23"></script>
 </body>
 </html>
