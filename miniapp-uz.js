@@ -92,7 +92,7 @@ window.langUZ = {
     btn_cancel: "Bekor qilish",
     alert_enter_child_name: "Bolaning ismini kiriting",
     alert_children_limit: "Tarifingizda {max} tadan ortiq profil qo'shib bo'lmaydi. Ko'proq qo'shish uchun tarifni almashtiring.",
-    confirm_delete_child: "Ushbu profilni o'chirasizmi? Unga ertaklar boshqa kelmaydi.",
+    confirm_delete_child: "«{name}» profili o'chirilsinmi? Bu bolaning barcha ertaklari va ovozlashtirilgan variantlari o'chib ketadi va qayta tiklanmaydi. Unga yangi ertaklar kelmaydi.",
 
     lbl_app_lang: "Ilova tili",
     lbl_app_theme: "Mavzu",
