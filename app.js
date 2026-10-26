@@ -1041,7 +1041,10 @@ function resetForm() {
     checkLimitAndMode();
 }
 async function deleteChild(id) {
-    if (!(await showConfirm(tr('confirm_delete_child')))) return;
+    // Окно Telegram вмещает не больше 256 символов — длинное имя укорачиваем
+    const child = allChildren.find(c => String(c.id) === String(id));
+    const name = child && child.name ? String(child.name).slice(0, 40) : '';
+    if (!(await showConfirm(tr('confirm_delete_child', { name })))) return;
     try {
         await api(`/api/app/children/${encodeURIComponent(id)}`, { method: 'DELETE' });
         if (String(editingChildId) === String(id)) resetForm();

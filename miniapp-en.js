@@ -92,7 +92,7 @@ window.langEN = {
     btn_cancel: "Cancel",
     alert_enter_child_name: "Enter the child's name",
     alert_children_limit: "Your plan allows up to {max} profiles. Change your plan to add more.",
-    confirm_delete_child: "Delete this profile? Tales will no longer be sent for this child.",
+    confirm_delete_child: "Delete the profile “{name}”? All tales and voiceovers of this child will be deleted and lost, and cannot be recovered. No new tales will be sent for this child.",
 
     lbl_app_lang: "App Language",
     lbl_app_theme: "Theme",
