@@ -197,13 +197,13 @@ body.light-theme .reader-screen.is-marking .reader-text .sent { text-decoration-
 .reader-text .sent.is-picked { background: rgba(250, 204, 21, 0.3); box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.3); text-decoration: none; }
 body.light-theme .reader-text .sent.is-picked { background: rgba(217, 119, 6, 0.22); box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.22); }
 .reader-screen.is-marking .report-end-btn, .reader-screen.is-marking .report-btn, .reader-screen.is-marking .share-btn, .reader-screen.is-marking .support-btn { visibility: hidden; }
-/* «Служба поддержки» в читалке: спокойная кнопка под «Поделиться» и «Нашли ошибку» */
+/* «Служба поддержки» в читалке: под «Поделиться» и «Нашли ошибку», фирменный голубой цвет Telegram (#229ED9) */
 .support-btn {
-    display: block; width: 100%; margin: 6px 0 14px; padding: 12px 16px; border-radius: 14px; cursor: pointer;
-    font: inherit; font-size: 14px; font-weight: 700; color: var(--text-main);
-    background: transparent; border: 1px solid rgba(148, 163, 184, 0.5);
+    display: block; width: 100%; margin: 8px 0 14px; padding: 14px 16px; border-radius: 14px; cursor: pointer;
+    font: inherit; font-size: 15px; font-weight: 800; color: #ffffff;
+    background: #229ed9; border: none; box-shadow: 0 4px 14px rgba(34, 158, 217, 0.3);
 }
-.support-btn:active { transform: scale(0.98); }
+.support-btn:active { transform: scale(0.98); background: #1c8cc2; }
 /* «Поделиться сказкой» */
 .share-btn {
     display: block; width: 100%; margin: 6px 0 6px; padding: 14px 16px; border-radius: 14px; cursor: pointer;
