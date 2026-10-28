@@ -196,7 +196,14 @@ body.light-theme .report-btn { border-color: rgba(180, 83, 9, 0.5); }
 body.light-theme .reader-screen.is-marking .reader-text .sent { text-decoration-color: rgba(180, 83, 9, 0.55); }
 .reader-text .sent.is-picked { background: rgba(250, 204, 21, 0.3); box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.3); text-decoration: none; }
 body.light-theme .reader-text .sent.is-picked { background: rgba(217, 119, 6, 0.22); box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.22); }
-.reader-screen.is-marking .report-end-btn, .reader-screen.is-marking .report-btn, .reader-screen.is-marking .share-btn { visibility: hidden; }
+.reader-screen.is-marking .report-end-btn, .reader-screen.is-marking .report-btn, .reader-screen.is-marking .share-btn, .reader-screen.is-marking .support-btn { visibility: hidden; }
+/* «Служба поддержки» в читалке: спокойная кнопка под «Поделиться» и «Нашли ошибку» */
+.support-btn {
+    display: block; width: 100%; margin: 6px 0 14px; padding: 12px 16px; border-radius: 14px; cursor: pointer;
+    font: inherit; font-size: 14px; font-weight: 700; color: var(--text-main);
+    background: transparent; border: 1px solid rgba(148, 163, 184, 0.5);
+}
+.support-btn:active { transform: scale(0.98); }
 /* «Поделиться сказкой» */
 .share-btn {
     display: block; width: 100%; margin: 6px 0 6px; padding: 14px 16px; border-radius: 14px; cursor: pointer;

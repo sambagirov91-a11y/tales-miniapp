@@ -175,6 +175,7 @@ window.langUZ = {
     // «Нашли ошибку?» в читалке: родитель отмечает фразу, админ получает сигнал
     report_btn: "Xato topdingizmi?",
     report_end_btn: "✏️ Matnda xato bormi? Belgilang",
+    support_btn: "🎧 Qo'llab-quvvatlash",
     report_hint: "Xato bor gapni bosing",
     report_hint_sub: "So'zlarni barmoq bilan belgilash ham mumkin",
     report_use_selection: "Belgilanganini yuborish",

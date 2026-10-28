@@ -6,12 +6,12 @@
     <title>Scheherezade</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="preload" as="image" href="logo.webp" type="image/webp">
-    <link rel="stylesheet" href="style.css?v=12">
+    <link rel="stylesheet" href="style.css?v=13">
     
     <!-- Подключаем внешние файлы со словарями для 3 языков -->
-<script src="miniapp-ru.js?v=19"></script>
-<script src="miniapp-uz.js?v=19"></script>
-<script src="miniapp-en.js?v=19"></script>
+<script src="miniapp-ru.js?v=20"></script>
+<script src="miniapp-uz.js?v=20"></script>
+<script src="miniapp-en.js?v=20"></script>
 </head>
 <body>
 
@@ -270,6 +270,8 @@
             <!-- «Поделиться сказкой»: карточка в Telegram или ссылка на страницу сказки на сайте (app.js → ПОДЕЛИТЬСЯ) -->
             <button id="readerShareBtn" class="share-btn" type="button" data-share-action="open">💌 Поделиться сказкой</button>
             <button id="readerReportEndBtn" class="report-end-btn" type="button" data-report-action="start">✏️ Нашли ошибку в тексте? Отметьте её</button>
+            <!-- «Служба поддержки»: открывает чат с ботом поддержки (app.js → СЛУЖБА ПОДДЕРЖКИ) -->
+            <button id="readerSupportBtn" class="support-btn" type="button" data-support-action="open">🎧 Служба поддержки</button>
             
             <!-- БЛОК ОЦЕНКИ -->
             <div id="rating-block" class="feedback-container" style="display: none;">
@@ -402,6 +404,6 @@
     </div>
 
     <!-- Основной скрипт логики Mini App -->
-    <script src="app.js?v=26"></script>
+    <script src="app.js?v=27"></script>
 </body>
 </html>

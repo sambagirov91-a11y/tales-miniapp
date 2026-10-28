@@ -5,6 +5,8 @@
 // выдать себе подписку или прочитать чужие данные.
 // =====================================================================
 const API_BASE = 'https://scheherezade.uz';
+// Бот поддержки (тот же, что в кнопках бота и на сайте)
+const SUPPORT_BOT_URL = 'https://t.me/ScheherezadeSupport_bot';
 // Фраза запуска навыка — одна на всё приложение (Алиса понимает только русский)
 const ALICE_SKILL_PHRASE = '«Алиса, запусти навык Сказки Шехерезады»';
 
@@ -568,6 +570,7 @@ function applyLanguage() {
     setText('readerPromoCta', tr('reader_promo_cta'));
     applyReportTexts();
     applyShareTexts();
+    setText('readerSupportBtn', tr('support_btn'));
     setText('feedbackRatingTitle', tr('feedback_rating_title'));
     setText('feedbackCommentTitle', tr('feedback_comment_title'));
     setPlaceholder('story-comment', tr('feedback_placeholder'));
@@ -1755,6 +1758,19 @@ document.addEventListener('click', (event) => {
 });
 document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && shareState.open) closeShareSheet();
+});
+
+// =====================================================================
+// СЛУЖБА ПОДДЕРЖКИ: кнопка в читалке открывает чат с ботом поддержки
+// =====================================================================
+function openSupport() {
+    try {
+        if (tg && tg.openTelegramLink) { tg.openTelegramLink(SUPPORT_BOT_URL); return; }
+    } catch (e) { /* ниже — обычная ссылка */ }
+    window.open(SUPPORT_BOT_URL, '_blank');
+}
+document.addEventListener('click', (event) => {
+    if (event.target.closest('[data-support-action="open"]')) openSupport();
 });
 
 // =====================================================================
