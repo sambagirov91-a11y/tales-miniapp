@@ -175,6 +175,7 @@ window.langEN = {
     // «Нашли ошибку?» в читалке: родитель отмечает фразу, админ получает сигнал
     report_btn: "Found a mistake?",
     report_end_btn: "✏️ Found a mistake in the text? Mark it",
+    support_btn: "🎧 Support",
     report_hint: "Tap the sentence with the mistake",
     report_hint_sub: "You can also select words with your finger",
     report_use_selection: "Report the selected text",
