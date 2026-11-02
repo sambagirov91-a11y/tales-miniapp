@@ -2067,10 +2067,10 @@ function audioHeader(icon, title, desc, chip) {
     `;
 }
 
-function audioPlayerMarkup(url) {
+function audioPlayerMarkup(url, storyId) {
     const label = (key) => escapeHtml(tr(key));
     return `
-        <div class="audio-player" data-audio-player>
+        <div class="audio-player" data-audio-player data-story-id="${escapeHtml(storyId || '')}">
             <audio preload="metadata" src="${escapeHtml(url)}"></audio>
             <div class="audio-player__seek">
                 <input class="audio-player__range" type="range" min="0" max="1000" step="1" value="0" data-player-seek aria-label="${label('audio_seek')}">
@@ -2123,7 +2123,41 @@ function bindAudioPlayer(root) {
     audio.addEventListener('ended', () => { setPlaying(false); audio.currentTime = 0; paint(); });
     audio.addEventListener('waiting', () => player.classList.add('is-buffering'));
     ['playing', 'canplay'].forEach(name => audio.addEventListener(name, () => player.classList.remove('is-buffering')));
-    audio.addEventListener('error', () => {
+    // Озвучка открывается по временной ссылке (сервер выдаёт её на 6 часов). Если ссылка устарела
+    // (приложение долго было открыто), один раз берём у сервера свежую и продолжаем с того же места;
+    // не вышло — показываем ошибку, как раньше.
+    let refreshed = false;
+    audio.addEventListener('canplay', () => { refreshed = false; });
+    audio.addEventListener('error', async () => {
+        const storyId = player.getAttribute('data-story-id');
+        if (!refreshed && storyId) {
+            refreshed = true;
+            const wasPlaying = player.classList.contains('is-playing');
+            const resumeAt = audio.currentTime || 0;
+            player.classList.add('is-buffering');
+            try {
+                const data = await api(`/api/user/voiceover-status?story_id=${encodeURIComponent(storyId)}`);
+                const fresh = data && data.status === 'done' ? safeUrl(data.audioUrl) : '';
+                if (fresh && player.isConnected) {
+                    rememberFeedback(storyId, { audio_url: fresh });
+                    player.classList.remove('is-error');
+                    audio.src = fresh;
+                    if (resumeAt > 0) {
+                        audio.addEventListener('loadedmetadata', () => {
+                            try { audio.currentTime = resumeAt; } catch (e) { /* перемотка недоступна */ }
+                        }, { once: true });
+                    }
+                    audio.load();
+                    if (wasPlaying) {
+                        const started = audio.play();
+                        if (started && started.catch) started.catch(err => console.error('Не удалось запустить аудио', err));
+                    }
+                    return;
+                }
+            } catch (err) {
+                console.error('Не удалось обновить ссылку на озвучку', err);
+            }
+        }
         player.classList.remove('is-buffering');
         player.classList.add('is-error');
         setPlaying(false);
@@ -2175,7 +2209,7 @@ function updateAudioInterface(storyId, audioUrl, left) {
         container.innerHTML = `
             <div class="audio-card audio-card--ready">
                 ${audioHeader('🎧', tr('audio_ready'), tr('audio_ready_desc'))}
-                ${audioPlayerMarkup(url)}
+                ${audioPlayerMarkup(url, storyId)}
             </div>
         `;
         bindAudioPlayer(container);
