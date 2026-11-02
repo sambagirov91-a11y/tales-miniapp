@@ -72,6 +72,8 @@ window.langUZ = {
     open_in_telegram_title: "Ilovani Telegram orqali oching",
     open_in_telegram_text: "Ilova faqat Telegram ichida ishlaydi. Botga qayting va «Profilni ochish» tugmasini bosing.",
     error_load: "Ma'lumotlarni yuklab bo'lmadi. Internetni tekshirib, qayta urinib ko'ring.",
+    error_blocked: "Hisobga kirish yopilgan. Xato bo'lsa, qo'llab-quvvatlash xizmatiga yozing.",
+    btn_support: "🎧 Qo'llab-quvvatlash",
     error_session: "Sessiya eskirdi. Ilovani yopib, bot orqali qayta oching.",
     error_network: "Server bilan aloqa yo'q. Internetni tekshirib, qayta urinib ko'ring.",
     error_generic: "Xatolik yuz berdi. Qayta urinib ko'ring.",
