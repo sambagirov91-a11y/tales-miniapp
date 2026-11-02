@@ -9,9 +9,9 @@
     <link rel="stylesheet" href="style.css?v=14">
     
     <!-- Подключаем внешние файлы со словарями для 3 языков -->
-<script src="miniapp-ru.js?v=20"></script>
-<script src="miniapp-uz.js?v=20"></script>
-<script src="miniapp-en.js?v=20"></script>
+<script src="miniapp-ru.js?v=21"></script>
+<script src="miniapp-uz.js?v=21"></script>
+<script src="miniapp-en.js?v=21"></script>
 </head>
 <body>
 
@@ -29,6 +29,7 @@
     <div class="app-state-icon">🌙</div>
     <p id="appErrorText">Не удалось загрузить данные. Проверьте интернет и попробуйте ещё раз.</p>
     <button id="appErrorRetry" class="primary-btn" onclick="retryBoot()">Попробовать снова</button>
+    <button id="appErrorSupport" class="primary-btn" onclick="openLink(SUPPORT_BOT_URL)" style="display: none;">🎧 Служба поддержки</button>
 </div>
 <div id="accountDeleted" class="app-state" style="display: none;">
     <div class="app-state-icon">🗑</div>
@@ -404,6 +405,6 @@
     </div>
 
     <!-- Основной скрипт логики Mini App -->
-    <script src="app.js?v=28"></script>
+    <script src="app.js?v=29"></script>
 </body>
 </html>

@@ -72,6 +72,8 @@ window.langEN = {
     open_in_telegram_title: "Open the app in Telegram",
     open_in_telegram_text: "The app works only inside Telegram. Go back to the bot and tap “Open profile”.",
     error_load: "Couldn't load your data. Check your connection and try again.",
+    error_blocked: "Access to this account is closed. If this is a mistake, please contact support.",
+    btn_support: "🎧 Support",
     error_session: "Your session has expired. Close the app and open it again from the bot.",
     error_network: "No connection to the server. Check your internet and try again.",
     error_generic: "Something went wrong. Please try again.",

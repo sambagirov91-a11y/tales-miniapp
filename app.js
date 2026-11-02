@@ -134,6 +134,7 @@ class ApiError extends Error {
 }
 const ERROR_TEXT_KEYS = {
     NO_INIT_DATA: 'error_session',
+    ACCOUNT_BLOCKED: 'error_blocked',
     CHILDREN_LIMIT: 'alert_children_limit',
     TARIFF_CHILDREN_LIMIT: 'error_tariff_children',
     CHILD_NAME_REQUIRED: 'alert_enter_child_name',
@@ -211,7 +212,15 @@ function showScreen(name) {
     if (name === 'main') show('mainAppContent');
 }
 function showLoadError(err) {
-    setText('appErrorText', err && err.code === 'NO_INIT_DATA' ? tr('error_session') : tr('error_load'));
+    // Заблокированному админом: вместо «Повторить» — кнопка «Служба поддержки» (бот поддержки)
+    const blocked = !!(err && err.code === 'ACCOUNT_BLOCKED');
+    let text = tr('error_load');
+    if (blocked) text = tr('error_blocked');
+    else if (err && err.code === 'NO_INIT_DATA') text = tr('error_session');
+    setText('appErrorText', text);
+    setText('appErrorSupport', tr('btn_support'));
+    if (blocked) { hide('appErrorRetry'); show('appErrorSupport', 'inline-block'); }
+    else { show('appErrorRetry', 'inline-block'); hide('appErrorSupport'); }
     showScreen('error');
 }
 async function boot() {
