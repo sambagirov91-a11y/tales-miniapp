@@ -1035,6 +1035,13 @@ body.light-theme .first-story { border-color: rgba(124, 58, 237, 0.4); box-shado
 }
 .first-story__btn:active { transform: scale(0.98); }
 .first-story__btn[disabled] { opacity: 0.75; cursor: default; transform: none; }
+/* Окно-подсказка после добавления первого ребёнка: главная кнопка — как в карточке, «Позже» — тихая ссылка под ней */
+.first-story-prompt__later {
+    display: block; width: 100%; box-sizing: border-box; margin-top: 8px; padding: 12px 14px;
+    background: none; border: none; border-radius: 12px; cursor: pointer;
+    font-size: 15px; font-weight: 600; color: var(--text-muted);
+}
+.first-story-prompt__later:active { background: rgba(255, 255, 255, 0.05); }
 .first-story__spin {
     width: 16px; height: 16px; flex: 0 0 auto; border-radius: 50%;
     border: 2px solid rgba(69, 26, 3, 0.25); border-top-color: #451a03; animation: audioSpin 0.9s linear infinite;

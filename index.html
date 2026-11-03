@@ -6,12 +6,12 @@
     <title>Scheherezade</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="preload" as="image" href="logo.webp" type="image/webp">
-    <link rel="stylesheet" href="style.css?v=14">
+    <link rel="stylesheet" href="style.css?v=15">
     
     <!-- Подключаем внешние файлы со словарями для 3 языков -->
-<script src="miniapp-ru.js?v=21"></script>
-<script src="miniapp-uz.js?v=21"></script>
-<script src="miniapp-en.js?v=21"></script>
+<script src="miniapp-ru.js?v=22"></script>
+<script src="miniapp-uz.js?v=22"></script>
+<script src="miniapp-en.js?v=22"></script>
 </head>
 <body>
 
@@ -404,7 +404,24 @@
         </div>
     </div>
 
+    <!-- ОКНО-ПОДСКАЗКА сразу после добавления ПЕРВОГО ребёнка: предлагает получить первую сказку -->
+    <div id="firstStoryPrompt" class="tariff-sheet" role="dialog" aria-modal="true" aria-labelledby="firstStoryPromptTitle" hidden>
+        <div class="tariff-sheet__backdrop" data-first-story-action="prompt-later"></div>
+        <div class="tariff-sheet__panel" tabindex="-1">
+            <div class="tariff-sheet__grab" aria-hidden="true"></div>
+            <header class="tariff-sheet__head">
+                <div class="tariff-sheet__heading">
+                    <h2 id="firstStoryPromptTitle" class="tariff-sheet__title">Профиль добавлен! 🎉</h2>
+                    <p id="firstStoryPromptText" class="tariff-sheet__sub"></p>
+                </div>
+                <button id="firstStoryPromptClose" class="tariff-sheet__close" type="button" data-first-story-action="prompt-later" aria-label="Закрыть">✕</button>
+            </header>
+            <button id="firstStoryPromptGo" class="first-story__btn" type="button" data-first-story-action="prompt-go">Получить первую сказку сейчас</button>
+            <button id="firstStoryPromptLater" class="first-story-prompt__later" type="button" data-first-story-action="prompt-later">Позже</button>
+        </div>
+    </div>
+
     <!-- Основной скрипт логики Mini App -->
-    <script src="app.js?v=30"></script>
+    <script src="app.js?v=31"></script>
 </body>
 </html>

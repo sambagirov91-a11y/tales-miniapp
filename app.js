@@ -1099,6 +1099,8 @@ async function saveData() {
 
     try {
         const body = { name, gender: selectedGender, language: languageSelect.value };
+        // Добавляют самого первого ребёнка (а не правят профиль и не добавляют второго) — после сохранения предложим первую сказку
+        const addingFirstChild = !editingChildId && !allChildren.length;
         if (editingChildId) {
             await api(`/api/app/children/${encodeURIComponent(editingChildId)}`, { method: 'PATCH', body });
         } else {
@@ -1115,6 +1117,9 @@ async function saveData() {
             window.history.replaceState({}, '', nextUrl.toString());
             switchAppTab('stories');
             await openReader(claimedDemo.storyId);
+        } else if (addingFirstChild) {
+            // Карточка «Первая сказка» появляется на этой же вкладке выше формы, и не все родители её замечают — зовём окном
+            offerFirstStoryAfterFirstChild();
         }
     } catch (err) {
         console.error(err);
@@ -1245,6 +1250,46 @@ function readFirstStory() {
     switchAppTab('stories');
     openReader(firstStoryResult.storyId);
 }
+// --- Окно-подсказка после добавления ПЕРВОГО ребёнка ---
+// Новый родитель добавляет профиль и остаётся у формы, а карточка «Первая сказка» возникает выше неё. Чтобы её не пропустили,
+// показываем окно с предложением. «Получить» — как кнопка в карточке (один ребёнок — сказка уходит сразу);
+// «Позже» — закрываем окно и прокручиваем к карточке. Окно показывается один раз за сеанс и только пока сервер говорит first_story.available.
+let firstStoryPromptOpen = false;
+let firstStoryPromptShown = false;
+function offerFirstStoryAfterFirstChild() {
+    if (firstStoryPromptShown || firstStoryBusy || firstStoryResult || !userExists) return;
+    if (allChildren.length !== 1) return;
+    if (!(profileData && profileData.first_story && profileData.first_story.available)) return;
+    openFirstStoryPrompt();
+}
+function openFirstStoryPrompt() {
+    const sheet = el('firstStoryPrompt');
+    if (!sheet) return;
+    firstStoryPromptShown = true;
+    setText('firstStoryPromptTitle', tr('first_story_prompt_title'));
+    setText('firstStoryPromptText', tr('first_story_prompt_text'));
+    setText('firstStoryPromptGo', tr('first_story_btn'));
+    setText('firstStoryPromptLater', tr('first_story_prompt_later'));
+    const close = el('firstStoryPromptClose');
+    if (close) close.setAttribute('aria-label', tr('first_story_close'));
+    firstStoryPromptOpen = true;
+    sheet.hidden = false;
+    document.body.classList.add('sheet-open');
+    const panel = sheet.querySelector('.tariff-sheet__panel');
+    if (panel) { panel.scrollTop = 0; try { panel.focus({ preventScroll: true }); } catch (e) { /* не страшно */ } }
+}
+function closeFirstStoryPrompt() {
+    firstStoryPromptOpen = false;
+    const sheet = el('firstStoryPrompt');
+    if (sheet) sheet.hidden = true;
+    if (!tariffSheetOpen && !firstStorySheetOpen) document.body.classList.remove('sheet-open');
+}
+// «Позже»: показываем, где лежит кнопка, — прокручиваем к карточке «Первая сказка» под профилями детей
+function revealFirstStoryCard() {
+    const slot = document.querySelector('[data-first-story-slot="profile"]');
+    if (!slot || slot.style.display === 'none') return;
+    slot.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
 document.addEventListener('click', (event) => {
     const node = event.target.closest('[data-first-story-action]');
     if (!node) return;
@@ -1253,8 +1298,14 @@ document.addEventListener('click', (event) => {
     else if (action === 'pick') sendFirstStory(node.getAttribute('data-child-id'));
     else if (action === 'read') readFirstStory();
     else if (action === 'close') closeFirstStorySheet();
+    else if (action === 'prompt-go') { closeFirstStoryPrompt(); startFirstStory(); }
+    else if (action === 'prompt-later') { closeFirstStoryPrompt(); revealFirstStoryCard(); }
 });
-document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && firstStorySheetOpen) closeFirstStorySheet(); });
+document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    if (firstStoryPromptOpen) { closeFirstStoryPrompt(); revealFirstStoryCard(); }
+    else if (firstStorySheetOpen) closeFirstStorySheet();
+});
 
 // =====================================================================
 // НАВИГАЦИЯ
