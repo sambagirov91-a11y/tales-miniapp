@@ -779,10 +779,27 @@ function startPromoTimer(deadlineMs, keepsTrialDays) {
 }
 
 // ---------------------------------------------------------------------
+// АНАЛИТИКА МИНИ-ПРИЛОЖЕНИЯ: три события уходят на сервер (POST /api/app/event) с подписью Telegram.
+// Без ожидания и без сообщений об ошибках — приложению аналитика не мешает. Что принимать, сервер решает сам.
+// ---------------------------------------------------------------------
+function trackAppEvent(body) {
+    if (!initData || !body) return;
+    try { api('/api/app/event', { method: 'POST', body }).catch(() => {}); } catch (e) { /* аналитика не должна ломать экран */ }
+}
+// Состояние доступа человека для событий: пробный период, оплаченная подписка, закончился доступ
+function planStateForEvent() {
+    const access = (profileData && profileData.access) || {};
+    if (access.hasAccess) return access.isTrial ? 'trial' : 'active';
+    return profileData && profileData.user ? 'expired' : 'none';
+}
+
+// ---------------------------------------------------------------------
 // ОКНО ВЫБОРА ТАРИФА
 // ---------------------------------------------------------------------
-function openTariffs() {
+// source — откуда открыли окно (для аналитики): paywall, profile, promo, children_limit
+function openTariffs(source) {
     if (!userExists || !profileData || !profileData.tariffs) return;
+    trackAppEvent({ event_name: 'subscription_offer_viewed', source: typeof source === 'string' ? source : 'other', plan_state: planStateForEvent() });
     tariffSheetOpen = true;
     renderTariffSheet();
     const sheet = el('tariffSheet');
@@ -900,7 +917,7 @@ document.addEventListener('click', (event) => {
     if (!node) return;
     const action = node.getAttribute('data-tariff-action');
     if (action === 'close') closeTariffs();
-    else if (action === 'open') openTariffs();
+    else if (action === 'open') openTariffs(node.getAttribute('data-tariff-source') || 'other');
     else if (action === 'choose') payForTariff(node.getAttribute('data-tariff-id'), node);
     else if (action === 'children') {
         closeTariffs();
@@ -917,6 +934,8 @@ async function payForTariff(tariffId, button) {
     const t = profileData.tariffs;
     const item = t.items.find(i => i.id === tariffId);
     if (!item || item.state === 'blocked_children') return;
+    // Нажали «Выбрать / Продлить» — ещё до вопроса про смену тарифа и до ссылки Payme
+    trackAppEvent({ event_name: 'subscription_cta_clicked', tariff_key: tariffId, plan_state: planStateForEvent() });
 
     // Смена тарифа посреди оплаченного периода: остаток прежнего не сохраняется — спрашиваем
     const access = profileData.access || {};
@@ -2108,6 +2127,14 @@ function bindAudioPlayer(root) {
     const current = player.querySelector('[data-player-current]');
     const duration = player.querySelector('[data-player-duration]');
     const playButton = player.querySelector('[data-player-action="toggle"]');
+    // Первый запуск этой сказки в плеере — событие аналитики (сервер оставляет одно на человека, сказку и день)
+    const analyticsStoryId = player.getAttribute('data-story-id');
+    let playCounted = false;
+    audio.addEventListener('play', () => {
+        if (playCounted || !analyticsStoryId) return;
+        playCounted = true;
+        trackAppEvent({ event_name: 'audio_played', story_id: analyticsStoryId });
+    });
     if (!audio || !seek || !current || !duration || !playButton) return;
 
     let scrubbing = false; // пользователь тянет ползунок — не двигаем его сами

@@ -114,14 +114,14 @@
                 <div id="promoTimerTitle" class="promo-timer__title"></div>
                 <div id="promoTimerCountdown" class="promo-timer__countdown">00:00:00</div>
                 <div id="promoTimerNote" class="promo-timer__note" style="display: none;"></div>
-                <button id="promoTimerCta" class="promo-timer__cta" type="button" data-tariff-action="open"></button>
+                <button id="promoTimerCta" class="promo-timer__cta" type="button" data-tariff-action="open" data-tariff-source="promo"></button>
             </div>
 
             <!-- Статус подписки -->
             <div id="statusSection" class="status-card">
                 <div id="statusBadge" class="status-badge">...</div>
                 <div id="statusText" class="status-text"></div>
-                <button id="renewBtn" class="primary-btn" style="display: none;" onclick="openTariffs()"></button>
+                <button id="renewBtn" class="primary-btn" style="display: none;" onclick="openTariffs('profile')"></button>
             </div>
 
 <!-- УМНЫЙ БЛОК ИНТЕГРАЦИИ С АЛИСОЙ -->
@@ -171,7 +171,7 @@
                     <div class="paywall-content">
                         <span class="paywall-icon">🔒</span>
                         <p id="paywallText" class="paywall-text">Доступ к архиву прошлых сказок возможен только в платном тарифе.</p>
-                        <button id="paywallBtn" class="primary-btn paywall-btn" onclick="openTariffs()">Выбрать тариф</button>
+                        <button id="paywallBtn" class="primary-btn paywall-btn" onclick="openTariffs('paywall')">Выбрать тариф</button>
                     </div>
                 </div>
                 
@@ -218,7 +218,7 @@
             <div id="childrenLimitHint" class="limit-hint" style="display: none;">
                 <span class="limit-hint__icon" aria-hidden="true">👧</span>
                 <p id="childrenLimitText" class="limit-hint__text"></p>
-                <button id="childrenLimitBtn" class="limit-hint__btn" type="button" data-tariff-action="open"></button>
+                <button id="childrenLimitBtn" class="limit-hint__btn" type="button" data-tariff-action="open" data-tariff-source="children_limit"></button>
             </div>
 
             <!-- Форма добавления/редактирования -->
@@ -405,6 +405,6 @@
     </div>
 
     <!-- Основной скрипт логики Mini App -->
-    <script src="app.js?v=29"></script>
+    <script src="app.js?v=30"></script>
 </body>
 </html>
