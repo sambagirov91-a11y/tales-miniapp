@@ -107,12 +107,18 @@ function openLink(url) {
     if (tg && tg.openLink) tg.openLink(link);
     else window.open(link, '_blank');
 }
+// Ссылка из настроек на языке человека. Документы (политика, оферта) загружаются в админке по языкам:
+// сервер отдаёт offer_url_ru / offer_url_uz / offer_url_en (и privacy_url_…); нет нужного языка — русский, затем старый ключ без языка.
+function configLinkUrl(key) {
+    const lang = ['ru', 'uz', 'en'].includes(currentLang) ? currentLang : 'ru';
+    return configUrls[key + '_' + lang] || configUrls[key + '_ru'] || configUrls[key] || '';
+}
 // Ссылки из настроек (политика, оферта, баннер) — через data-атрибуты, без JS в разметке
 document.addEventListener('click', (event) => {
     const configLink = event.target.closest('[data-config-link]');
     if (configLink) {
         event.preventDefault();
-        openLink(configUrls[configLink.getAttribute('data-config-link')]);
+        openLink(configLinkUrl(configLink.getAttribute('data-config-link')));
         return;
     }
     const directLink = event.target.closest('[data-open-link]');
