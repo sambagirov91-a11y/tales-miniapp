@@ -9,9 +9,9 @@
     <link rel="stylesheet" href="style.css?v=15">
     
     <!-- Подключаем внешние файлы со словарями для 3 языков -->
-<script src="miniapp-ru.js?v=22"></script>
-<script src="miniapp-uz.js?v=22"></script>
-<script src="miniapp-en.js?v=22"></script>
+<script src="miniapp-ru.js?v=23"></script>
+<script src="miniapp-uz.js?v=23"></script>
+<script src="miniapp-en.js?v=23"></script>
 </head>
 <body>
 
@@ -93,6 +93,17 @@
     </div>
 </div>
     
+<!-- Мягкое окно «Мы обновили документы» (повторное согласие): ничего не блокирует, можно «Напомнить позже» -->
+<div id="termsModal" class="modal-overlay" style="display: none; background: rgba(15, 23, 42, 0.9); z-index: 9998; position: fixed; top: 0; left: 0; width: 100%; height: 100%; box-sizing: border-box; justify-content: center; align-items: center; padding: 20px;">
+    <div class="modal-content glass-panel" style="width: 100%; max-width: 340px; padding: 24px; text-align: center; box-sizing: border-box; border-radius: 16px;">
+        <h2 id="termsModalTitle" style="margin-top: 0; color: #fff;">Мы обновили документы 📄</h2>
+        <p id="termsModalText" style="color: #cbd5e1; font-size: 14px; line-height: 1.5; margin-bottom: 14px;"></p>
+        <div id="termsModalLinks" style="font-size: 14px; margin-bottom: 20px; line-height: 1.9;"></div>
+        <button id="termsAcceptBtn" onclick="acceptTerms()" style="width: 100%; background: #9333ea; color: white; font-weight: bold; padding: 14px; border-radius: 10px; border: none; cursor: pointer; transition: background 0.3s; margin-bottom: 10px;">Принимаю</button>
+        <button id="termsLaterBtn" onclick="snoozeTerms()" style="width: 100%; background: transparent; color: #cbd5e1; font-weight: bold; padding: 10px; border: none; cursor: pointer;">Напомнить позже</button>
+    </div>
+</div>
+
     <!-- ОСНОВНОЙ КОНТЕЙНЕР -->
     <div id="mainAppContent" style="display: none;">
     <div id="mainContent" class="main-content">
@@ -422,6 +433,6 @@
     </div>
 
     <!-- Основной скрипт логики Mini App -->
-    <script src="app.js?v=31"></script>
+    <script src="app.js?v=33"></script>
 </body>
 </html>

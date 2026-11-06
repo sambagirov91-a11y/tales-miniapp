@@ -246,6 +246,15 @@ window.langUZ = {
     first_story_need_child: "Avval farzandingiz profilini qo'shing — shundan keyin birinchi ertakni darhol olishingiz mumkin.",
     first_story_err_done: "Birinchi ertak allaqachon yuborilgan. Keyingisi soat 21:00 da keladi.",
     first_story_err_none: "Hozircha mos ertak yo'q. Kechqurun ertak jadval bo'yicha keladi.",
+    // Окно «Мы обновили документы» (повторное согласие, мягкое)
+    termsModalTitle: "Hujjatlarni yangiladik 📄",
+    termsModalText: "Hammasi tushunarli va halol bo'lishi uchun {docs} yangiladik. Ertaklaringiz, obunangiz va ovozli ertaklaringiz o'zgarishsiz qoladi. Hujjatlar bilan tanishib, roziligingizni tasdiqlang — bu bir necha soniya oladi.",
+    termsDocsOffer: "ommaviy ofertani",
+    termsDocsPrivacy: "maxfiylik siyosatini",
+    termsDocsBoth: "ommaviy oferta va maxfiylik siyosatini",
+    termsAcceptBtn: "Roziman",
+    termsLaterBtn: "Keyinroq eslatilsin",
+    termsError: "Saqlab bo'lmadi. Birozdan so'ng qayta urinib ko'ring.",
 
     footer_privacy: "Maxfiylik siyosati",
     footer_offer: "Ommaviy oferta",

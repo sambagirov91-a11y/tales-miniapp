@@ -246,6 +246,15 @@ window.langEN = {
     first_story_need_child: "First add your child's profile — then you can get the first tale right away.",
     first_story_err_done: "The first tale has already been sent. The next one arrives at 21:00.",
     first_story_err_none: "There is no suitable tale yet. An evening tale will arrive on schedule.",
+    // Окно «Мы обновили документы» (повторное согласие, мягкое)
+    termsModalTitle: "We've updated our documents 📄",
+    termsModalText: "To keep everything clear and fair, we've updated our {docs}. Your stories, subscription and voice-overs stay exactly as they are. Take a quick look and confirm you agree — it only takes a few seconds.",
+    termsDocsOffer: "Public Offer",
+    termsDocsPrivacy: "Privacy Policy",
+    termsDocsBoth: "Public Offer and Privacy Policy",
+    termsAcceptBtn: "I agree",
+    termsLaterBtn: "Remind me later",
+    termsError: "Couldn't save that. Please try again in a moment.",
 
     footer_privacy: "Privacy Policy",
     footer_offer: "Terms of Service",

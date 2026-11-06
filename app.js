@@ -107,12 +107,18 @@ function openLink(url) {
     if (tg && tg.openLink) tg.openLink(link);
     else window.open(link, '_blank');
 }
+// Ссылка из настроек на языке человека. Документы (политика, оферта) загружаются в админке по языкам:
+// сервер отдаёт offer_url_ru / offer_url_uz / offer_url_en (и privacy_url_…); нет нужного языка — русский, затем старый ключ без языка.
+function configLinkUrl(key) {
+    const lang = ['ru', 'uz', 'en'].includes(currentLang) ? currentLang : 'ru';
+    return configUrls[key + '_' + lang] || configUrls[key + '_ru'] || configUrls[key] || '';
+}
 // Ссылки из настроек (политика, оферта, баннер) — через data-атрибуты, без JS в разметке
 document.addEventListener('click', (event) => {
     const configLink = event.target.closest('[data-config-link]');
     if (configLink) {
         event.preventDefault();
-        openLink(configUrls[configLink.getAttribute('data-config-link')]);
+        openLink(configLinkUrl(configLink.getAttribute('data-config-link')));
         return;
     }
     const directLink = event.target.closest('[data-open-link]');
@@ -325,6 +331,7 @@ async function loadProfile() {
     renderChildren();
     renderFirstStory();
     checkLimitAndMode();
+    maybeShowTermsModal();
 }
 // Привязка сказки, созданной на сайте. Токен не нужен: сервер связывает pending-сессию
 // с Telegram ID из проверенного initData и разрешает только принадлежащие пользователю профили.
@@ -439,6 +446,61 @@ async function restoreAccount() {
         if (button) { button.innerText = tr('account_restore_btn'); button.disabled = false; }
     }
 }
+
+// =====================================================================
+// ОБНОВЛЁННЫЕ ДОКУМЕНТЫ: мягкая просьба согласиться заново
+// Сервер (GET /api/app/me → terms) присылает reconsent: true, когда оферту или политику обновили, а человек согласился с прежней
+// редакцией, и новые PDF уже загружены. Окно ничего не блокирует: сказки, подписка и оплата работают как раньше.
+// «Напомнить позже» прячет окно на 3 дня (в браузере; нет хранилища — до следующего открытия).
+// =====================================================================
+const TERMS_SNOOZE_MS = 3 * 24 * 60 * 60 * 1000;
+let termsPromptShown = false;
+function termsSnoozed() {
+    try {
+        const until = Number(localStorage.getItem('samba_terms_snooze_until') || 0);
+        return until > Date.now();
+    } catch (e) { return false; /* приватный режим: просто покажем */ }
+}
+function maybeShowTermsModal() {
+    const terms = profileData && profileData.terms;
+    if (!terms || !terms.reconsent || termsPromptShown || termsSnoozed()) return;
+    const changed = Array.isArray(terms.changed) ? terms.changed : [];
+    const both = changed.includes('offer') && changed.includes('privacy');
+    const docsKey = both ? 'termsDocsBoth' : (changed.includes('privacy') ? 'termsDocsPrivacy' : 'termsDocsOffer');
+    setText('termsModalTitle', tr('termsModalTitle'));
+    setText('termsModalText', tr('termsModalText', { docs: tr(docsKey) }));
+    setText('termsAcceptBtn', tr('termsAcceptBtn'));
+    setText('termsLaterBtn', tr('termsLaterBtn'));
+    // Ссылки на новые документы на языке человека (обработчик data-config-link выше берёт их из настроек)
+    const links = [];
+    if (changed.includes('offer')) links.push(`<a href="#" data-config-link="offer_url" style="color:#c4b5fd;">${escapeHtml(tr('footer_offer'))}</a>`);
+    if (changed.includes('privacy')) links.push(`<a href="#" data-config-link="privacy_url" style="color:#c4b5fd;">${escapeHtml(tr('footer_privacy'))}</a>`);
+    const box = el('termsModalLinks');
+    if (box) box.innerHTML = links.map(link => `<div>${link}</div>`).join('');
+    termsPromptShown = true;
+    show('termsModal', 'flex');
+}
+function snoozeTerms() {
+    try { localStorage.setItem('samba_terms_snooze_until', String(Date.now() + TERMS_SNOOZE_MS)); } catch (e) { /* без хранилища — до следующего открытия */ }
+    hide('termsModal');
+}
+async function acceptTerms() {
+    const button = el('termsAcceptBtn');
+    if (button) button.disabled = true;
+    try {
+        await api('/api/app/accept-terms', { method: 'POST', body: { accepted: true } });
+        if (profileData) profileData.terms = { reconsent: false, changed: [] };
+        try { localStorage.removeItem('samba_terms_snooze_until'); } catch (e) { /* не страшно */ }
+        hide('termsModal');
+    } catch (err) {
+        console.error(err);
+        showAlert(tr('termsError'));
+    } finally {
+        if (button) button.disabled = false;
+    }
+}
+window.acceptTerms = acceptTerms;
+window.snoozeTerms = snoozeTerms;
 
 // =====================================================================
 // АНКЕТА РОДИТЕЛЯ
