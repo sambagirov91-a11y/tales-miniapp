@@ -93,6 +93,11 @@ window.langUZ = {
     btn_save_edit: "O'zgarishlarni saqlash",
     btn_cancel: "Bekor qilish",
     alert_enter_child_name: "Bolaning ismini kiriting",
+    name_hint_cyr: "Ism rus harflarida (kirill alifbosida) yozilishi kerak, chunki ertak tili sifatida rus tili tanlangan.",
+    name_hint_lat_uz: "Ism lotin harflarida yozilishi kerak, chunki ertak tili sifatida o‘zbek tili tanlangan.",
+    name_hint_lat_en: "Ism lotin harflarida yozilishi kerak, chunki ertak tili sifatida ingliz tili tanlangan.",
+    name_btn_to_cyr: "Kirill harflarida yozish: {preview}",
+    name_btn_to_lat: "Lotin harflarida yozish: {preview}",
     alert_children_limit: "Tarifingizda {max} tadan ortiq profil qo'shib bo'lmaydi. Ko'proq qo'shish uchun tarifni almashtiring.",
     confirm_delete_child: "«{name}» profili o'chirilsinmi? Bu bolaning barcha ertaklari va ovozlashtirilgan variantlari o'chib ketadi va qayta tiklanmaydi. Unga yangi ertaklar kelmaydi.",
 
