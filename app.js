@@ -36,6 +36,7 @@ let promoTimerInterval = null;
 let awaitingPayment = false;
 let paymentSnapshot = null;
 let currentStory = null;
+let nameGuard = null;            // защита поля имени ребёнка (name-script.js)
 // =====================================================================
 // ВСПОМОГАТЕЛЬНОЕ
 // =====================================================================
@@ -232,6 +233,7 @@ function showLoadError(err) {
 async function boot() {
     applyTheme();
     applyLanguage();
+    initNameGuard();
     window.toggleParentBtn();
 
     if (!initData) {
@@ -601,6 +603,7 @@ function applyLanguage() {
     setText('txtGirl', tr('btn_girl'));
     setText('saveBtn', editingChildId ? tr('btn_save_edit') : tr('btn_save_add'));
     setText('cancelBtn', tr('btn_cancel'));
+    if (nameGuard) nameGuard.refresh();   // подсказка под полем имени — на языке интерфейса
 
     setText('lblAppLang', tr('lbl_app_lang'));
     setText('lblAppTheme', tr('lbl_app_theme'));
@@ -1120,6 +1123,7 @@ function startEdit(id) {
     editingChildId = child.id;
     if (el('childName')) el('childName').value = child.name;
     if (el('language')) el('language').value = child.language;
+    if (nameGuard) nameGuard.recheck();   // старое имя в чужом алфавите: подсказка и кнопка перевода, текст не трогаем
     selectGender(child.gender);
     applyLanguage();
     checkLimitAndMode();
@@ -1129,6 +1133,7 @@ function startEdit(id) {
 function resetForm() {
     editingChildId = null;
     if (el('childName')) el('childName').value = '';
+    if (nameGuard) nameGuard.reset();
     selectGender('M');
     applyLanguage();
     checkLimitAndMode();
@@ -1152,9 +1157,21 @@ async function saveData() {
     const languageSelect = el('language');
     if (!nameInput || !languageSelect) return;
 
-    const name = nameInput.value.trim();
+    let name = nameInput.value.trim();
     if (!name) return showAlert(tr('alert_enter_child_name'));
     if (!editingChildId && allChildren.length >= maxChildren) return showAlert(tr('alert_children_limit', { max: maxChildren }));
+    // Имя — в алфавите языка сказок. Старое имя при правке только пола не трогаем (так же решает и сервер)
+    const original = editingChildId ? allChildren.find(c => String(c.id) === String(editingChildId)) : null;
+    const nameUnchanged = original && original.name === name && original.language === languageSelect.value;
+    if (!nameUnchanged && window.NameScript) {
+        const checked = NameScript.check(name, languageSelect.value);
+        if (checked.foreign) {
+            if (nameGuard) nameGuard.recheck();
+            return showAlert(nameHintText(languageSelect.value));
+        }
+        if (!checked.text) return showAlert(tr('alert_enter_child_name'));
+        name = checked.text;
+    }
 
     const button = el('saveBtn');
     if (button) { button.disabled = true; button.innerText = tr('saving'); }
@@ -1185,11 +1202,32 @@ async function saveData() {
         }
     } catch (err) {
         console.error(err);
-        showAlert(err.message || tr('error_generic'));
+        showAlert(err.code === 'CHILD_NAME_SCRIPT' ? nameHintText(languageSelect.value) : (err.message || tr('error_generic')));
     } finally {
         if (button) button.disabled = false;
         applyLanguage();
     }
+}
+// =====================================================================
+// ИМЯ РЕБЁНКА В АЛФАВИТЕ ЯЗЫКА СКАЗКИ
+// Русская сказка — только кириллица, узбекская и английская — только латиница (name-script.js, копия name_script.js из Scheherazade).
+// Чужие буквы в поле не попадают, снизу появляется подсказка и кнопка «Записать латиницей/кириллицей: …».
+// При смене языка сказок имя проверяется заново. Сервер проверяет то же самое при создании профиля и смене имени или языка.
+// =====================================================================
+function nameHintText(taleLang) {
+    return tr(taleLang === 'uz' ? 'name_hint_lat_uz' : taleLang === 'en' ? 'name_hint_lat_en' : 'name_hint_cyr');
+}
+function initNameGuard() {
+    if (nameGuard || !window.NameScript) return;
+    const input = el('childName');
+    const languageSelect = el('language');
+    if (!input || !languageSelect) return;
+    nameGuard = NameScript.bind(input, {
+        getLang: () => languageSelect.value,
+        uiLang: () => currentLang,
+        t: (key, params) => tr('name_' + key, params)
+    });
+    languageSelect.addEventListener('change', () => nameGuard.recheck());
 }
 // =====================================================================
 // ПЕРВАЯ СКАЗКА СРАЗУ (пробный период)

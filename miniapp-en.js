@@ -93,6 +93,11 @@ window.langEN = {
     btn_save_edit: "Save Changes",
     btn_cancel: "Cancel",
     alert_enter_child_name: "Enter the child's name",
+    name_hint_cyr: "The name must be written in Russian letters (Cyrillic), because Russian is selected as the story language.",
+    name_hint_lat_uz: "The name must be written in Latin letters, because Uzbek is selected as the story language.",
+    name_hint_lat_en: "The name must be written in Latin letters (English alphabet), because English is selected as the story language.",
+    name_btn_to_cyr: "Write in Cyrillic: {preview}",
+    name_btn_to_lat: "Write in Latin letters: {preview}",
     alert_children_limit: "Your plan allows up to {max} profiles. Change your plan to add more.",
     confirm_delete_child: "Delete the profile “{name}”? All tales and voiceovers of this child will be deleted and lost, and cannot be recovered. No new tales will be sent for this child.",
 
