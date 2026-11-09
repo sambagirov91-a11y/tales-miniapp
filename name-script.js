@@ -134,6 +134,18 @@
         return Array.from(str).map(function (c) { return APOSTROPHES.indexOf(c) >= 0 ? '\'' : c.toLowerCase(); }).join('').replace(/\s+/g, ' ').trim();
     }
 
+    /**
+     * Одно ли это имя: без регистра, с одинаковыми апострофами и независимо от алфавита
+     * (Amina = Амина, Muhammad = Мухаммад: оба имени приводятся к кириллице).
+     */
+    function sameName(a, b) {
+        var ka = key(a);
+        var kb = key(b);
+        if (!ka || !kb) return false;
+        if (ka === kb) return true;
+        return key(latToCyr(ka)) === key(latToCyr(kb));
+    }
+
     /** Есть ли в тексте буквы другого алфавита (для уже сохранённых имён). */
     function hasForeign(text, lang) {
         return clean(text, lang, { final: false }).foreign.length > 0;
@@ -438,7 +450,7 @@
 
     return {
         ALPHABETS: ALPHABETS, ALLOWED: ALLOWED, LANGS: LANGS, MESSAGES: MESSAGES,
-        scriptFor: scriptFor, clean: clean, check: check, key: key, hasForeign: hasForeign, detectScript: detectScript,
+        scriptFor: scriptFor, clean: clean, check: check, key: key, sameName: sameName, hasForeign: hasForeign, detectScript: detectScript,
         cyrToLat: cyrToLat, latToCyr: latToCyr, transliterate: transliterate,
         hint: hint, message: message, bind: bind
     };
