@@ -1165,11 +1165,11 @@ async function saveData() {
     const nameUnchanged = original && original.name === name && original.language === languageSelect.value;
     if (!nameUnchanged && window.NameScript) {
         const checked = NameScript.check(name, languageSelect.value);
-        if (!checked.text) return showAlert(tr('alert_enter_child_name'));
-        if (!checked.ok) {
+        if (checked.foreign) {
             if (nameGuard) nameGuard.recheck();
             return showAlert(nameHintText(languageSelect.value));
         }
+        if (!checked.text) return showAlert(tr('alert_enter_child_name'));
         name = checked.text;
     }
 
