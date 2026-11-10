@@ -22,8 +22,6 @@ const i18n_app = {
     en: window.langEN || {}
 };
 let currentLang = detectInitialLang();
-let selectedGender = 'M';
-let editingChildId = null;
 let allChildren = [];
 let userStories = [];
 let userExists = false;
@@ -36,7 +34,6 @@ let promoTimerInterval = null;
 let awaitingPayment = false;
 let paymentSnapshot = null;
 let currentStory = null;
-let nameGuard = null;            // защита поля имени ребёнка (name-script.js)
 // =====================================================================
 // ВСПОМОГАТЕЛЬНОЕ
 // =====================================================================
@@ -233,7 +230,6 @@ function showLoadError(err) {
 async function boot() {
     applyTheme();
     applyLanguage();
-    initNameGuard();
     window.toggleParentBtn();
 
     if (!initData) {
@@ -331,8 +327,9 @@ async function loadProfile() {
     updateStatusUI();
     updateAliceUI(!!(data.user && data.user.alice_connected));
     renderChildren();
+    renderParentCard();
+    renderTariffCard();
     renderFirstStory();
-    checkLimitAndMode();
     maybeShowTermsModal();
 }
 // Привязка сказки, созданной на сайте. Токен не нужен: сервер связывает pending-сессию
@@ -566,8 +563,6 @@ async function saveParentInfo() {
 async function changeAppLanguage(newLang) {
     currentLang = newLang;
     applyLanguage();
-    renderChildren();
-    updateStatusUI();
     renderBanners();
     renderStoriesList();
 
@@ -583,9 +578,11 @@ function applyLanguage() {
     document.documentElement.lang = currentLang;
 
     setText('lblTabHome', tr('tab_home'));
+    setText('lblTabKids', tr('tab_kids'));
     setText('lblTabStories', tr('tab_stories'));
     setText('lblTabProfile', tr('tab_profile'));
     setText('pageTitleHome', tr('page_title_home'));
+    setText('pageTitleKids', tr('page_title_kids'));
     setText('pageTitleStories', tr('page_title_stories'));
     setText('pageTitleProfile', tr('page_title_profile'));
 
@@ -594,16 +591,11 @@ function applyLanguage() {
     setText('openInTelegramText', tr('open_in_telegram_text'));
     setText('appErrorRetry', tr('btn_retry'));
 
-    setText('formTitle', editingChildId ? tr('form_title_edit') : tr('form_title_add'));
-    setText('labelLang', tr('label_lang'));
-    setText('labelName', tr('label_name'));
-    setPlaceholder('childName', tr('placeholder_name'));
-    setText('labelGender', tr('label_gender'));
-    setText('txtBoy', tr('btn_boy'));
-    setText('txtGirl', tr('btn_girl'));
-    setText('saveBtn', editingChildId ? tr('btn_save_edit') : tr('btn_save_add'));
-    setText('cancelBtn', tr('btn_cancel'));
-    if (nameGuard) nameGuard.refresh();   // подсказка под полем имени — на языке интерфейса
+    setText('lblParentCard', tr('lbl_parent_card'));
+    setText('lblTariffCard', tr('lbl_tariff_card'));
+    setText('lblSettingsCard', tr('lbl_settings_card'));
+    setText('kidsFormBackBtn', tr('reader_back'));
+    setText('kidsFormCancelBtn', tr('btn_cancel'));
 
     setText('lblAppLang', tr('lbl_app_lang'));
     setText('lblAppTheme', tr('lbl_app_theme'));
@@ -652,7 +644,10 @@ function applyLanguage() {
     if (sendButton && !sendButton.disabled) sendButton.innerText = tr('feedback_send');
 
     if (profileData) updateStatusUI();
-    updateChildrenLimitHint();
+    renderChildren();
+    renderParentCard();
+    renderTariffCard();
+    refreshKidsFormTexts();
     renderFirstStory();
     renderFooterAndPromo();
     renderStoriesPromo();
@@ -1065,20 +1060,60 @@ async function checkPaymentResult(retryOnce) {
     }
 }
 // =====================================================================
-// ДЕТИ
+// ДЕТИ (вкладка «Дети»)
+// Блок 1 — сводка: сколько детей можно добавить по тарифу, кто уже добавлен, кнопка «Добавить ребёнка»
+// (мест нет — «Обновить тариф»; детей уже 5, как в «Кидс», — кнопки нет).
+// Блок 2 — карточки детей: имя, пол, язык сказок, «Изменить», «Удалить».
+// Добавление и правка — на отдельном экране kidsFormScreen (ниже).
 // =====================================================================
-function selectGender(gender) {
-    selectedGender = gender;
-    const boy = el('btn-M');
-    const girl = el('btn-F');
-    if (boy) boy.classList.toggle('selected', gender === 'M');
-    if (girl) girl.classList.toggle('selected', gender === 'F');
-}
+const KIDS_TOP_MAX = 5;          // больше детей нет ни в одном тарифе («Кидс»)
+const TALE_LANGS = [['ru', '🇷🇺 Русский'], ['uz', "🇺🇿 O'zbekcha"], ['en', '🇬🇧 English']];
 
 function languageBadge(language) {
     return language === 'ru' ? '🇷🇺 RU' : (language === 'uz' ? '🇺🇿 UZ' : '🇬🇧 EN');
 }
+function genderLabel(gender) {
+    return tr(gender === 'M' ? 'btn_boy' : 'btn_girl');
+}
+function renderKidsSummary() {
+    const box = el('kidsSummary');
+    if (!box) return;
+    if (!userExists) { box.innerHTML = ''; box.style.display = 'none'; return; }
+    box.style.display = 'block';
+
+    const count = allChildren.length;
+    const max = maxChildren;
+    const free = Math.max(0, max - count);
+    const access = (profileData && profileData.access) || {};
+
+    let text;
+    let button = '';
+    if (free > 0) {
+        if (max === 1) text = tr('kids_info_one');
+        else if (!count) text = tr('kids_info_empty', { max });
+        else text = tr('kids_info_free', { max, count, free });
+        button = `<button class="primary-btn" type="button" onclick="openKidsForm()">${escapeHtml(tr('kids_btn_add'))}</button>`;
+    } else if (max >= KIDS_TOP_MAX) {
+        text = tr('kids_info_top', { max });
+    } else {
+        text = tr('kids_info_full', { max });
+        const label = access.hasAccess && !access.isTrial ? 'kids_btn_upgrade' : 'btn_pick_tariff';
+        button = `<button class="primary-btn" type="button" data-tariff-action="open" data-tariff-source="children_limit">${escapeHtml(tr(label))}</button>`;
+    }
+
+    const names = count
+        ? `<ul class="kids-summary__list">${allChildren.map(child =>
+            `<li><span class="kids-summary__name">${escapeHtml(child.name)}</span><span class="kids-summary__gender">${escapeHtml(genderLabel(child.gender))}</span></li>`).join('')}</ul>`
+        : '';
+
+    box.innerHTML = `
+        <div class="kids-summary__count">${escapeHtml(tr('kids_summary_count', { count, max }))}</div>
+        <p class="kids-summary__text">${escapeHtml(text)}</p>
+        ${names}
+        ${button}`;
+}
 function renderChildren() {
+    renderKidsSummary();
     const container = el('childrenList');
     if (!container) return;
 
@@ -1087,56 +1122,16 @@ function renderChildren() {
         return;
     }
     container.innerHTML = allChildren.map(child => `
-        <div class="child-card">
+        <div class="child-card kid-card">
             <div class="child-info">
-                <span class="child-name">${escapeHtml(child.name)} ${child.gender === 'M' ? '👦' : '👧'}</span>
-                <span class="child-details">${languageBadge(child.language)}</span>
+                <span class="child-name">${escapeHtml(child.name)}</span>
+                <span class="child-details">${escapeHtml(genderLabel(child.gender))} · ${languageBadge(child.language)}</span>
             </div>
-            <div class="card-actions">
-                <button class="icon-btn" data-id="${escapeHtml(child.id)}" onclick="startEdit(this.dataset.id)" aria-label="${escapeHtml(tr('form_title_edit'))}">✏️</button>
-                <button class="icon-btn" data-id="${escapeHtml(child.id)}" onclick="deleteChild(this.dataset.id)">🗑️</button>
+            <div class="kid-card__actions">
+                <button class="kid-btn" type="button" data-id="${escapeHtml(child.id)}" onclick="openKidsForm(this.dataset.id)">✏️ ${escapeHtml(tr('kids_btn_edit'))}</button>
+                <button class="kid-btn kid-btn--danger" type="button" data-id="${escapeHtml(child.id)}" onclick="deleteChild(this.dataset.id)">🗑️ ${escapeHtml(tr('kids_btn_delete'))}</button>
             </div>
         </div>`).join('');
-}
-function checkLimitAndMode() {
-    const form = el('formContainer');
-    if (!form) return;
-    form.style.display = (allChildren.length >= maxChildren && !editingChildId) ? 'none' : 'block';
-    const cancel = el('cancelBtn');
-    if (cancel) cancel.style.display = editingChildId ? 'block' : 'none';
-    updateChildrenLimitHint();
-}
-// Достигнут лимит детей по тарифу: объясняем и предлагаем сменить тариф
-function updateChildrenLimitHint() {
-    const hint = el('childrenLimitHint');
-    if (!hint) return;
-    const full = userExists && allChildren.length >= maxChildren && !editingChildId;
-    hint.style.display = full ? 'flex' : 'none';
-    if (!full) return;
-    const access = (profileData && profileData.access) || {};
-    setText('childrenLimitText', tr('children_limit_hint', { max: maxChildren }));
-    setText('childrenLimitBtn', tr(access.hasAccess && !access.isTrial ? 'btn_change_tariff' : 'btn_pick_tariff'));
-}
-function startEdit(id) {
-    const child = allChildren.find(c => String(c.id) === String(id));
-    if (!child) return;
-    editingChildId = child.id;
-    if (el('childName')) el('childName').value = child.name;
-    if (el('language')) el('language').value = child.language;
-    if (nameGuard) nameGuard.recheck();   // старое имя в чужом алфавите: подсказка и кнопка перевода, текст не трогаем
-    selectGender(child.gender);
-    applyLanguage();
-    checkLimitAndMode();
-    const form = el('formContainer');
-    if (form) form.scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
-function resetForm() {
-    editingChildId = null;
-    if (el('childName')) el('childName').value = '';
-    if (nameGuard) nameGuard.reset();
-    selectGender('M');
-    applyLanguage();
-    checkLimitAndMode();
 }
 async function deleteChild(id) {
     // Окно Telegram вмещает не больше 256 символов — длинное имя укорачиваем
@@ -1145,93 +1140,313 @@ async function deleteChild(id) {
     if (!(await showConfirm(tr('confirm_delete_child', { name })))) return;
     try {
         await api(`/api/app/children/${encodeURIComponent(id)}`, { method: 'DELETE' });
-        if (String(editingChildId) === String(id)) resetForm();
         await loadProfile();
     } catch (err) {
         console.error(err);
         showAlert(err.message || tr('error_generic'));
     }
 }
-async function saveData() {
-    const nameInput = el('childName');
-    const languageSelect = el('language');
-    if (!nameInput || !languageSelect) return;
-
-    let name = nameInput.value.trim();
-    if (!name) return showAlert(tr('alert_enter_child_name'));
-    if (!editingChildId && allChildren.length >= maxChildren) return showAlert(tr('alert_children_limit', { max: maxChildren }));
-    // Имя — в алфавите языка сказок. Старое имя при правке только пола не трогаем (так же решает и сервер)
-    const original = editingChildId ? allChildren.find(c => String(c.id) === String(editingChildId)) : null;
-    const nameUnchanged = original && original.name === name && original.language === languageSelect.value;
-    if (!nameUnchanged && window.NameScript) {
-        const checked = NameScript.check(name, languageSelect.value);
-        if (checked.foreign) {
-            if (nameGuard) nameGuard.recheck();
-            return showAlert(nameHintText(languageSelect.value));
-        }
-        if (!checked.text) return showAlert(tr('alert_enter_child_name'));
-        name = checked.text;
-    }
-
-    const button = el('saveBtn');
-    if (button) { button.disabled = true; button.innerText = tr('saving'); }
-
-    try {
-        const body = { name, gender: selectedGender, language: languageSelect.value };
-        // Добавляют самого первого ребёнка (а не правят профиль и не добавляют второго) — после сохранения предложим первую сказку
-        const addingFirstChild = !editingChildId && !allChildren.length;
-        if (editingChildId) {
-            await api(`/api/app/children/${encodeURIComponent(editingChildId)}`, { method: 'PATCH', body });
-        } else {
-            await api('/api/app/children', { method: 'POST', body });
-        }
-        resetForm();
-        await loadProfile();
-        // Пользователь мог добавить ребёнка уже после первого открытия Mini App.
-        siteDemoClaimChecked = false;
-        const claimedDemo = await claimPendingSiteDemo();
-        if (claimedDemo && claimedDemo.storyId) {
-            const nextUrl = new URL(window.location.href);
-            nextUrl.searchParams.set('story_id', claimedDemo.storyId);
-            window.history.replaceState({}, '', nextUrl.toString());
-            switchAppTab('stories');
-            await openReader(claimedDemo.storyId);
-        } else if (addingFirstChild) {
-            // Карточка «Первая сказка» появляется на этой же вкладке выше формы, и не все родители её замечают — зовём окном
-            offerFirstStoryAfterFirstChild();
-        }
-    } catch (err) {
-        console.error(err);
-        showAlert(err.code === 'CHILD_NAME_SCRIPT' ? nameHintText(languageSelect.value) : (err.message || tr('error_generic')));
-    } finally {
-        if (button) button.disabled = false;
-        applyLanguage();
-    }
-}
 // =====================================================================
-// ИМЯ РЕБЁНКА В АЛФАВИТЕ ЯЗЫКА СКАЗКИ
-// Русская сказка — только кириллица, узбекская и английская — только латиница (name-script.js, копия name_script.js из Scheherazade).
-// Чужие буквы в поле не попадают, снизу появляется подсказка и кнопка «Записать латиницей/кириллицей: …».
-// При смене языка сказок имя проверяется заново. Сервер проверяет то же самое при создании профиля и смене имени или языка.
+// ЭКРАН «ДОБАВИТЬ ДЕТЕЙ» / «ИЗМЕНИТЬ ДАННЫЕ РЕБЁНКА»
+// Добавление: по строке на каждое свободное место тарифа («Ребёнок №2», «Ребёнок №3»…). Заполнять можно не все —
+// пустые строки пропускаются. Правка: одна строка с данными ребёнка.
+// Имя — в алфавите языка сказок (name-script.js): у каждой строки своя защита поля и свой выбор языка.
 // =====================================================================
+let kidsForm = null;             // { mode: 'add' | 'edit', childId, rows: [{ number, node, guard }], busy }
+
 function nameHintText(taleLang) {
     return tr(taleLang === 'uz' ? 'name_hint_lat_uz' : taleLang === 'en' ? 'name_hint_lat_en' : 'name_hint_cyr');
 }
-function initNameGuard() {
-    if (nameGuard || !window.NameScript) return;
-    const input = el('childName');
-    const languageSelect = el('language');
-    if (!input || !languageSelect) return;
-    nameGuard = NameScript.bind(input, {
-        getLang: () => languageSelect.value,
-        uiLang: () => currentLang,
-        t: (key, params) => tr('name_' + key, params)
+function kidRowMarkup(number, child) {
+    const lang = child ? child.language : currentLang;
+    const gender = child ? child.gender : '';
+    return `
+        <div class="kid-row glass-panel" data-kid-row="${number}">
+            <h3 class="kid-row__title" data-kid-number="${number}">${escapeHtml(tr('kids_row_title', { n: number }))}</h3>
+            <label data-tr="label_name">${escapeHtml(tr('label_name'))}</label>
+            <input type="text" class="kid-row__name" data-tr-placeholder="placeholder_name" placeholder="${escapeHtml(tr('placeholder_name'))}" autocomplete="off" maxlength="40" value="${escapeHtml(child ? child.name : '')}">
+            <label data-tr="label_gender">${escapeHtml(tr('label_gender'))}</label>
+            <div class="radio-group kid-row__gender">
+                <div class="radio-label${gender === 'F' ? ' selected' : ''}" data-kid-gender="F" data-tr="btn_girl" role="button" tabindex="0">${escapeHtml(tr('btn_girl'))}</div>
+                <div class="radio-label${gender === 'M' ? ' selected' : ''}" data-kid-gender="M" data-tr="btn_boy" role="button" tabindex="0">${escapeHtml(tr('btn_boy'))}</div>
+            </div>
+            <label data-tr="label_lang">${escapeHtml(tr('label_lang'))}</label>
+            <select class="kid-row__lang">
+                ${TALE_LANGS.map(([code, title]) => `<option value="${code}"${code === lang ? ' selected' : ''}>${escapeHtml(title)}</option>`).join('')}
+            </select>
+        </div>`;
+}
+function refreshKidsFormTexts() {
+    if (!kidsForm) return;
+    const edit = kidsForm.mode === 'edit';
+    setText('kidsFormTitle', tr(edit ? 'kids_form_title_edit' : 'kids_form_title_add'));
+    if (!kidsForm.busy) setText('kidsFormSaveBtn', tr(edit ? 'btn_save_edit' : 'kids_form_btn_add'));
+    const info = el('kidsFormInfo');
+    if (info) {
+        const free = kidsForm.rows.length;
+        if (edit) info.innerText = tr('kids_form_info_edit');
+        else if (maxChildren === 1) info.innerText = tr('kids_info_one');
+        else info.innerText = tr(free === 1 ? 'kids_form_info_last' : 'kids_form_info', { max: maxChildren, free });
+    }
+    const screen = el('kidsFormScreen');
+    if (!screen) return;
+    screen.querySelectorAll('[data-tr]').forEach(node => { node.innerText = tr(node.getAttribute('data-tr')); });
+    screen.querySelectorAll('[data-tr-placeholder]').forEach(node => { node.placeholder = tr(node.getAttribute('data-tr-placeholder')); });
+    screen.querySelectorAll('[data-kid-number]').forEach(node => { node.innerText = tr('kids_row_title', { n: node.getAttribute('data-kid-number') }); });
+    kidsForm.rows.forEach(row => { if (row.guard) row.guard.refresh(); });
+}
+function openKidsForm(editId) {
+    if (!userExists) return;
+    const box = el('kidsFormRows');
+    const screen = el('kidsFormScreen');
+    if (!box || !screen) return;
+
+    let numbers;
+    let child = null;
+    if (editId !== undefined && editId !== null) {
+        const index = allChildren.findIndex(c => String(c.id) === String(editId));
+        if (index < 0) return;
+        child = allChildren[index];
+        numbers = [index + 1];
+    } else {
+        if (allChildren.length >= maxChildren) { renderKidsSummary(); return; }
+        numbers = [];
+        for (let n = allChildren.length + 1; n <= maxChildren; n += 1) numbers.push(n);
+    }
+
+    box.innerHTML = numbers.map(n => kidRowMarkup(n, child)).join('');
+    kidsForm = { mode: child ? 'edit' : 'add', childId: child ? child.id : null, rows: [], busy: false };
+    box.querySelectorAll('[data-kid-row]').forEach(node => {
+        const input = node.querySelector('.kid-row__name');
+        const select = node.querySelector('.kid-row__lang');
+        let guard = null;
+        if (window.NameScript && input && select) {
+            guard = NameScript.bind(input, {
+                getLang: () => select.value,
+                uiLang: () => currentLang,
+                t: (key, params) => tr('name_' + key, params)
+            });
+            select.addEventListener('change', () => guard.recheck());
+            if (child) guard.recheck();   // старое имя в чужом алфавите: подсказка и кнопка перевода, текст не трогаем
+        }
+        kidsForm.rows.push({ number: Number(node.getAttribute('data-kid-row')), node, guard });
     });
-    languageSelect.addEventListener('change', () => nameGuard.recheck());
+    refreshKidsFormTexts();
+    screen.style.display = 'flex';
+    screen.scrollTop = 0;
+}
+function closeKidsForm() {
+    if (kidsForm && kidsForm.busy) return;
+    kidsForm = null;
+    hide('kidsFormScreen');
+    const box = el('kidsFormRows');
+    if (box) box.innerHTML = '';
+}
+// Выбор пола в строке (нажатие и клавиатура)
+function pickKidGender(node) {
+    const group = node.parentNode;
+    if (!group) return;
+    group.querySelectorAll('[data-kid-gender]').forEach(item => item.classList.toggle('selected', item === node));
+}
+document.addEventListener('click', (event) => {
+    const node = event.target.closest ? event.target.closest('[data-kid-gender]') : null;
+    if (node) pickKidGender(node);
+});
+document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    const node = event.target && event.target.matches && event.target.matches('[data-kid-gender]') ? event.target : null;
+    if (node) { event.preventDefault(); pickKidGender(node); }
+});
+// Читает строки формы. Возвращает { items } или { error } (текст для окна)
+function collectKidsForm() {
+    const items = [];
+    for (const row of kidsForm.rows) {
+        const input = row.node.querySelector('.kid-row__name');
+        const select = row.node.querySelector('.kid-row__lang');
+        const picked = row.node.querySelector('[data-kid-gender].selected');
+        let name = input ? input.value.trim() : '';
+        const language = select ? select.value : currentLang;
+        if (!name) {
+            if (kidsForm.mode === 'edit') return { error: tr('alert_enter_child_name') };
+            continue;            // пустая строка — это место просто не заполняли
+        }
+        if (!picked) return { error: tr('kids_form_gender', { n: row.number }) };
+        const gender = picked.getAttribute('data-kid-gender');
+        // Имя — в алфавите языка сказок. Старое имя при правке только пола не трогаем (так же решает и сервер)
+        const original = kidsForm.mode === 'edit' ? allChildren.find(c => String(c.id) === String(kidsForm.childId)) : null;
+        const nameUnchanged = original && original.name === name && original.language === language;
+        if (!nameUnchanged && window.NameScript) {
+            const checked = NameScript.check(name, language);
+            if (checked.foreign) {
+                if (row.guard) row.guard.recheck();
+                return { error: nameHintText(language) };
+            }
+            if (!checked.text) return { error: tr('alert_enter_child_name') };
+            name = checked.text;
+        }
+        items.push({ name, gender, language });
+    }
+    if (!items.length) return { error: tr('kids_form_empty') };
+    return { items };
+}
+async function submitKidsForm() {
+    if (!kidsForm || kidsForm.busy) return;
+    const collected = collectKidsForm();
+    if (collected.error) return showAlert(collected.error);
+
+    const edit = kidsForm.mode === 'edit';
+    const hadNoChildren = !allChildren.length;
+    const button = el('kidsFormSaveBtn');
+    kidsForm.busy = true;
+    if (button) { button.disabled = true; button.innerText = tr('saving'); }
+
+    let saved = 0;
+    let failure = null;
+    try {
+        for (const body of collected.items) {
+            if (edit) await api(`/api/app/children/${encodeURIComponent(kidsForm.childId)}`, { method: 'PATCH', body });
+            else await api('/api/app/children', { method: 'POST', body });
+            saved += 1;
+        }
+    } catch (err) {
+        console.error(err);
+        failure = err;
+    }
+    kidsForm.busy = false;
+    if (button) button.disabled = false;
+
+    if (failure && !saved) {
+        refreshKidsFormTexts();
+        const failedLang = collected.items[0].language;
+        return showAlert(failure.code === 'CHILD_NAME_SCRIPT' ? nameHintText(failedLang) : (failure.message || tr('error_generic')));
+    }
+
+    closeKidsForm();
+    try {
+        await loadProfile();
+    } catch (err) {
+        console.error(err);
+    }
+    switchAppTab('kids');
+    if (failure) {
+        // Часть детей сохранилась, на следующем сервер ответил ошибкой
+        showAlert(tr('kids_form_partial', { saved }) + ' ' + (failure.message || tr('error_generic')));
+        return;
+    }
+    if (edit) return;
+    // Пользователь мог добавить ребёнка уже после первого открытия Mini App.
+    siteDemoClaimChecked = false;
+    const claimedDemo = await claimPendingSiteDemo();
+    if (claimedDemo && claimedDemo.storyId) {
+        const nextUrl = new URL(window.location.href);
+        nextUrl.searchParams.set('story_id', claimedDemo.storyId);
+        window.history.replaceState({}, '', nextUrl.toString());
+        switchAppTab('stories');
+        await openReader(claimedDemo.storyId);
+    } else if (hadNoChildren) {
+        // Карточка «Первая сказка» появляется на вкладке «Дети», и не все родители её замечают — зовём окном
+        offerFirstStoryAfterFirstChild();
+    }
+}
+// =====================================================================
+// МОЙ ПРОФИЛЬ: данные родителя из анкеты (можно изменить) и действующий тариф
+// =====================================================================
+const PARENT_ROLES = [['Мама', 'roleMother'], ['Папа', 'roleFather'], ['Бабушка', 'roleGrandma'], ['Дедушка', 'roleGrandpa'], ['Няня', 'roleNanny']];
+let parentEditing = false;
+let parentSaving = false;
+
+// В базе роль хранится по-русски («Мама»); показываем на языке интерфейса. Своя роль («Тётя») — как ввели
+function roleLabel(value) {
+    const known = PARENT_ROLES.find(([role]) => role === value);
+    return known ? tr(known[1]) : String(value || '');
+}
+function infoRow(label, value) {
+    return `<div class="info-row"><span class="info-row__label">${escapeHtml(label)}</span><span class="info-row__value">${escapeHtml(value)}</span></div>`;
+}
+function renderParentCard() {
+    const box = el('parentCard');
+    if (!box) return;
+    const user = profileData && profileData.user;
+    if (!user || !user.profile_complete) { box.innerHTML = ''; return; }
+
+    if (!parentEditing) {
+        box.innerHTML = `
+            ${infoRow(tr('parent_name'), user.parent_name || '—')}
+            ${infoRow(tr('parent_age'), user.parent_age ? String(user.parent_age) : '—')}
+            ${infoRow(tr('parent_role'), roleLabel(user.parent_role) || '—')}
+            <button class="kid-btn info-card__btn" type="button" onclick="startParentEdit()">✏️ ${escapeHtml(tr('kids_btn_edit'))}</button>`;
+        return;
+    }
+    const known = PARENT_ROLES.some(([role]) => role === user.parent_role);
+    const options = PARENT_ROLES.map(([role, key]) =>
+        `<option value="${role}"${role === user.parent_role ? ' selected' : ''}>${escapeHtml(tr(key))}</option>`).join('') +
+        `<option value="Другое"${known ? '' : ' selected'}>${escapeHtml(tr('roleOther'))}</option>`;
+    box.innerHTML = `
+        <label for="editParentName">${escapeHtml(tr('labelParentName'))}</label>
+        <input type="text" id="editParentName" maxlength="60" autocomplete="off" value="${escapeHtml(user.parent_name || '')}">
+        <label for="editParentAge">${escapeHtml(tr('labelParentAge'))}</label>
+        <input type="number" id="editParentAge" inputmode="numeric" min="10" max="100" value="${escapeHtml(user.parent_age || '')}">
+        <label for="editParentRole">${escapeHtml(tr('labelParentRole'))}</label>
+        <select id="editParentRole" onchange="toggleEditCustomRole(this.value)">${options}</select>
+        <input type="text" id="editParentCustomRole" maxlength="40" placeholder="${escapeHtml(tr('customRolePlaceholder'))}" value="${escapeHtml(known ? '' : (user.parent_role || ''))}" style="display: ${known ? 'none' : 'block'};">
+        <button class="primary-btn" id="editParentSave" type="button" onclick="saveParentEdit()"${parentSaving ? ' disabled' : ''}>${escapeHtml(tr(parentSaving ? 'saving' : 'btn_save_edit'))}</button>
+        <button class="cancel-edit" type="button" onclick="cancelParentEdit()" style="display: block;">${escapeHtml(tr('btn_cancel'))}</button>`;
+}
+function startParentEdit() { parentEditing = true; renderParentCard(); }
+function cancelParentEdit() { if (parentSaving) return; parentEditing = false; renderParentCard(); }
+function toggleEditCustomRole(value) {
+    const input = el('editParentCustomRole');
+    if (input) input.style.display = value === 'Другое' ? 'block' : 'none';
+}
+async function saveParentEdit() {
+    if (parentSaving) return;
+    const parentName = (el('editParentName') ? el('editParentName').value : '').trim();
+    let role = el('editParentRole') ? el('editParentRole').value : '';
+    if (role === 'Другое') role = (el('editParentCustomRole') ? el('editParentCustomRole').value : '').trim();
+    const age = parseInt(el('editParentAge') ? el('editParentAge').value : '', 10);
+
+    if (!parentName) return showAlert(tr('alert_enter_parent_name'));
+    if (!role || isNaN(age) || age < 10 || age > 100) return showAlert(tr('alert_parent_role_age'));
+
+    const button = el('editParentSave');
+    parentSaving = true;
+    if (button) { button.disabled = true; button.innerText = tr('saving'); }
+    try {
+        await api('/api/app/parent', { method: 'PATCH', body: { parentName, role, age } });
+        parentSaving = false;
+        parentEditing = false;
+        await loadProfile();
+    } catch (err) {
+        console.error(err);
+        parentSaving = false;
+        if (button) { button.disabled = false; button.innerText = tr('btn_save_edit'); }
+        showAlert(err.message || tr('error_generic'));
+    }
+}
+// Действующий тариф: название, дата начала и дата окончания
+function renderTariffCard() {
+    const box = el('tariffCard');
+    if (!box) return;
+    if (!profileData || !profileData.user) { box.innerHTML = ''; return; }
+    const access = profileData.access || {};
+    const currentId = profileData.tariffs ? profileData.tariffs.current : null;
+
+    if (!access.hasAccess) {
+        box.innerHTML = `
+            ${infoRow(tr('tariff_card_name'), tr('tariff_card_none'))}
+            <p class="info-card__note">${escapeHtml(tr('tariff_card_none_text'))}</p>
+            <button class="primary-btn" type="button" onclick="openTariffs('profile')">${escapeHtml(tr('btn_pick_tariff'))}</button>`;
+        return;
+    }
+    const name = access.isTrial ? tr('tariff_card_trial') : (currentId ? `«${tariffName(currentId)}»` : tr('tariff_card_legacy'));
+    box.innerHTML = `
+        ${infoRow(tr('tariff_card_name'), name)}
+        ${access.startDate ? infoRow(tr('tariff_card_start'), formatDate(access.startDate)) : ''}
+        ${access.endDate ? infoRow(tr('tariff_card_end'), formatDate(access.endDate)) : ''}`;
 }
 // =====================================================================
 // ПЕРВАЯ СКАЗКА СРАЗУ (пробный период)
-// Карточка с кнопкой «Получить первую сказку сейчас» — на «Главной» и под профилями детей.
+// Карточка с кнопкой «Получить первую сказку сейчас» — на «Главной» и во вкладке «Дети».
 // Один ребёнок в профиле — сказка уходит сразу; несколько — спрашиваем «Для кого прислать сказку?».
 // Нет детей — отправляем добавлять профиль. Показываем, пока сервер говорит first_story.available.
 // Вечерняя сказка в 21:00 приходит как обычно.
@@ -1268,9 +1483,9 @@ function firstStoryMarkup(state) {
 function renderFirstStory() {
     const state = firstStoryState();
     document.querySelectorAll('[data-first-story-slot]').forEach(slot => {
-        const inProfile = slot.getAttribute('data-first-story-slot') === 'profile';
+        const inProfile = slot.getAttribute('data-first-story-slot') === 'kids';
         // Под профилями детей кнопка нужна, когда уже есть кого выбирать. Итог «Сказка отправлена» показываем в обоих местах:
-        // нажали на вкладке «Мой профиль» — ответ должен появиться там же (вкладки открыты по одной, дубля на экране нет)
+        // нажали на вкладке «Дети» — ответ должен появиться там же (вкладки открыты по одной, дубля на экране нет)
         const hidden = state === 'hidden' || (inProfile && !allChildren.length);
         if (hidden) {
             slot.style.display = 'none';
@@ -1386,7 +1601,7 @@ function closeFirstStoryPrompt() {
 }
 // «Позже»: показываем, где лежит кнопка, — прокручиваем к карточке «Первая сказка» под профилями детей
 function revealFirstStoryCard() {
-    const slot = document.querySelector('[data-first-story-slot="profile"]');
+    const slot = document.querySelector('[data-first-story-slot="kids"]');
     if (!slot || slot.style.display === 'none') return;
     slot.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
@@ -1412,6 +1627,7 @@ document.addEventListener('keydown', (event) => {
 // =====================================================================
 const APP_TABS = {
     home: ['tabHome', 'btnTabHome'],
+    kids: ['tabKids', 'btnTabKids'],
     stories: ['tabStories', 'btnTabStories'],
     profile: ['tabProfile', 'btnTabProfile']
 };
@@ -1424,11 +1640,10 @@ function switchAppTab(tabId) {
     if (tabId === 'stories') loadUserStories();
     window.scrollTo(0, 0);
 }
-// Профили детей живут во вкладке «Мой профиль»: открываем её и показываем этот раздел
+// Профили детей живут во вкладке «Дети»: открываем её
 function showChildrenSection() {
-    switchAppTab('profile');
-    const title = el('lblChildren');
-    if (title) title.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    closeKidsForm();
+    switchAppTab('kids');
 }
 // Новому пользователю без детей сразу открываем раздел, где их добавляют
 function openChildrenIfEmpty() {
