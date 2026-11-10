@@ -1004,9 +1004,9 @@ body.light-theme .tariff-card--baby .tariff-btn { color: #fff; }
 .stories-promo:empty { display: none; }
 .stories-promo .footer-promo { margin-bottom: 0; }
 
-/* Узкие экраны: три вкладки в нижней панели — подписи чуть компактнее, чтобы «Mening profilim» не обрезалось */
+/* Узкие экраны: четыре вкладки в нижней панели — подписи ещё компактнее */
 @media (max-width: 360px) {
-    .tab-label { font-size: 10px; letter-spacing: 0.1px; }
+    .tab-label { font-size: 9px; letter-spacing: 0; }
 }
 
 /* ----------------- ПЕРВАЯ СКАЗКА СРАЗУ (пробный период) ----------------- */
@@ -1056,3 +1056,48 @@ body.light-theme .first-story { border-color: rgba(124, 58, 237, 0.4); box-shado
 .first-story-choice:active { transform: scale(0.98); background: rgba(250, 204, 21, 0.12); }
 .first-story-choice__name { font-size: 18px; font-weight: 700; overflow-wrap: anywhere; }
 .first-story-choice__meta { flex: 0 0 auto; font-size: 13px; color: var(--text-muted); }
+
+/* ----------------- ВКЛАДКА «ДЕТИ» ----------------- */
+.kids-summary { padding: 20px; margin-bottom: 24px; }
+.kids-summary__count { font-size: 18px; font-weight: 700; color: var(--gold-main); margin-bottom: 8px; }
+.kids-summary__text { margin: 0 0 16px; font-size: 14px; line-height: 1.5; color: var(--text-main); }
+.kids-summary__list { list-style: none; margin: 0 0 16px; padding: 0; border-top: 1px solid var(--glass-border); }
+.kids-summary__list li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--glass-border); }
+.kids-summary__name { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.kids-summary__gender { flex: 0 0 auto; font-size: 13px; color: var(--text-muted); }
+.kids-summary > :last-child { margin-bottom: 0; }
+
+/* Карточка ребёнка: имя и пол, под ними — «Изменить» и «Удалить» */
+.kid-card { flex-direction: column; align-items: stretch; gap: 14px; }
+.kid-card .child-name { overflow-wrap: anywhere; }
+.kid-card__actions { display: flex; gap: 10px; }
+.kid-btn {
+    flex: 1 1 0; min-height: 44px; padding: 10px 12px; border-radius: 10px; cursor: pointer;
+    background: rgba(128,128,128,0.15); border: 1px solid var(--glass-border); color: var(--text-main);
+    font-size: 14px; font-weight: 600; transition: transform 0.2s, background 0.2s;
+}
+.kid-btn:active { transform: scale(0.97); background: rgba(128,128,128,0.3); }
+.kid-btn--danger { color: #f87171; border-color: rgba(248, 113, 113, 0.4); }
+body.light-theme .kid-btn--danger { color: #b91c1c; }
+
+/* Экран «Добавить детей» / «Изменить данные ребёнка» */
+.kids-form-screen { z-index: 110; }
+.kids-form__info { margin: 0 0 20px; font-size: 14px; line-height: 1.5; color: var(--text-main); }
+.kid-row { padding: 18px 18px 2px; margin-bottom: 18px; }
+.kid-row__title { margin: 0 0 14px; font-size: 17px; font-weight: 700; color: var(--gold-main); }
+.kid-row .radio-group { margin-bottom: 20px; }
+.kid-row .radio-label { padding: 14px 8px; }
+
+/* ----------------- «МОЙ ПРОФИЛЬ»: данные родителя и тариф ----------------- */
+.info-card { padding: 8px 20px 20px; margin-bottom: 8px; }
+.info-card:empty { display: none; }
+.info-row { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--glass-border); }
+.info-row__label { flex: 0 0 auto; font-size: 14px; color: var(--text-muted); }
+.info-row__value { min-width: 0; text-align: right; font-weight: 600; overflow-wrap: anywhere; }
+.info-card > label:first-child { margin-top: 12px; }
+.info-card__btn { width: 100%; margin-top: 16px; }
+.info-card__note { margin: 14px 0 16px; font-size: 14px; line-height: 1.5; color: var(--text-main); }
+.info-card > .info-row:last-child { border-bottom: none; padding-bottom: 0; }
+
+/* Четыре вкладки в нижней панели: подписи компактнее */
+.tab-label { font-size: 10px; letter-spacing: 0.2px; }
