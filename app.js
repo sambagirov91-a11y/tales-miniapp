@@ -892,7 +892,7 @@ function tariffCardMarkup(item, context) {
 
     const features = [
         ['👧', item.max_children === 1 ? tr('tariff_children_one') : tr('tariff_children_many', { n: item.max_children })],
-        ['🎙️', item.voiceovers > 0 ? tr('tariff_voiceovers_n', { n: item.voiceovers }) : tr('tariff_voiceovers_none')],
+        ['🎙️', item.voiceovers === 1 ? tr('tariff_voiceovers_one') : item.voiceovers > 0 ? tr('tariff_voiceovers_n', { n: item.voiceovers }) : tr('tariff_voiceovers_none')],
         ['💳', tr('tariff_extra_voiceover', { price: formatPrice(item.extra_voiceover_amount) })]
     ].map(([icon, text]) => `
         <li class="tariff-feature"><span class="tariff-feature__icon" aria-hidden="true">${icon}</span><span>${escapeHtml(text)}</span></li>`).join('');
@@ -2634,8 +2634,10 @@ function updateAudioInterface(storyId, audioUrl, left) {
     const buyLabel = voiceoverAmount
         ? tr('audio_buy_btn', { price: formatPrice(voiceoverAmount) })
         : tr('audio_buy_btn_plain');
-    // В тарифе «Старт» озвучек нет вовсе — это не «закончились», а «оплатите одну»
-    const startPlan = !!(profileData && profileData.tariffs && profileData.tariffs.current === 'start');
+    // Тариф без включённых озвучек (сейчас таких нет: с 11.11.2026 в «Старте» 1 озвучка в месяц) — это не «закончились», а «оплатите одну»
+    const tariffInfo = profileData && profileData.tariffs;
+    const currentPlan = tariffInfo && Array.isArray(tariffInfo.items) ? tariffInfo.items.find((t) => t.id === tariffInfo.current) : null;
+    const startPlan = !!(currentPlan && Number(currentPlan.voiceovers) === 0);
     container.innerHTML = `
         <div class="audio-card audio-card--paid">
             ${startPlan
