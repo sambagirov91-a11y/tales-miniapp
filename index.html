@@ -8,12 +8,12 @@
     <!-- Самообновление: при запуске и возврате в приложение проверяет, не вышла ли новая версия (номера ?v= ниже), и перезагружается -->
     <script src="self-update.js?v=1"></script>
     <link rel="preload" as="image" href="logo.webp" type="image/webp">
-    <link rel="stylesheet" href="style.css?v=16">
+    <link rel="stylesheet" href="style.css?v=17">
     
     <!-- Подключаем внешние файлы со словарями для 3 языков -->
-<script src="miniapp-ru.js?v=26"></script>
-<script src="miniapp-uz.js?v=26"></script>
-<script src="miniapp-en.js?v=26"></script>
+<script src="miniapp-ru.js?v=27"></script>
+<script src="miniapp-uz.js?v=27"></script>
+<script src="miniapp-en.js?v=27"></script>
 </head>
 <body>
 
@@ -259,7 +259,8 @@
         <div class="reader-content">
             <p id="kidsFormInfo" class="kids-form__info"></p>
             <div id="kidsFormRows"></div>
-            <button id="kidsFormSaveBtn" class="primary-btn" type="button" onclick="submitKidsForm()">Добавить</button>
+            <button id="kidsFormAddRowBtn" class="kids-form__add" type="button" onclick="addKidRow()" style="display: none;">➕ Добавить ещё ребёнка</button>
+            <button id="kidsFormSaveBtn" class="primary-btn" type="button" onclick="submitKidsForm()">Сохранить</button>
             <button id="kidsFormCancelBtn" class="cancel-edit" type="button" onclick="closeKidsForm()" style="display: block;">Отменить</button>
         </div>
     </div>
@@ -440,7 +441,7 @@
 
     <!-- Основной скрипт логики Mini App -->
     <!-- Алфавиты имени ребёнка: русская сказка — кириллица, узбекская и английская — латиница (копия name_script.js из репозитория Scheherazade) -->
-    <script src="name-script.js?v=1"></script>
-    <script src="app.js?v=36"></script>
+    <script src="name-script.js?v=2"></script>
+    <script src="app.js?v=37"></script>
 </body>
 </html>

@@ -1087,6 +1087,23 @@ body.light-theme .kid-btn--danger { color: #b91c1c; }
 .kid-row__title { margin: 0 0 14px; font-size: 17px; font-weight: 700; color: var(--gold-main); }
 .kid-row .radio-group { margin-bottom: 20px; }
 .kid-row .radio-label { padding: 14px 8px; }
+.kid-row__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.kid-row__head .kid-row__title { margin: 0; }
+.kid-row__remove {
+    flex: 0 0 auto; padding: 6px 10px; border-radius: 8px; cursor: pointer;
+    background: transparent; border: 1px solid var(--glass-border); color: var(--text-muted); font-size: 13px; font-weight: 600;
+}
+.kid-row__warn { margin: -6px 0 16px; font-size: 13px; line-height: 1.45; color: #f59e0b; }
+body.light-theme .kid-row__warn { color: #b45309; }
+.kid-row__warn[hidden] { display: none; }
+/* «Добавить ещё ребёнка» — между строками и «Сохранить» */
+button.kids-form__add {
+    width: 100%; min-height: 50px; margin: 0 0 16px; padding: 12px; border-radius: 12px; cursor: pointer;
+    background: transparent; border: 1.5px dashed var(--gold-main); color: var(--gold-main);
+    font-size: 15px; font-weight: 700; transition: transform 0.2s, background 0.2s;
+}
+button.kids-form__add:active { transform: scale(0.98); background: rgba(217, 119, 6, 0.08); }
+button.kids-form__add:disabled { opacity: 0.5; }
 
 /* ----------------- «МОЙ ПРОФИЛЬ»: данные родителя и тариф ----------------- */
 .info-card { padding: 8px 20px 20px; margin-bottom: 8px; }

@@ -151,6 +151,27 @@
         return clean(text, lang, { final: false }).foreign.length > 0;
     }
 
+    // ---------------------------------------------------------------- несколько имён в одном поле
+    // Родители иногда пишут в одно поле имена всех детей: «Тимур и Ясмина», «Hasanjon va Husanjon», «Солиха, Ирода».
+    // joined — имена явно перечислены (запятая, «;», «/», «&», «+» между словами или союз «и», «ва», «va», «and», «hamda»):
+    //          это точно несколько детей, такое имя не принимаем;
+    // words  — сколько слов в имени после очистки («Мария-Анна» — одно слово). Двойные имена («Muhammad Ali», «Soliha Bonu»)
+    //          обычны, поэтому 2 слова — норма, а 3 и больше — повод переспросить родителя.
+    var LIST_SEPARATOR = /[^\s,;\/&+|\\][\s]*[,;\/&+|\\\n][\s,;\/&+|\\\n]*[^\s,;\/&+|\\]/;
+    var JOIN_WORDS = ['и', 'ва', 'va', 'and', 'hamda'];
+    function severalNames(raw, lang) {
+        var str = String(raw == null ? '' : raw);
+        if (str.normalize) str = str.normalize('NFC');
+        var tokens = str.split(/[\s,;\/&+|\\]+/).filter(function (t) { return t.length > 0; });
+        var joined = LIST_SEPARATOR.test(str.trim());
+        for (var i = 1; !joined && i < tokens.length - 1; i++) {
+            if (JOIN_WORDS.indexOf(tokens[i].toLowerCase()) >= 0) joined = true;
+        }
+        var text = lang ? clean(str, lang, { final: true }).text : str.trim();
+        var words = text.split(/\s+/).filter(function (w) { return w.length > 0; }).length;
+        return { joined: joined, words: words };
+    }
+
     /** Какой письменностью написан текст: 'cyr' | 'lat' | 'mixed' | 'none'. */
     function detectScript(text) {
         var s = String(text || '');
@@ -451,6 +472,7 @@
     return {
         ALPHABETS: ALPHABETS, ALLOWED: ALLOWED, LANGS: LANGS, MESSAGES: MESSAGES,
         scriptFor: scriptFor, clean: clean, check: check, key: key, sameName: sameName, hasForeign: hasForeign, detectScript: detectScript,
+        severalNames: severalNames,
         cyrToLat: cyrToLat, latToCyr: latToCyr, transliterate: transliterate,
         hint: hint, message: message, bind: bind
     };
