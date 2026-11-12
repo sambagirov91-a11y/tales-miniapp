@@ -8,14 +8,16 @@
     <!-- Самообновление: при запуске и возврате в приложение проверяет, не вышла ли новая версия (номера ?v= ниже), и перезагружается -->
     <script src="self-update.js?v=1"></script>
     <link rel="preload" as="image" href="logo.webp" type="image/webp">
-    <link rel="stylesheet" href="style.css?v=17">
+    <link rel="stylesheet" href="style.css?v=18">
     
     <!-- Подключаем внешние файлы со словарями для 3 языков -->
-<script src="miniapp-ru.js?v=27"></script>
-<script src="miniapp-uz.js?v=27"></script>
-<script src="miniapp-en.js?v=27"></script>
+<script src="miniapp-ru.js?v=28"></script>
+<script src="miniapp-uz.js?v=28"></script>
+<script src="miniapp-en.js?v=28"></script>
 </head>
 <body>
+    <!-- Иконки интерфейса «Шахерезады» (SVG-спрайт, ~11 КБ, ~2,3 КБ в сжатии): <svg class="ic"><use href="#i-имя"></use></svg>. Иконки правятся прямо здесь (viewBox 24×24, линия 1.8, цвет currentColor) -->
+    <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden"><symbol id="i-home" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1.6v1.4"/><path d="M12 3c1.6 2 5.4 3 5.4 6.2H6.6C6.6 6 10.4 5 12 3z"/><path d="M5.4 9.2h13.2M6.4 9.2v11.3h11.2V9.2"/><path d="M10 20.5v-3.6a2 2 0 0 1 4 0v3.6"/><path d="M3.4 20.5h17.2"/></g></symbol><symbol id="i-kids" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="8.6" r="3.3"/><path d="M11 5.3c.6-1.2 1.9-1.6 2.8-1"/><path d="M4.8 20.3c0-3.6 2.7-6.1 6.2-6.1s6.2 2.5 6.2 6.1"/><path fill="currentColor" stroke="none" d="M19 2.6l.7 1.5 1.5.7-1.5.7-.7 1.5-.7-1.5-1.5-.7 1.5-.7z"/></g></symbol><symbol id="i-tales" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8.2C10 6.8 7 6.4 3.6 6.9v11.9c3.4-.5 6.4-.1 8.4 1.3 2-1.4 5-1.8 8.4-1.3V6.9C17 6.4 14 6.8 12 8.2z"/><path d="M12 8.2v11.9"/><path fill="currentColor" stroke="none" d="M12 1.6l.75 1.65 1.65.75-1.65.75L12 6.4l-.75-1.65L9.6 4l1.65-.75z"/></g></symbol><symbol id="i-profile" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.8" r="3.6"/><path d="M5 20.4c.9-3.7 3.7-5.8 7-5.8s6.1 2.1 7 5.8"/></g></symbol><symbol id="i-check-star" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12.00 2.00 L14.93 4.93 L19.07 4.93 L19.07 9.07 L22.00 12.00 L19.07 14.93 L19.07 19.07 L14.93 19.07 L12.00 22.00 L9.07 19.07 L4.93 19.07 L4.93 14.93 L2.00 12.00 L4.93 9.07 L4.93 4.93 L9.07 4.93Z"/><path d="M8.4 12.3l2.4 2.4 4.8-5"/></g></symbol><symbol id="i-cross-star" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12.00 2.00 L14.93 4.93 L19.07 4.93 L19.07 9.07 L22.00 12.00 L19.07 14.93 L19.07 19.07 L14.93 19.07 L12.00 22.00 L9.07 19.07 L4.93 19.07 L4.93 14.93 L2.00 12.00 L4.93 9.07 L4.93 4.93 L9.07 4.93Z"/><path d="M9.4 9.4l5.2 5.2M14.6 9.4l-5.2 5.2"/></g></symbol><symbol id="i-warning" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.8L21 19.6H3z"/><path d="M12 9.8v4.6"/><circle cx="12" cy="17" r=".4" fill="currentColor"/></g></symbol><symbol id="i-hourglass" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.8 3.5h10.4M6.8 20.5h10.4"/><path d="M8 3.5c0 4.2 4 5.4 4 8.5s-4 4.3-4 8.5M16 3.5c0 4.2-4 5.4-4 8.5s4 4.3 4 8.5"/></g></symbol><symbol id="i-headphones" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.5V12a8 8 0 0 1 16 0v2.5"/><path d="M4 14.2h2.6a1 1 0 0 1 1 1v3.9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zM20 14.2h-2.6a1 1 0 0 0-1 1v3.9a1 1 0 0 0 1 1H19a1 1 0 0 0 1-1z"/></g></symbol><symbol id="i-mic" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="10.5" rx="3"/><path d="M5.8 11.2a6.2 6.2 0 0 0 12.4 0"/><path d="M12 17.4v3.2M9 20.6h6"/></g></symbol><symbol id="i-lock" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.6" width="14" height="10" rx="2.6"/><path d="M8.2 10.6V7.8a3.8 3.8 0 0 1 7.6 0v2.8"/><path d="M12 14.6v2.4"/></g></symbol><symbol id="i-card" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.6"/><path d="M3 9.8h18M6.6 14.6h4"/></g></symbol><symbol id="i-edit" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15.4 4.6l4 4L9 19l-5 1 1-5z"/><path d="M13.3 6.7l4 4"/></g></symbol><symbol id="i-trash" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 7h15"/><path d="M9.6 7V4.8h4.8V7"/><path d="M6.6 7l.9 13h9l.9-13"/><path d="M10.3 10.8v5.6M13.7 10.8v5.6"/></g></symbol><symbol id="i-star" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.6l-5.2 2.8 1-5.9-4.3-4.1 5.9-.8z"/></g></symbol><symbol id="i-moon" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.8 14.6A8.4 8.4 0 1 1 9.4 4.2a6.7 6.7 0 0 0 10.4 10.4z"/><path fill="currentColor" stroke="none" d="M17 3.4l.55 1.25 1.25.55-1.25.55L17 7l-.55-1.25-1.25-.55 1.25-.55z"/></g></symbol><symbol id="i-sun" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.4 5.4l1.5 1.5M17.1 17.1l1.5 1.5M5.4 18.6l1.5-1.5M17.1 6.9l1.5-1.5"/></g></symbol><symbol id="i-plus" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></g></symbol><symbol id="i-close" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></g></symbol><symbol id="i-link" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 14.5l5-5"/><path d="M11 6.8l1.3-1.3a4 4 0 0 1 5.7 5.7l-1.3 1.3"/><path d="M13 17.2l-1.3 1.3a4 4 0 0 1-5.7-5.7l1.3-1.3"/></g></symbol><symbol id="i-send" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 3.4L3.2 10.6l6.6 2.7 2.7 6.6z"/><path d="M9.8 13.3L20.8 3.4"/></g></symbol><symbol id="i-settings" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h8.5M16.5 7H20M4 17h3.5M11.5 17H20"/><circle cx="14.5" cy="7" r="2"/><circle cx="9.5" cy="17" r="2"/></g></symbol><symbol id="i-crown" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.8 8.2l4.4 3.6L12 5.4l3.8 6.4 4.4-3.6-1.6 10.2H5.4z"/><path d="M5.6 20.6h12.8"/></g></symbol><symbol id="i-share" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 14.6V3.6M7.9 7.6L12 3.6l4.1 4"/><path d="M5 12.4v6.3a1.8 1.8 0 0 0 1.8 1.8h10.4a1.8 1.8 0 0 0 1.8-1.8v-6.3"/></g></symbol><symbol id="i-restore" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.6 12a7.4 7.4 0 1 0 2.2-5.25L4.4 9.1"/><path d="M4.4 4.6v4.5h4.5"/></g></symbol><symbol id="i-support" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.6c0 4-3.6 7.2-8 7.2-1.1 0-2.2-.2-3.1-.6L4 19.6l1.3-3.7C4.5 14.7 4 13.2 4 11.6c0-4 3.6-7.2 8-7.2s8 3.2 8 7.2z"/><path fill="currentColor" stroke="none" d="M12 14.7s-3-1.7-3-3.7c0-.9.7-1.6 1.6-1.6.6 0 1.1.3 1.4.8.3-.5.8-.8 1.4-.8.9 0 1.6.7 1.6 1.6 0 2-3 3.7-3 3.7z"/></g></symbol><symbol id="i-girl" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10.2" r="3.4"/><path d="M12 5.6L9.3 4.1v3zM12 5.6l2.7-1.5v3z"/><path d="M5.4 20.5c.8-3.3 3.4-5.2 6.6-5.2s5.8 1.9 6.6 5.2"/></g></symbol><symbol id="i-boy" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9.6" r="3.4"/><path d="M12 6.2c.3-1.1 1.4-1.8 2.6-1.5"/><path d="M5.4 20.5c.8-3.3 3.4-5.2 6.6-5.2s5.8 1.9 6.6 5.2"/></g></symbol><symbol id="i-flame" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21c3.6 0 6-2.4 6-5.8 0-3.9-3-5.9-3.9-9.4-1.7 1.3-2.4 3.2-2.3 5-1.2-.7-1.9-1.9-2-3.2C7.5 9.3 6 11.8 6 15.2 6 18.6 8.4 21 12 21z"/></g></symbol><symbol id="i-sparkles" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.6l1.5 4.1 4.1 1.5-4.1 1.5L10 14.8l-1.5-4.1-4.1-1.5 4.1-1.5z"/><path d="M17.4 13.6l.8 2.1 2.1.8-2.1.8-.8 2.1-.8-2.1-2.1-.8 2.1-.8z"/></g></symbol><symbol id="i-phone" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6.5" y="2.5" width="11" height="19" rx="2.8"/><path d="M10.5 18.5h3"/></g></symbol><symbol id="i-sprout" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21v-8.4"/><path d="M12 13.4C12 9.6 9.4 7.4 5.5 7.5c-.1 3.8 2.6 6 6.5 5.9z"/><path d="M12 11.2c0-3.5 2.4-5.7 6.4-5.7.1 3.6-2.5 5.7-6.4 5.7z"/><path d="M7.6 21h8.8"/></g></symbol><symbol id="i-teddy" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.7 9.2a2.4 2.4 0 1 1 1.8-3.4M16.3 9.2a2.4 2.4 0 1 0-1.8-3.4"/><circle cx="12" cy="13" r="6.3"/><ellipse cx="12" cy="15.4" rx="2.4" ry="1.8"/><path fill="currentColor" stroke="none" d="M12 15.3a.7.6 0 1 0 0-1.2.7.6 0 1 0 0 1.2zM9.8 12.3a.65.65 0 1 0 0-1.3.65.65 0 1 0 0 1.3zM14.2 12.3a.65.65 0 1 0 0-1.3.65.65 0 1 0 0 1.3z"/></g></symbol><symbol id="i-balloon" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15.8c-3.3 0-5.6-2.9-5.6-6.3 0-3.5 2.5-6 5.6-6s5.6 2.5 5.6 6c0 3.4-2.3 6.3-5.6 6.3z"/><path d="M11 17.1h2l-1-1.3z"/><path d="M12 17.1c-1.2 1.4 1.2 2.4 0 4.1"/><path d="M9.3 7.7c.4-.9 1.1-1.5 2-1.8"/></g></symbol><symbol id="i-star-fill" viewBox="0 0 24 24"><path fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" d="M12 3.2l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.6l-5.2 2.8 1-5.9-4.3-4.1 5.9-.8z"/></symbol></svg>
 
 <!-- ЭКРАНЫ ЗАГРУЗКИ, «ОТКРОЙТЕ В TELEGRAM» И ОШИБКИ -->
 <div id="appLoader" class="app-state app-loader" style="display: flex;" role="status" aria-live="polite">
@@ -23,21 +25,21 @@
     <p id="appLoaderText" class="sr-only">Загрузка...</p>
 </div>
 <div id="openInTelegram" class="app-state" style="display: none;">
-    <div class="app-state-icon">📱</div>
+    <div class="app-state-icon"><svg class="ic ic--gold" aria-hidden="true" focusable="false"><use href="#i-phone" xlink:href="#i-phone"></use></svg></div>
     <h2 id="openInTelegramTitle">Откройте приложение в Telegram</h2>
     <p id="openInTelegramText">Приложение работает только внутри Telegram. Вернитесь в бота и нажмите «Открыть профиль».</p>
 </div>
 <div id="appError" class="app-state" style="display: none;">
-    <div class="app-state-icon">🌙</div>
+    <div class="app-state-icon"><svg class="ic ic--gold" aria-hidden="true" focusable="false"><use href="#i-moon" xlink:href="#i-moon"></use></svg></div>
     <p id="appErrorText">Не удалось загрузить данные. Проверьте интернет и попробуйте ещё раз.</p>
     <button id="appErrorRetry" class="primary-btn" onclick="retryBoot()">Попробовать снова</button>
-    <button id="appErrorSupport" class="primary-btn" onclick="openLink(SUPPORT_BOT_URL)" style="display: none;">🎧 Служба поддержки</button>
+    <button id="appErrorSupport" class="primary-btn" onclick="openLink(SUPPORT_BOT_URL)" style="display: none;"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-support" xlink:href="#i-support"></use></svg><span>Служба поддержки</span></button>
 </div>
 <div id="accountDeleted" class="app-state" style="display: none;">
-    <div class="app-state-icon">🗑</div>
+    <div class="app-state-icon"><svg class="ic ic--gold" aria-hidden="true" focusable="false"><use href="#i-trash" xlink:href="#i-trash"></use></svg></div>
     <h2 id="accountDeletedTitle">Аккаунт удалён</h2>
     <p id="accountDeletedText"></p>
-    <button id="accountRestoreBtn" class="primary-btn" onclick="restoreAccount()">♻️ Восстановить аккаунт</button>
+    <button id="accountRestoreBtn" class="primary-btn" onclick="restoreAccount()"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-restore" xlink:href="#i-restore"></use></svg><span>Восстановить аккаунт</span></button>
 </div>
 
 <!-- МОДАЛЬНОЕ ОКНО РОДИТЕЛЯ (Анкета) -->
@@ -98,7 +100,7 @@
 <!-- Мягкое окно «Мы обновили документы» (повторное согласие): ничего не блокирует, можно «Напомнить позже» -->
 <div id="termsModal" class="modal-overlay" style="display: none; background: rgba(15, 23, 42, 0.9); z-index: 9998; position: fixed; top: 0; left: 0; width: 100%; height: 100%; box-sizing: border-box; justify-content: center; align-items: center; padding: 20px;">
     <div class="modal-content glass-panel" style="width: 100%; max-width: 340px; padding: 24px; text-align: center; box-sizing: border-box; border-radius: 16px;">
-        <h2 id="termsModalTitle" style="margin-top: 0; color: #fff;">Мы обновили документы 📄</h2>
+        <h2 id="termsModalTitle" style="margin-top: 0; color: #fff;">Мы обновили документы</h2>
         <p id="termsModalText" style="color: #cbd5e1; font-size: 14px; line-height: 1.5; margin-bottom: 14px;"></p>
         <div id="termsModalLinks" style="font-size: 14px; margin-bottom: 20px; line-height: 1.9;"></div>
         <button id="termsAcceptBtn" onclick="acceptTerms()" style="width: 100%; background: #9333ea; color: white; font-weight: bold; padding: 14px; border-radius: 10px; border: none; cursor: pointer; transition: background 0.3s; margin-bottom: 10px;">Принимаю</button>
@@ -150,7 +152,7 @@
     <!-- Состояние 2: ПЛАШКА УСПЕХА (ПОДКЛЮЧЕНО) -->
     <div id="alice-connected-state" style="display: none;" class="alice-success-box glass-panel">
         <div class="alice-success-header">
-            <span class="success-icon">✅</span>
+            <span class="success-icon"><svg class="ic ic--ok" aria-hidden="true" focusable="false"><use href="#i-check-star" xlink:href="#i-check-star"></use></svg></span>
             <span id="aliceSuccessTitle" class="success-title">Колонка подключена!</span>
         </div>
         <div class="alice-instruction">
@@ -171,18 +173,18 @@
             </div>
 
             <!-- Новые сказки -->
-            <h2 id="lblNewStories" class="section-title" style="margin-top: 0;">✨ Новые сказки!</h2>
+            <h2 id="lblNewStories" class="section-title" style="margin-top: 0;"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-sparkles" xlink:href="#i-sparkles"></use></svg><span>Новые сказки!</span></h2>
             <div id="todayStoriesList" class="stories-list">
                 <p id="emptyToday" style="color: #a0a0a0; font-size: 14px; text-align: center; padding: 10px;">Новая сказка появится в 21:00!</p>
             </div>
 
             <!-- Архив сказок -->
-            <h2 id="lblArchiveStories" class="section-title" style="margin-top: 24px;">📚 Мои сказки (Архив)</h2>
+            <h2 id="lblArchiveStories" class="section-title" style="margin-top: 24px;"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-tales" xlink:href="#i-tales"></use></svg><span>Мои сказки (Архив)</span></h2>
             <div id="archiveContainer" class="archive-container" style="position: relative;">
                 <!-- Пейвол (Перекрытие Архива) -->
                 <div id="paywallOverlay" class="paywall-overlay" style="display: none;">
                     <div class="paywall-content">
-                        <span class="paywall-icon">🔒</span>
+                        <span class="paywall-icon"><svg class="ic ic--gold" aria-hidden="true" focusable="false"><use href="#i-lock" xlink:href="#i-lock"></use></svg></span>
                         <p id="paywallText" class="paywall-text">Доступ к архиву прошлых сказок возможен только в платном тарифе.</p>
                         <button id="paywallBtn" class="primary-btn paywall-btn" onclick="openTariffs('paywall')">Выбрать тариф</button>
                     </div>
@@ -207,7 +209,7 @@
             <div class="first-story-slot" data-first-story-slot="kids" style="display: none;"></div>
 
             <!-- Блок 2: карточки детей -->
-            <h2 id="lblChildren" class="section-title" style="margin-top: 4px;">👶 Профили детей</h2>
+            <h2 id="lblChildren" class="section-title" style="margin-top: 4px;"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-kids" xlink:href="#i-kids"></use></svg><span>Профили детей</span></h2>
             <div id="childrenList">
                 <div class="loader-container">
                     <div class="spinner"></div>
@@ -220,15 +222,15 @@
             <h1 id="pageTitleProfile" class="top-title">Мой профиль</h1>
 
             <!-- Данные родителя из анкеты (с возможностью изменить): рисует app.js → renderParentCard -->
-            <h2 id="lblParentCard" class="section-title" style="margin-top: 0;">🙂 О вас</h2>
+            <h2 id="lblParentCard" class="section-title" style="margin-top: 0;"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-profile" xlink:href="#i-profile"></use></svg><span>О вас</span></h2>
             <div id="parentCard" class="info-card glass-panel"></div>
 
             <!-- Действующий тариф: даты начала и окончания (app.js → renderTariffCard) -->
-            <h2 id="lblTariffCard" class="section-title">💳 Ваш тариф</h2>
+            <h2 id="lblTariffCard" class="section-title"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-crown" xlink:href="#i-crown"></use></svg><span>Ваш тариф</span></h2>
             <div id="tariffCard" class="info-card glass-panel"></div>
 
             <!-- Настройки (Язык и Тема) -->
-            <h2 id="lblSettingsCard" class="section-title">⚙️ Настройки</h2>
+            <h2 id="lblSettingsCard" class="section-title"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-settings" xlink:href="#i-settings"></use></svg><span>Настройки</span></h2>
             <div class="settings-card glass-panel">
                 <div class="settings-row">
                     <span id="lblAppLang">Язык приложения</span>
@@ -240,7 +242,7 @@
                 </div>
                 <div class="settings-row border-top">
                     <span id="lblAppTheme">Тема оформления</span>
-                    <button id="themeToggleBtn" onclick="toggleMiniAppTheme()" class="theme-btn">🌙 Ночь</button>
+                    <button id="themeToggleBtn" onclick="toggleMiniAppTheme()" class="theme-btn"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-moon" xlink:href="#i-moon"></use></svg><span>Ночь</span></button>
                 </div>
             </div>
 
@@ -259,7 +261,7 @@
         <div class="reader-content">
             <p id="kidsFormInfo" class="kids-form__info"></p>
             <div id="kidsFormRows"></div>
-            <button id="kidsFormAddRowBtn" class="kids-form__add" type="button" onclick="addKidRow()" style="display: none;">➕ Добавить ещё ребёнка</button>
+            <button id="kidsFormAddRowBtn" class="kids-form__add" type="button" onclick="addKidRow()" style="display: none;"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-plus" xlink:href="#i-plus"></use></svg><span>Добавить ещё ребёнка</span></button>
             <button id="kidsFormSaveBtn" class="primary-btn" type="button" onclick="submitKidsForm()">Сохранить</button>
             <button id="kidsFormCancelBtn" class="cancel-edit" type="button" onclick="closeKidsForm()" style="display: block;">Отменить</button>
         </div>
@@ -283,20 +285,20 @@
             </div>
             <div id="readerText" class="reader-text"></div>
             <!-- «Поделиться сказкой»: карточка в Telegram или ссылка на страницу сказки на сайте (app.js → ПОДЕЛИТЬСЯ) -->
-            <button id="readerShareBtn" class="share-btn" type="button" data-share-action="open">💌 Поделиться сказкой</button>
-            <button id="readerReportEndBtn" class="report-end-btn" type="button" data-report-action="start">✏️ Нашли ошибку в тексте? Отметьте её</button>
+            <button id="readerShareBtn" class="share-btn" type="button" data-share-action="open"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-share" xlink:href="#i-share"></use></svg><span>Поделиться сказкой</span></button>
+            <button id="readerReportEndBtn" class="report-end-btn" type="button" data-report-action="start"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-edit" xlink:href="#i-edit"></use></svg><span>Нашли ошибку в тексте? Отметьте её</span></button>
             <!-- «Служба поддержки»: открывает чат с ботом поддержки (app.js → СЛУЖБА ПОДДЕРЖКИ) -->
-            <button id="readerSupportBtn" class="support-btn" type="button" data-support-action="open">🎧 Служба поддержки</button>
+            <button id="readerSupportBtn" class="support-btn" type="button" data-support-action="open"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-support" xlink:href="#i-support"></use></svg><span>Служба поддержки</span></button>
             
             <!-- БЛОК ОЦЕНКИ -->
             <div id="rating-block" class="feedback-container" style="display: none;">
                 <h3 id="feedbackRatingTitle" class="feedback-title">Как вам сказка?</h3>
                 <div class="stars" id="stars-container">
-                    <span data-value="1">★</span>
-                    <span data-value="2">★</span>
-                    <span data-value="3">★</span>
-                    <span data-value="4">★</span>
-                    <span data-value="5">★</span>
+                    <span data-value="1"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-star-fill" xlink:href="#i-star-fill"></use></svg></span>
+                    <span data-value="2"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-star-fill" xlink:href="#i-star-fill"></use></svg></span>
+                    <span data-value="3"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-star-fill" xlink:href="#i-star-fill"></use></svg></span>
+                    <span data-value="4"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-star-fill" xlink:href="#i-star-fill"></use></svg></span>
+                    <span data-value="5"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-star-fill" xlink:href="#i-star-fill"></use></svg></span>
                 </div>
                 <p id="rating-thanks" style="display:none; color: #9333ea; font-weight: bold; text-align: center;">Спасибо за оценку! 💖</p>
             </div>        
@@ -312,7 +314,7 @@
             <!-- Рекламный баннер внутри сказки -->
             <a id="readerPromoLink" href="#" style="display: none;">
                 <img id="readerPromoImg" class="reader-promo-img" src="" alt="Promo">
-                <p id="readerPromoCta" class="reader-promo-cta">👉 Нажмите здесь, чтобы узнать подробности 👈</p>
+                <p id="readerPromoCta" class="reader-promo-cta"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-sparkles" xlink:href="#i-sparkles"></use></svg><span>Нажмите здесь, чтобы узнать подробности</span><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-sparkles" xlink:href="#i-sparkles"></use></svg></p>
             </a>
             
         </div> <!-- Конец readerContentArea -->
@@ -331,19 +333,19 @@
     <!-- НИЖНЯЯ ПАНЕЛЬ НАВИГАЦИИ (TAB BAR) -->
     <nav class="bottom-tab-bar glass-panel">
         <div class="tab-item active" id="btnTabHome" onclick="switchAppTab('home')">
-            <span class="tab-icon">🏠</span>
+            <span class="tab-icon"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-home" xlink:href="#i-home"></use></svg></span>
             <span id="lblTabHome" class="tab-label">Главная</span>
         </div>
         <div class="tab-item" id="btnTabKids" onclick="switchAppTab('kids')">
-            <span class="tab-icon">👶</span>
+            <span class="tab-icon"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-kids" xlink:href="#i-kids"></use></svg></span>
             <span id="lblTabKids" class="tab-label">Дети</span>
         </div>
         <div class="tab-item" id="btnTabStories" onclick="switchAppTab('stories')">
-            <span class="tab-icon">📖</span>
+            <span class="tab-icon"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-tales" xlink:href="#i-tales"></use></svg></span>
             <span id="lblTabStories" class="tab-label">Сказки</span>
         </div>
         <div class="tab-item" id="btnTabProfile" onclick="switchAppTab('profile')">
-            <span class="tab-icon">👤</span>
+            <span class="tab-icon"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-profile" xlink:href="#i-profile"></use></svg></span>
             <span id="lblTabProfile" class="tab-label">Мой профиль</span>
         </div>
     </nav>
@@ -359,7 +361,7 @@
                     <h2 id="tariffSheetTitle" class="tariff-sheet__title">Выберите тариф</h2>
                     <p id="tariffSheetSub" class="tariff-sheet__sub"></p>
                 </div>
-                <button id="tariffSheetClose" class="tariff-sheet__close" type="button" data-tariff-action="close" aria-label="Закрыть">✕</button>
+                <button id="tariffSheetClose" class="tariff-sheet__close" type="button" data-tariff-action="close" aria-label="Закрыть"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-close" xlink:href="#i-close"></use></svg></button>
             </header>
             <p id="tariffNote" class="tariff-note" style="display: none;"></p>
             <div id="tariffCards" class="tariff-cards"></div>
@@ -376,7 +378,7 @@
                     <h2 id="reportSheetTitle" class="tariff-sheet__title">Ошибка в тексте</h2>
                     <p id="reportSheetSub" class="tariff-sheet__sub"></p>
                 </div>
-                <button id="reportSheetClose" class="tariff-sheet__close" type="button" data-report-action="close" aria-label="Закрыть">✕</button>
+                <button id="reportSheetClose" class="tariff-sheet__close" type="button" data-report-action="close" aria-label="Закрыть"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-close" xlink:href="#i-close"></use></svg></button>
             </header>
             <div id="reportFragmentLabel" class="report-label">Фраза с ошибкой</div>
             <blockquote id="reportFragment" class="report-fragment"></blockquote>
@@ -397,10 +399,10 @@
                     <h2 id="shareSheetTitle" class="tariff-sheet__title">Поделиться сказкой</h2>
                     <p id="shareSheetSub" class="tariff-sheet__sub"></p>
                 </div>
-                <button id="shareSheetClose" class="tariff-sheet__close" type="button" data-share-action="close" aria-label="Закрыть">✕</button>
+                <button id="shareSheetClose" class="tariff-sheet__close" type="button" data-share-action="close" aria-label="Закрыть"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-close" xlink:href="#i-close"></use></svg></button>
             </header>
-            <button id="shareTelegramBtn" class="first-story__btn share-sheet__main" type="button" data-share-action="telegram">✈️ Отправить в Telegram</button>
-            <button id="shareLinkBtn" class="report-other share-sheet__link" type="button" data-share-action="link">🔗 Поделиться ссылкой</button>
+            <button id="shareTelegramBtn" class="first-story__btn share-sheet__main" type="button" data-share-action="telegram"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-send" xlink:href="#i-send"></use></svg><span>Отправить в Telegram</span></button>
+            <button id="shareLinkBtn" class="report-other share-sheet__link" type="button" data-share-action="link"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-link" xlink:href="#i-link"></use></svg><span>Поделиться ссылкой</span></button>
             <p id="shareNote" class="share-note"></p>
             <button id="shareStopBtn" class="share-stop" type="button" data-share-action="stop" hidden>Перестать делиться</button>
         </div>
@@ -416,7 +418,7 @@
                     <h2 id="firstStorySheetTitle" class="tariff-sheet__title">Для кого прислать сказку?</h2>
                     <p id="firstStorySheetSub" class="tariff-sheet__sub"></p>
                 </div>
-                <button id="firstStorySheetClose" class="tariff-sheet__close" type="button" data-first-story-action="close" aria-label="Закрыть">✕</button>
+                <button id="firstStorySheetClose" class="tariff-sheet__close" type="button" data-first-story-action="close" aria-label="Закрыть"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-close" xlink:href="#i-close"></use></svg></button>
             </header>
             <div id="firstStoryChoices" class="first-story-choices"></div>
         </div>
@@ -429,10 +431,10 @@
             <div class="tariff-sheet__grab" aria-hidden="true"></div>
             <header class="tariff-sheet__head">
                 <div class="tariff-sheet__heading">
-                    <h2 id="firstStoryPromptTitle" class="tariff-sheet__title">Профиль добавлен! 🎉</h2>
+                    <h2 id="firstStoryPromptTitle" class="tariff-sheet__title">Профиль добавлен!</h2>
                     <p id="firstStoryPromptText" class="tariff-sheet__sub"></p>
                 </div>
-                <button id="firstStoryPromptClose" class="tariff-sheet__close" type="button" data-first-story-action="prompt-later" aria-label="Закрыть">✕</button>
+                <button id="firstStoryPromptClose" class="tariff-sheet__close" type="button" data-first-story-action="prompt-later" aria-label="Закрыть"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-close" xlink:href="#i-close"></use></svg></button>
             </header>
             <button id="firstStoryPromptGo" class="first-story__btn" type="button" data-first-story-action="prompt-go">Получить первую сказку сейчас</button>
             <button id="firstStoryPromptLater" class="first-story-prompt__later" type="button" data-first-story-action="prompt-later">Позже</button>
@@ -442,6 +444,6 @@
     <!-- Основной скрипт логики Mini App -->
     <!-- Алфавиты имени ребёнка: русская сказка — кириллица, узбекская и английская — латиница (копия name_script.js из репозитория Scheherazade) -->
     <script src="name-script.js?v=2"></script>
-    <script src="app.js?v=37"></script>
+    <script src="app.js?v=38"></script>
 </body>
 </html>
