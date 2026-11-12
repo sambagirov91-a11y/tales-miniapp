@@ -1148,23 +1148,43 @@ async function deleteChild(id) {
 }
 // =====================================================================
 // ЭКРАН «ДОБАВИТЬ ДЕТЕЙ» / «ИЗМЕНИТЬ ДАННЫЕ РЕБЁНКА»
-// Добавление: по строке на каждое свободное место тарифа («Ребёнок №2», «Ребёнок №3»…). Заполнять можно не все —
-// пустые строки пропускаются. Правка: одна строка с данными ребёнка.
+// Добавление: сначала одна строка «Ребёнок №N». Ещё строку добавляет кнопка «Добавить ещё ребёнка» (пока есть свободные
+// места тарифа), лишнюю строку можно убрать. Пустые строки пропускаются. Правка: одна строка с данными ребёнка.
 // Имя — в алфавите языка сказок (name-script.js): у каждой строки своя защита поля и свой выбор языка.
+// Одно поле — одно имя: перечисление («Тимур и Ясмина», «Солиха, Ирода») не принимаем, на 3 слова и больше переспрашиваем.
 // =====================================================================
-let kidsForm = null;             // { mode: 'add' | 'edit', childId, rows: [{ number, node, guard }], busy }
+let kidsForm = null;             // { mode: 'add' | 'edit', childId, rows: [{ number, node, guard, sepTyped }], busy }
 
 function nameHintText(taleLang) {
     return tr(taleLang === 'uz' ? 'name_hint_lat_uz' : taleLang === 'en' ? 'name_hint_lat_en' : 'name_hint_cyr');
 }
-function kidRowMarkup(number, child) {
+// Сколько детей ещё можно добавить по тарифу (строк в форме добавления — не больше)
+function kidsFormFree() {
+    return Math.max(0, maxChildren - allChildren.length);
+}
+// Можно ли в форме добавить ещё строку
+function kidsFormCanAddRow() {
+    return !!kidsForm && kidsForm.mode === 'add' && kidsForm.rows.length < kidsFormFree();
+}
+// «В одном поле — одно имя» + совет про кнопку «Добавить ещё ребёнка», если места ещё есть
+function oneNameText() {
+    return tr('kids_form_one_name') + (kidsFormCanAddRow() ? ' ' + tr('kids_form_add_separately') : '');
+}
+function kidRowMarkup(number, child, removable) {
     const lang = child ? child.language : currentLang;
     const gender = child ? child.gender : '';
+    const remove = removable
+        ? `<button type="button" class="kid-row__remove" data-tr="kids_form_remove_row" onclick="removeKidRow(this)">${escapeHtml(tr('kids_form_remove_row'))}</button>`
+        : '';
     return `
         <div class="kid-row glass-panel" data-kid-row="${number}">
-            <h3 class="kid-row__title" data-kid-number="${number}">${escapeHtml(tr('kids_row_title', { n: number }))}</h3>
+            <div class="kid-row__head">
+                <h3 class="kid-row__title" data-kid-number="${number}">${escapeHtml(tr('kids_row_title', { n: number }))}</h3>
+                ${remove}
+            </div>
             <label data-tr="label_name">${escapeHtml(tr('label_name'))}</label>
             <input type="text" class="kid-row__name" data-tr-placeholder="placeholder_name" placeholder="${escapeHtml(tr('placeholder_name'))}" autocomplete="off" maxlength="40" value="${escapeHtml(child ? child.name : '')}">
+            <p class="kid-row__warn" hidden></p>
             <label data-tr="label_gender">${escapeHtml(tr('label_gender'))}</label>
             <div class="radio-group kid-row__gender">
                 <div class="radio-label${gender === 'F' ? ' selected' : ''}" data-kid-gender="F" data-tr="btn_girl" role="button" tabindex="0">${escapeHtml(tr('btn_girl'))}</div>
@@ -1183,17 +1203,80 @@ function refreshKidsFormTexts() {
     if (!kidsForm.busy) setText('kidsFormSaveBtn', tr(edit ? 'btn_save_edit' : 'kids_form_btn_add'));
     const info = el('kidsFormInfo');
     if (info) {
-        const free = kidsForm.rows.length;
+        const free = kidsFormFree();
         if (edit) info.innerText = tr('kids_form_info_edit');
         else if (maxChildren === 1) info.innerText = tr('kids_info_one');
         else info.innerText = tr(free === 1 ? 'kids_form_info_last' : 'kids_form_info', { max: maxChildren, free });
+    }
+    const addRowBtn = el('kidsFormAddRowBtn');
+    if (addRowBtn) {
+        addRowBtn.style.display = kidsFormCanAddRow() ? 'block' : 'none';
+        addRowBtn.disabled = !!kidsForm.busy;
+        addRowBtn.innerText = tr('kids_form_add_row');
     }
     const screen = el('kidsFormScreen');
     if (!screen) return;
     screen.querySelectorAll('[data-tr]').forEach(node => { node.innerText = tr(node.getAttribute('data-tr')); });
     screen.querySelectorAll('[data-tr-placeholder]').forEach(node => { node.placeholder = tr(node.getAttribute('data-tr-placeholder')); });
     screen.querySelectorAll('[data-kid-number]').forEach(node => { node.innerText = tr('kids_row_title', { n: node.getAttribute('data-kid-number') }); });
-    kidsForm.rows.forEach(row => { if (row.guard) row.guard.refresh(); });
+    kidsForm.rows.forEach(row => {
+        if (row.guard) row.guard.refresh();
+        updateKidRowWarn(row);
+    });
+}
+// Подсказка «одно поле — одно имя» под полем имени: видна, пока в поле перечислены несколько детей
+function kidRowSeveral(row) {
+    const input = row.node.querySelector('.kid-row__name');
+    const select = row.node.querySelector('.kid-row__lang');
+    const value = input ? input.value : '';
+    if (!value.trim() || !window.NameScript || !NameScript.severalNames) return false;
+    const several = NameScript.severalNames(value, select ? select.value : currentLang);
+    // Запятую и «/» поле стирает сразу (name-script.js), поэтому помним, что их вводили: «Тимур, Ясмина» → «Тимур Ясмина»
+    return several.joined || (row.sepTyped && several.words >= 2);
+}
+function updateKidRowWarn(row) {
+    const warn = row.node.querySelector('.kid-row__warn');
+    if (!warn) return;
+    const input = row.node.querySelector('.kid-row__name');
+    if (row.sepTyped && input && !input.value.trim()) row.sepTyped = false;   // поле очистили — начинаем заново
+    const show = kidRowSeveral(row);
+    warn.hidden = !show;
+    if (show) warn.innerText = oneNameText();
+}
+// Защита поля имени и подсказки для строки формы
+function bindKidRow(node, child) {
+    const input = node.querySelector('.kid-row__name');
+    const select = node.querySelector('.kid-row__lang');
+    let guard = null;
+    if (window.NameScript && input && select) {
+        guard = NameScript.bind(input, {
+            getLang: () => select.value,
+            uiLang: () => currentLang,
+            t: (key, params) => tr('name_' + key, params)
+        });
+        select.addEventListener('change', () => guard.recheck());
+        if (child) guard.recheck();   // старое имя в чужом алфавите: подсказка и кнопка перевода, текст не трогаем
+    }
+    const row = { number: Number(node.getAttribute('data-kid-row')), node, guard, sepTyped: false };
+    if (input) {
+        // Знаки перечисления ловим до того, как поле их сотрёт
+        input.addEventListener('beforeinput', (event) => {
+            if (event && typeof event.data === 'string' && /[,;\/&+|\\\n]/.test(event.data)) row.sepTyped = true;
+        });
+        input.addEventListener('input', () => updateKidRowWarn(row));
+    }
+    if (select) select.addEventListener('change', () => updateKidRowWarn(row));
+    return row;
+}
+// Номера строк «Ребёнок №N» по порядку (после удаления строки)
+function renumberKidRows() {
+    if (!kidsForm || kidsForm.mode !== 'add') return;
+    kidsForm.rows.forEach((row, i) => {
+        row.number = allChildren.length + i + 1;
+        row.node.setAttribute('data-kid-row', String(row.number));
+        const title = row.node.querySelector('[data-kid-number]');
+        if (title) title.setAttribute('data-kid-number', String(row.number));
+    });
 }
 function openKidsForm(editId) {
     if (!userExists) return;
@@ -1201,39 +1284,50 @@ function openKidsForm(editId) {
     const screen = el('kidsFormScreen');
     if (!box || !screen) return;
 
-    let numbers;
+    let number;
     let child = null;
     if (editId !== undefined && editId !== null) {
         const index = allChildren.findIndex(c => String(c.id) === String(editId));
         if (index < 0) return;
         child = allChildren[index];
-        numbers = [index + 1];
+        number = index + 1;
     } else {
         if (allChildren.length >= maxChildren) { renderKidsSummary(); return; }
-        numbers = [];
-        for (let n = allChildren.length + 1; n <= maxChildren; n += 1) numbers.push(n);
+        number = allChildren.length + 1;      // сначала — один ребёнок; ещё — кнопкой «Добавить ещё ребёнка»
     }
 
-    box.innerHTML = numbers.map(n => kidRowMarkup(n, child)).join('');
+    box.innerHTML = kidRowMarkup(number, child, false);
     kidsForm = { mode: child ? 'edit' : 'add', childId: child ? child.id : null, rows: [], busy: false };
-    box.querySelectorAll('[data-kid-row]').forEach(node => {
-        const input = node.querySelector('.kid-row__name');
-        const select = node.querySelector('.kid-row__lang');
-        let guard = null;
-        if (window.NameScript && input && select) {
-            guard = NameScript.bind(input, {
-                getLang: () => select.value,
-                uiLang: () => currentLang,
-                t: (key, params) => tr('name_' + key, params)
-            });
-            select.addEventListener('change', () => guard.recheck());
-            if (child) guard.recheck();   // старое имя в чужом алфавите: подсказка и кнопка перевода, текст не трогаем
-        }
-        kidsForm.rows.push({ number: Number(node.getAttribute('data-kid-row')), node, guard });
-    });
+    box.querySelectorAll('[data-kid-row]').forEach(node => { kidsForm.rows.push(bindKidRow(node, child)); });
     refreshKidsFormTexts();
     screen.style.display = 'flex';
     screen.scrollTop = 0;
+}
+// «Добавить ещё ребёнка»: новая пустая строка внизу формы
+function addKidRow() {
+    if (!kidsFormCanAddRow() || kidsForm.busy) return;
+    const box = el('kidsFormRows');
+    if (!box) return;
+    const number = allChildren.length + kidsForm.rows.length + 1;
+    box.insertAdjacentHTML('beforeend', kidRowMarkup(number, null, true));
+    const node = box.lastElementChild;
+    kidsForm.rows.push(bindKidRow(node, null));
+    refreshKidsFormTexts();
+    haptic('select');
+    try { node.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) { /* старый WebView */ }
+    const input = node.querySelector('.kid-row__name');
+    if (input) setTimeout(() => { try { input.focus(); } catch (e) { /* ignore */ } }, 350);
+}
+// «Убрать»: удаляет добавленную строку (первую строку убрать нельзя)
+function removeKidRow(button) {
+    if (!kidsForm || kidsForm.busy || kidsForm.mode !== 'add') return;
+    const node = button && button.closest ? button.closest('[data-kid-row]') : null;
+    const index = node ? kidsForm.rows.findIndex(row => row.node === node) : -1;
+    if (index <= 0) return;
+    kidsForm.rows.splice(index, 1);
+    node.remove();
+    renumberKidRows();
+    refreshKidsFormTexts();
 }
 function closeKidsForm() {
     if (kidsForm && kidsForm.busy) return;
@@ -1275,7 +1369,13 @@ function collectKidsForm() {
         // Имя — в алфавите языка сказок. Старое имя при правке только пола не трогаем (так же решает и сервер)
         const original = kidsForm.mode === 'edit' ? allChildren.find(c => String(c.id) === String(kidsForm.childId)) : null;
         const nameUnchanged = original && original.name === name && original.language === language;
+        let manyWords = false;
         if (!nameUnchanged && window.NameScript) {
+            // Одно поле — одно имя: «Тимур и Ясмина», «Солиха, Ирода» — это несколько детей
+            if (kidRowSeveral(row)) {
+                updateKidRowWarn(row);
+                return { error: oneNameText() };
+            }
             const checked = NameScript.check(name, language);
             if (checked.foreign) {
                 if (row.guard) row.guard.recheck();
@@ -1283,8 +1383,9 @@ function collectKidsForm() {
             }
             if (!checked.text) return { error: tr('alert_enter_child_name') };
             name = checked.text;
+            manyWords = !!NameScript.severalNames && NameScript.severalNames(name, language).words >= 3;
         }
-        items.push({ name, gender, language });
+        items.push({ name, gender, language, manyWords });
     }
     if (!items.length) return { error: tr('kids_form_empty') };
     return { items };
@@ -1293,6 +1394,15 @@ async function submitKidsForm() {
     if (!kidsForm || kidsForm.busy) return;
     const collected = collectKidsForm();
     if (collected.error) return showAlert(collected.error);
+    // Имя из 3 слов и больше: двойные имена бывают, но чаще так пишут нескольких детей — переспрашиваем
+    for (const item of collected.items) {
+        if (!item.manyWords) continue;
+        const question = tr('kids_form_confirm_words', { name: item.name.slice(0, 40) })
+            + (kidsFormCanAddRow() ? ' ' + tr('kids_form_add_separately') : '');
+        if (!(await showConfirm(question))) return;
+        if (!kidsForm || kidsForm.busy) return;
+    }
+    collected.items = collected.items.map(({ name, gender, language }) => ({ name, gender, language }));
 
     const edit = kidsForm.mode === 'edit';
     const hadNoChildren = !allChildren.length;
@@ -1318,6 +1428,7 @@ async function submitKidsForm() {
     if (failure && !saved) {
         refreshKidsFormTexts();
         const failedLang = collected.items[0].language;
+        if (failure.code === 'CHILD_NAME_SEVERAL') return showAlert(oneNameText());
         return showAlert(failure.code === 'CHILD_NAME_SCRIPT' ? nameHintText(failedLang) : (failure.message || tr('error_generic')));
     }
 
