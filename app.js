@@ -63,6 +63,14 @@ function safeUrl(value) {
 }
 function el(id) { return document.getElementById(id); }
 function setText(id, text) { const node = el(id); if (node) node.innerText = text; }
+// Иконки интерфейса — свои, в стиле «Шахерезады»: SVG-спрайт встроен в index.html (символы #i-…), без запросов к сети.
+// Размер — 1em (растёт вместе с шрифтом контейнера), цвет — цвет текста (currentColor).
+function icon(name, cls) {
+    return `<svg class="ic${cls ? ' ' + cls : ''}" aria-hidden="true" focusable="false"><use href="#i-${name}" xlink:href="#i-${name}"></use></svg>`;
+}
+// Иконка + подпись (подпись экранируется)
+function iconText(name, text, cls) { return icon(name, cls) + `<span>${escapeHtml(text)}</span>`; }
+function setIconText(id, name, text) { const node = el(id); if (node) node.innerHTML = iconText(name, text); }
 function setPlaceholder(id, text) { const node = el(id); if (node) node.placeholder = text; }
 function show(id, display) { const node = el(id); if (node) node.style.display = display || 'block'; }
 function hide(id) { const node = el(id); if (node) node.style.display = 'none'; }
@@ -222,7 +230,7 @@ function showLoadError(err) {
     if (blocked) text = tr('error_blocked');
     else if (err && err.code === 'NO_INIT_DATA') text = tr('error_session');
     setText('appErrorText', text);
-    setText('appErrorSupport', tr('btn_support'));
+    setIconText('appErrorSupport', 'support', tr('btn_support'));
     if (blocked) { hide('appErrorRetry'); show('appErrorSupport', 'inline-block'); }
     else { show('appErrorRetry', 'inline-block'); hide('appErrorSupport'); }
     showScreen('error');
@@ -285,7 +293,8 @@ function applyTheme() {
 }
 
 function updateThemeButton() {
-    setText('themeToggleBtn', document.body.classList.contains('light-theme') ? tr('theme_day') : tr('theme_night'));
+    const light = document.body.classList.contains('light-theme');
+    setIconText('themeToggleBtn', light ? 'sun' : 'moon', light ? tr('theme_day') : tr('theme_night'));
 }
 
 function toggleMiniAppTheme() {
@@ -429,7 +438,7 @@ function renderAccountDeleted() {
     setText('accountDeletedTitle', tr('account_deleted_title'));
     setText('accountDeletedText', tr('account_deleted_text', { date: formatRestoreDate(profileData.account.purge_after) }));
     const button = el('accountRestoreBtn');
-    if (button) { button.innerText = tr('account_restore_btn'); button.disabled = false; }
+    if (button) { button.innerHTML = iconText('restore', tr('account_restore_btn')); button.disabled = false; }
     showScreen('deleted');
 }
 
@@ -442,7 +451,7 @@ async function restoreAccount() {
     } catch (err) {
         console.error(err);
         showAlert(err.message || tr('error_generic'));
-        if (button) { button.innerText = tr('account_restore_btn'); button.disabled = false; }
+        if (button) { button.innerHTML = iconText('restore', tr('account_restore_btn')); button.disabled = false; }
     }
 }
 
@@ -591,9 +600,9 @@ function applyLanguage() {
     setText('openInTelegramText', tr('open_in_telegram_text'));
     setText('appErrorRetry', tr('btn_retry'));
 
-    setText('lblParentCard', tr('lbl_parent_card'));
-    setText('lblTariffCard', tr('lbl_tariff_card'));
-    setText('lblSettingsCard', tr('lbl_settings_card'));
+    setIconText('lblParentCard', 'profile', tr('lbl_parent_card'));
+    setIconText('lblTariffCard', 'crown', tr('lbl_tariff_card'));
+    setIconText('lblSettingsCard', 'settings', tr('lbl_settings_card'));
     setText('kidsFormBackBtn', tr('reader_back'));
     setText('kidsFormCancelBtn', tr('btn_cancel'));
 
@@ -627,16 +636,17 @@ function applyLanguage() {
     const offerText = el('textOffer');
     if (offerText) offerText.innerHTML = tr('textOffer');
     setText('saveParentBtn', tr('saveParentBtn'));
-    setText('lblChildren', tr('lbl_children'));
-    setText('lblNewStories', tr('lbl_new_stories'));
-    setText('lblArchiveStories', tr('lbl_archive_stories'));
+    setIconText('lblChildren', 'kids', tr('lbl_children'));
+    setIconText('lblNewStories', 'sparkles', tr('lbl_new_stories'));
+    setIconText('lblArchiveStories', 'tales', tr('lbl_archive_stories'));
     setText('paywallText', tr('paywall_text'));
     setText('readerHeaderTitle', tr('reader_header'));
     setText('readerBackBtn', tr('reader_back'));
-    setText('readerPromoCta', tr('reader_promo_cta'));
+    const promoCta = el('readerPromoCta');
+    if (promoCta) promoCta.innerHTML = iconText('sparkles', tr('reader_promo_cta')) + icon('sparkles');
     applyReportTexts();
     applyShareTexts();
-    setText('readerSupportBtn', tr('support_btn'));
+    setIconText('readerSupportBtn', 'support', tr('support_btn'));
     setText('feedbackRatingTitle', tr('feedback_rating_title'));
     setText('feedbackCommentTitle', tr('feedback_comment_title'));
     setPlaceholder('story-comment', tr('feedback_placeholder'));
@@ -742,7 +752,7 @@ function renderBanners() {
 // СТАТУС ПОДПИСКИ, ТАРИФЫ И ТАЙМЕР АКЦИИ
 // Цены, лимиты и дедлайн акции решает сервер — здесь только показ.
 // =====================================================================
-const TARIFF_ICONS = { start: '🌱', baby: '🧸', kids: '🎈' };
+const TARIFF_ICONS = { start: 'sprout', baby: 'teddy', kids: 'balloon' };   // символы спрайта иконок
 let tariffSheetOpen = false;
 let tariffTimerInterval = null;
 let payingTariff = false;
@@ -788,9 +798,9 @@ function updateStatusUI() {
     const badge = el('statusBadge');
     if (badge) {
         badge.className = `status-badge ${access.hasAccess ? (access.isTrial ? 'trial' : 'active') : 'inactive'}`;
-        if (!access.hasAccess) badge.innerText = tr('status_inactive');
-        else if (access.isTrial) badge.innerText = tr('status_trial');
-        else badge.innerText = currentId ? tr('status_active_tariff', { name: tariffName(currentId) }) : tr('status_active');
+        if (!access.hasAccess) badge.innerHTML = iconText('cross-star', tr('status_inactive'));
+        else if (access.isTrial) badge.innerHTML = iconText('hourglass', tr('status_trial'));
+        else badge.innerHTML = iconText('check-star', currentId ? tr('status_active_tariff', { name: tariffName(currentId) }) : tr('status_active'));
     }
 
     if (access.hasAccess && access.endDate) {
@@ -821,7 +831,7 @@ function updateStatusUI() {
 function startPromoTimer(deadlineMs, keepsTrialDays) {
     const promoItem = ((profileData.tariffs && profileData.tariffs.items) || []).find(i => i.promo_amount);
     if (!promoItem) return;
-    setText('promoTimerTitle', tr('timer_title', {
+    setIconText('promoTimerTitle', 'flame', tr('timer_title', {
         name: tariffName(promoItem.id),
         promo_price: formatPrice(promoItem.promo_amount),
         price: formatPrice(promoItem.price_amount)
@@ -891,14 +901,14 @@ function tariffCardMarkup(item, context) {
     const price = priceParts(promo ? item.promo_amount : item.price_amount);
 
     const features = [
-        ['👧', item.max_children === 1 ? tr('tariff_children_one') : tr('tariff_children_many', { n: item.max_children })],
-        ['🎙️', item.voiceovers === 1 ? tr('tariff_voiceovers_one') : item.voiceovers > 0 ? tr('tariff_voiceovers_n', { n: item.voiceovers }) : tr('tariff_voiceovers_none')],
-        ['💳', tr('tariff_extra_voiceover', { price: formatPrice(item.extra_voiceover_amount) })]
-    ].map(([icon, text]) => `
-        <li class="tariff-feature"><span class="tariff-feature__icon" aria-hidden="true">${icon}</span><span>${escapeHtml(text)}</span></li>`).join('');
+        ['kids', item.max_children === 1 ? tr('tariff_children_one') : tr('tariff_children_many', { n: item.max_children })],
+        ['mic', item.voiceovers === 1 ? tr('tariff_voiceovers_one') : item.voiceovers > 0 ? tr('tariff_voiceovers_n', { n: item.voiceovers }) : tr('tariff_voiceovers_none')],
+        ['card', tr('tariff_extra_voiceover', { price: formatPrice(item.extra_voiceover_amount) })]
+    ].map(([name, text]) => `
+        <li class="tariff-feature"><span class="tariff-feature__icon" aria-hidden="true">${icon(name)}</span><span>${escapeHtml(text)}</span></li>`).join('');
 
     const badge = current ? `<span class="tariff-badge tariff-badge--current">${escapeHtml(tr('tariff_badge_current'))}</span>`
-        : (promo ? `<span class="tariff-badge tariff-badge--promo">${escapeHtml(tr('tariff_badge_promo'))}</span>` : '');
+        : (promo ? `<span class="tariff-badge tariff-badge--promo">${iconText('flame', tr('tariff_badge_promo'))}</span>` : '');
 
     const oldPrice = promo ? `<span class="tariff-price__old">${escapeHtml(formatPrice(item.price_amount))}</span>` : '';
     const promoLine = promo ? `
@@ -921,7 +931,7 @@ function tariffCardMarkup(item, context) {
         <article class="tariff-card tariff-card--${id}${current ? ' is-current' : ''}${blocked ? ' is-blocked' : ''}${promo ? ' has-promo' : ''}">
             ${badge}
             <header class="tariff-card__header">
-                <span class="tariff-card__icon" aria-hidden="true">${TARIFF_ICONS[item.id] || '⭐'}</span>
+                <span class="tariff-card__icon" aria-hidden="true">${icon(TARIFF_ICONS[item.id] || 'star')}</span>
                 <div class="tariff-card__title">
                     <h3 class="tariff-card__name">${escapeHtml(tariffName(item.id))}</h3>
                     <p class="tariff-card__tag">${escapeHtml(tr('tariff_' + item.id + '_tag'))}</p>
@@ -1092,7 +1102,7 @@ function renderKidsSummary() {
         if (max === 1) text = tr('kids_info_one');
         else if (!count) text = tr('kids_info_empty', { max });
         else text = tr('kids_info_free', { max, count, free });
-        button = `<button class="primary-btn" type="button" onclick="openKidsForm()">${escapeHtml(tr('kids_btn_add'))}</button>`;
+        button = `<button class="primary-btn" type="button" onclick="openKidsForm()">${iconText('plus', tr('kids_btn_add'))}</button>`;
     } else if (max >= KIDS_TOP_MAX) {
         text = tr('kids_info_top', { max });
     } else {
@@ -1128,8 +1138,8 @@ function renderChildren() {
                 <span class="child-details">${escapeHtml(genderLabel(child.gender))} · ${languageBadge(child.language)}</span>
             </div>
             <div class="kid-card__actions">
-                <button class="kid-btn" type="button" data-id="${escapeHtml(child.id)}" onclick="openKidsForm(this.dataset.id)">✏️ ${escapeHtml(tr('kids_btn_edit'))}</button>
-                <button class="kid-btn kid-btn--danger" type="button" data-id="${escapeHtml(child.id)}" onclick="deleteChild(this.dataset.id)">🗑️ ${escapeHtml(tr('kids_btn_delete'))}</button>
+                <button class="kid-btn" type="button" data-id="${escapeHtml(child.id)}" onclick="openKidsForm(this.dataset.id)">${iconText('edit', tr('kids_btn_edit'))}</button>
+                <button class="kid-btn kid-btn--danger" type="button" data-id="${escapeHtml(child.id)}" onclick="deleteChild(this.dataset.id)">${iconText('trash', tr('kids_btn_delete'))}</button>
             </div>
         </div>`).join('');
 }
@@ -1174,7 +1184,7 @@ function kidRowMarkup(number, child, removable) {
     const lang = child ? child.language : currentLang;
     const gender = child ? child.gender : '';
     const remove = removable
-        ? `<button type="button" class="kid-row__remove" data-tr="kids_form_remove_row" onclick="removeKidRow(this)">${escapeHtml(tr('kids_form_remove_row'))}</button>`
+        ? `<button type="button" class="kid-row__remove" data-tr="kids_form_remove_row" data-tr-icon="close" onclick="removeKidRow(this)">${iconText('close', tr('kids_form_remove_row'))}</button>`
         : '';
     return `
         <div class="kid-row glass-panel" data-kid-row="${number}">
@@ -1187,8 +1197,8 @@ function kidRowMarkup(number, child, removable) {
             <p class="kid-row__warn" hidden></p>
             <label data-tr="label_gender">${escapeHtml(tr('label_gender'))}</label>
             <div class="radio-group kid-row__gender">
-                <div class="radio-label${gender === 'F' ? ' selected' : ''}" data-kid-gender="F" data-tr="btn_girl" role="button" tabindex="0">${escapeHtml(tr('btn_girl'))}</div>
-                <div class="radio-label${gender === 'M' ? ' selected' : ''}" data-kid-gender="M" data-tr="btn_boy" role="button" tabindex="0">${escapeHtml(tr('btn_boy'))}</div>
+                <div class="radio-label${gender === 'F' ? ' selected' : ''}" data-kid-gender="F" data-tr="btn_girl" data-tr-icon="girl" role="button" tabindex="0">${iconText('girl', tr('btn_girl'))}</div>
+                <div class="radio-label${gender === 'M' ? ' selected' : ''}" data-kid-gender="M" data-tr="btn_boy" data-tr-icon="boy" role="button" tabindex="0">${iconText('boy', tr('btn_boy'))}</div>
             </div>
             <label data-tr="label_lang">${escapeHtml(tr('label_lang'))}</label>
             <select class="kid-row__lang">
@@ -1212,11 +1222,15 @@ function refreshKidsFormTexts() {
     if (addRowBtn) {
         addRowBtn.style.display = kidsFormCanAddRow() ? 'block' : 'none';
         addRowBtn.disabled = !!kidsForm.busy;
-        addRowBtn.innerText = tr('kids_form_add_row');
+        addRowBtn.innerHTML = iconText('plus', tr('kids_form_add_row'));
     }
     const screen = el('kidsFormScreen');
     if (!screen) return;
-    screen.querySelectorAll('[data-tr]').forEach(node => { node.innerText = tr(node.getAttribute('data-tr')); });
+    screen.querySelectorAll('[data-tr]').forEach(node => {
+        const name = node.getAttribute('data-tr-icon');   // подпись с иконкой спрайта
+        if (name) node.innerHTML = iconText(name, tr(node.getAttribute('data-tr')));
+        else node.innerText = tr(node.getAttribute('data-tr'));
+    });
     screen.querySelectorAll('[data-tr-placeholder]').forEach(node => { node.placeholder = tr(node.getAttribute('data-tr-placeholder')); });
     screen.querySelectorAll('[data-kid-number]').forEach(node => { node.innerText = tr('kids_row_title', { n: node.getAttribute('data-kid-number') }); });
     kidsForm.rows.forEach(row => {
@@ -1485,7 +1499,7 @@ function renderParentCard() {
             ${infoRow(tr('parent_name'), user.parent_name || '—')}
             ${infoRow(tr('parent_age'), user.parent_age ? String(user.parent_age) : '—')}
             ${infoRow(tr('parent_role'), roleLabel(user.parent_role) || '—')}
-            <button class="kid-btn info-card__btn" type="button" onclick="startParentEdit()">✏️ ${escapeHtml(tr('kids_btn_edit'))}</button>`;
+            <button class="kid-btn info-card__btn" type="button" onclick="startParentEdit()">${iconText('edit', tr('kids_btn_edit'))}</button>`;
         return;
     }
     const known = PARENT_ROLES.some(([role]) => role === user.parent_role);
@@ -1578,7 +1592,7 @@ function firstStoryMarkup(state) {
         const text = tr(firstStoryResult.sent ? 'first_story_done_text' : 'first_story_done_unsent', { name });
         return `
         <div class="first-story first-story--done" data-first-story-state="done">
-            <div class="first-story__head"><span class="first-story__icon" aria-hidden="true">✅</span><span class="first-story__title">${escapeHtml(tr('first_story_done_title'))}</span></div>
+            <div class="first-story__head"><span class="first-story__icon" aria-hidden="true">${icon('check-star', 'ic--ok')}</span><span class="first-story__title">${escapeHtml(tr('first_story_done_title'))}</span></div>
             <p class="first-story__text">${text}</p>
             <button type="button" class="first-story__btn" data-first-story-action="read">${escapeHtml(tr('first_story_read_btn'))}</button>
         </div>`;
@@ -1586,7 +1600,7 @@ function firstStoryMarkup(state) {
     const busy = state === 'busy';
     return `
         <div class="first-story" data-first-story-state="${state}">
-            <div class="first-story__head"><span class="first-story__icon" aria-hidden="true">🌙</span><span class="first-story__title">${escapeHtml(tr('first_story_title'))}</span></div>
+            <div class="first-story__head"><span class="first-story__icon" aria-hidden="true">${icon('moon', 'ic--gold')}</span><span class="first-story__title">${escapeHtml(tr('first_story_title'))}</span></div>
             <p class="first-story__text">${escapeHtml(tr('first_story_text'))}</p>
             <button type="button" class="first-story__btn" data-first-story-action="start"${busy ? ' disabled aria-busy="true"' : ''}>${busy ? '<span class="first-story__spin" aria-hidden="true"></span>' + escapeHtml(tr('first_story_sending')) : escapeHtml(tr('first_story_btn'))}</button>
         </div>`;
@@ -1636,7 +1650,7 @@ function openFirstStorySheet() {
     if (list) {
         list.innerHTML = allChildren.map(child => `
             <button type="button" class="first-story-choice" data-first-story-action="pick" data-child-id="${escapeHtml(child.id)}">
-                <span class="first-story-choice__name">${escapeHtml(child.name)} ${child.gender === 'M' ? '👦' : '👧'}</span>
+                <span class="first-story-choice__name"><span>${escapeHtml(child.name)}</span>${icon(child.gender === 'M' ? 'boy' : 'girl')}</span>
                 <span class="first-story-choice__meta">${languageBadge(child.language)}</span>
             </button>`).join('');
     }
@@ -1804,7 +1818,7 @@ function createStoryCard(st) {
                 <div class="story-title">${escapeHtml(st.title)}${childName}</div>
                 <div class="story-date">${escapeHtml(date)}${st.locked ? ' · ' + escapeHtml(tr('story_locked')) : ''}</div>
             </div>
-            <div class="story-icon">${st.locked ? '🔒' : '📖'}</div>
+            <div class="story-icon">${icon(st.locked ? 'lock' : 'tales')}</div>
         </div>`;
 }
 async function openReader(storyId, options) {
@@ -1923,7 +1937,7 @@ function shareInlineIndex(paragraphs) {
 }
 function shareInlineHtml() {
     const label = escapeHtml(tr('share_btn'));
-    return `<div class="share-inline"><button type="button" class="share-btn share-btn--inline" data-share-action="open" data-label="${label}" aria-label="${label}"></button></div>`;
+    return `<div class="share-inline"><button type="button" class="share-btn share-btn--inline" data-share-action="open" data-label="${label}" aria-label="${label}">${icon('share')}</button></div>`;
 }
 function readerTextHtml(rawText) {
     const paragraphs = String(rawText || '').split('\n').filter(p => p.trim());
@@ -1936,7 +1950,7 @@ const reportState = { marking: false, open: false, sending: false, fragment: '',
 
 function applyReportTexts() {
     setText('readerReportBtn', tr('report_btn'));
-    setText('readerReportEndBtn', tr('report_end_btn'));
+    setIconText('readerReportEndBtn', 'edit', tr('report_end_btn'));
     setText('reportHintTitle', tr('report_hint'));
     setText('reportHintSub', tr('report_hint_sub'));
     setText('reportUseSelectionBtn', tr('report_use_selection'));
@@ -2102,7 +2116,7 @@ function canTelegramCard() {
     try { return !!(tg && typeof tg.shareMessage === 'function' && (!tg.isVersionAtLeast || tg.isVersionAtLeast('8.0'))); } catch (e) { return false; }
 }
 function applyShareTexts() {
-    setText('readerShareBtn', tr('share_btn'));
+    setIconText('readerShareBtn', 'share', tr('share_btn'));
     document.querySelectorAll('.share-btn--inline').forEach((button) => {
         button.setAttribute('data-label', tr('share_btn'));
         button.setAttribute('aria-label', tr('share_btn'));
@@ -2118,8 +2132,8 @@ function updateShareButtons() {
     const telegram = el('shareTelegramBtn');
     const link = el('shareLinkBtn');
     const ready = !!shareState.data && !shareState.loading;
-    if (telegram) { telegram.innerText = shareState.loading ? tr('share_loading') : tr('share_telegram'); telegram.disabled = !ready; }
-    if (link) { link.innerText = canNativeShare() ? tr('share_link') : tr('share_copy'); link.disabled = !ready; }
+    if (telegram) { telegram.innerHTML = shareState.loading ? escapeHtml(tr('share_loading')) : iconText('send', tr('share_telegram')); telegram.disabled = !ready; }
+    if (link) { link.innerHTML = iconText('link', canNativeShare() ? tr('share_link') : tr('share_copy')); link.disabled = !ready; }
     const stop = el('shareStopBtn');
     if (stop) stop.hidden = !shareState.wasShared;
 }
@@ -2291,7 +2305,7 @@ function renderFeedbackBlocks(story) {
         if (stars) stars.style.display = 'none';
         if (ratingThanks) {
             ratingThanks.style.display = 'block';
-            ratingThanks.innerText = `${tr('feedback_your_rating')} ${'⭐'.repeat(Math.min(5, Number(story.rating) || 0))}`;
+            ratingThanks.innerHTML = `${escapeHtml(tr('feedback_your_rating'))} <span class="rating-thanks__stars">${icon('star-fill', 'ic--gold').repeat(Math.min(5, Number(story.rating) || 0))}</span>`;
         }
     } else {
         if (stars) stars.style.display = 'flex';
@@ -2502,7 +2516,7 @@ function renderAudioQueued(storyId) {
     // Одна карточка и для «в очереди», и для «озвучивается»: место в очереди и время ожидания не показываем
     container.innerHTML = `
         <div class="audio-card audio-card--loading" role="status" data-story-id="${escapeHtml(storyId)}">
-            ${audioHeader('⏳', tr('audio_processing_title'), tr('audio_queued_desc'))}
+            ${audioHeader(icon('hourglass'), tr('audio_processing_title'), tr('audio_queued_desc'))}
             <span class="audio-spinner" aria-hidden="true"></span>
         </div>
     `;
@@ -2550,7 +2564,7 @@ function renderAudioLoadError(storyId) {
     if (!container) return;
     container.innerHTML = `
         <div class="audio-card audio-card--error">
-            ${audioHeader('⚠️', tr('audio_load_error'))}
+            ${audioHeader(icon('warning'), tr('audio_load_error'))}
             <button class="audio-btn audio-btn--ghost" type="button" data-audio-action="retry" data-story-id="${escapeHtml(storyId)}">
                 <span>${escapeHtml(tr('audio_retry'))}</span>
             </button>
@@ -2721,7 +2735,7 @@ function updateAudioInterface(storyId, audioUrl, left) {
     if (url) {
         container.innerHTML = `
             <div class="audio-card audio-card--ready">
-                ${audioHeader('🎧', tr('audio_ready'), tr('audio_ready_desc'))}
+                ${audioHeader(icon('headphones'), tr('audio_ready'), tr('audio_ready_desc'))}
                 ${audioPlayerMarkup(url, storyId)}
             </div>
         `;
@@ -2732,9 +2746,9 @@ function updateAudioInterface(storyId, audioUrl, left) {
     if (left > 0) {
         container.innerHTML = `
             <div class="audio-card audio-card--free">
-                ${audioHeader('🎙️', tr('audio_gen_title'), tr('audio_gen_desc'), tr('audio_left_chip', { left }))}
+                ${audioHeader(icon('mic'), tr('audio_gen_title'), tr('audio_gen_desc'), tr('audio_left_chip', { left }))}
                 <button id="btn-gen-audio" class="audio-btn audio-btn--primary" type="button" data-audio-action="generate" data-story-id="${id}">
-                    <span class="audio-btn__icon">🎙️</span>
+                    <span class="audio-btn__icon">${icon('mic')}</span>
                     <span>${escapeHtml(tr('audio_gen_btn'))}</span>
                 </button>
             </div>
@@ -2752,10 +2766,10 @@ function updateAudioInterface(storyId, audioUrl, left) {
     container.innerHTML = `
         <div class="audio-card audio-card--paid">
             ${startPlan
-                ? audioHeader('🎙️', tr('audio_pay_title'), tr('audio_pay_desc'))
-                : audioHeader('🔒', tr('audio_limit_title'), tr('audio_limit_desc'))}
+                ? audioHeader(icon('mic'), tr('audio_pay_title'), tr('audio_pay_desc'))
+                : audioHeader(icon('lock'), tr('audio_limit_title'), tr('audio_limit_desc'))}
             <button id="btn-buy-audio" class="audio-btn audio-btn--secondary" type="button" data-audio-action="buy" data-story-id="${id}">
-                <span class="audio-btn__icon">💳</span>
+                <span class="audio-btn__icon">${icon('card')}</span>
                 <span>${escapeHtml(buyLabel)}</span>
             </button>
         </div>
@@ -2766,7 +2780,7 @@ async function requestAudioGeneration(storyId) {
     const btn = el('btn-gen-audio');
     if (!btn || btn.disabled) return;
 
-    btn.innerHTML = `<span class="audio-btn__icon">⏳</span><span>${escapeHtml(tr('audio_gen_progress'))}</span>`;
+    btn.innerHTML = `<span class="audio-btn__icon">${icon('hourglass')}</span><span>${escapeHtml(tr('audio_gen_progress'))}</span>`;
     btn.disabled = true;
     btn.classList.add('is-loading');
 
@@ -2794,7 +2808,7 @@ async function requestAudioGeneration(storyId) {
         }
         showAlert(err.message || tr('audio_error'));
         if (btn.isConnected) {
-            btn.innerHTML = `<span class="audio-btn__icon">🎙️</span><span>${escapeHtml(tr('audio_gen_retry'))}</span>`;
+            btn.innerHTML = `<span class="audio-btn__icon">${icon('mic')}</span><span>${escapeHtml(tr('audio_gen_retry'))}</span>`;
             btn.disabled = false;
             btn.classList.remove('is-loading');
         }
@@ -2808,7 +2822,7 @@ async function buyAudioGeneration(storyId) {
     if (btn) {
         if (btn.disabled) return;
         btn.dataset.label = btn.innerHTML;
-        btn.innerHTML = `<span class="audio-btn__icon">⏳</span><span>${escapeHtml(tr('audio_pay_opening'))}</span>`;
+        btn.innerHTML = `<span class="audio-btn__icon">${icon('hourglass')}</span><span>${escapeHtml(tr('audio_pay_opening'))}</span>`;
         btn.disabled = true;
     }
 

@@ -1118,3 +1118,55 @@ button.kids-form__add:disabled { opacity: 0.5; }
 
 /* Четыре вкладки в нижней панели: подписи компактнее */
 .tab-label { font-size: 10px; letter-spacing: 0.2px; }
+
+/* ===================== Иконки интерфейса (SVG-спрайт в index.html) =====================
+   Размер — 1em от шрифта контейнера, цвет — цвет текста. Подпись рядом — <span> после иконки. */
+.ic { display: inline-block; width: 1em; height: 1em; flex: 0 0 auto; vertical-align: -0.14em; overflow: visible; pointer-events: none; }
+.ic + span { margin-left: 0.42em; }
+span + .ic { margin-left: 0.38em; }
+.ic--gold { color: var(--gold-main); }
+.ic--ok { color: #34d399; }
+.ic--bad { color: #f87171; }
+.ic--glow { filter: drop-shadow(0 0 6px rgba(250, 204, 21, 0.45)); }
+body.light-theme .ic--ok { color: #047857; }
+body.light-theme .ic--bad { color: #b91c1c; }
+body.light-theme .ic--glow { filter: none; }
+/* Контейнеры, где иконка и подпись уже разделены отступом (flex + gap) — без двойного отступа */
+.section-title .ic + span, .status-badge .ic + span { margin-left: 0; }
+.status-badge .ic { font-size: 16px; }
+/* Нижнее меню */
+.tab-icon { display: inline-flex; font-size: 25px; line-height: 1; }
+.tab-item.active .tab-icon .ic { filter: drop-shadow(0 0 6px rgba(250, 204, 21, 0.45)); }
+body.light-theme .tab-item.active .tab-icon .ic { filter: none; }
+/* Крупные иконки состояний и замок пейволла — золотые */
+.app-state-icon, .paywall-icon { color: var(--gold-main); line-height: 1; }
+.paywall-icon .ic { vertical-align: middle; }
+.success-icon { display: inline-flex; font-size: 22px; line-height: 1; }
+.story-icon { display: grid; place-items: center; color: var(--gold-main); font-size: 22px; line-height: 1; }
+/* Тарифы: иконка тарифа и пунктов — цветом тарифа */
+.tariff-card__icon { color: rgb(var(--tariff-accent)); }
+.tariff-card__icon .ic { font-size: 28px; }
+.tariff-feature__icon { color: rgb(var(--tariff-accent)); font-size: 17px; }
+.tariff-badge .ic { vertical-align: -0.16em; }
+/* Озвучка */
+.audio-card__icon .ic { font-size: 26px; }
+.audio-btn .audio-btn__icon { display: inline-flex; }
+/* Кнопки закрытия шторок */
+.tariff-sheet__close { display: grid; place-items: center; padding: 0; }
+.tariff-sheet__close .ic { font-size: 18px; }
+/* Звёзды оценки: заливка цветом звезды (серый / золотой) */
+.stars span { display: inline-flex; }
+.stars .ic { vertical-align: top; }
+.rating-thanks__stars { white-space: nowrap; }
+.rating-thanks__stars .ic { font-size: 18px; vertical-align: -0.2em; }
+.rating-thanks__stars .ic + .ic { margin-left: 2px; }
+/* «Поделиться» внутри текста: иконка перед подписью из data-label */
+.share-btn--inline .ic { margin-right: 0.42em; }
+/* Имя в выборе «Для кого сказка» и пол в форме ребёнка */
+.first-story-choice__name .ic { color: var(--gold-main); }
+.radio-label .ic { font-size: 1.15em; }
+.reader-promo-cta .ic { color: var(--gold-main); }
+
+.audio-card__icon { color: rgb(var(--audio-accent)); }
+#promoTimerTitle .ic { color: #f97316; }
+body.light-theme #promoTimerTitle .ic { color: #c2410c; }
