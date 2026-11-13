@@ -239,6 +239,8 @@ window.langEN = {
     first_story_text: "No need to wait for the evening: we'll send a tale right away. And at 21:00 another one arrives, as usual.",
     first_story_btn: "Get the first tale now",
     first_story_sending: "Sending the tale...",
+    share_pick_title: "Which tale to share?",
+    share_pick_sub: "Pick a tale to send to grandparents or friends.",
     first_story_pick_title: "Who is the tale for?",
     first_story_pick_sub: "Pick your child — a tale with their name arrives right away.",
     first_story_close: "Close",
