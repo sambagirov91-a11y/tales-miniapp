@@ -11,9 +11,9 @@
     <link rel="stylesheet" href="style.css?v=18">
     
     <!-- Подключаем внешние файлы со словарями для 3 языков -->
-<script src="miniapp-ru.js?v=28"></script>
-<script src="miniapp-uz.js?v=28"></script>
-<script src="miniapp-en.js?v=28"></script>
+<script src="miniapp-ru.js?v=29"></script>
+<script src="miniapp-uz.js?v=29"></script>
+<script src="miniapp-en.js?v=29"></script>
 </head>
 <body>
     <!-- Иконки интерфейса «Шахерезады» (SVG-спрайт, ~11 КБ, ~2,3 КБ в сжатии): <svg class="ic"><use href="#i-имя"></use></svg>. Иконки правятся прямо здесь (viewBox 24×24, линия 1.8, цвет currentColor) -->
@@ -408,6 +408,22 @@
         </div>
     </div>
 
+    <!-- ОКНО «ЧЬЕЙ СКАЗКОЙ ПОДЕЛИТЬСЯ?» (кнопка «Поделиться» в вечернем сообщении семье с несколькими детьми) -->
+    <div id="sharePickSheet" class="tariff-sheet" role="dialog" aria-modal="true" aria-labelledby="sharePickTitle" hidden>
+        <div class="tariff-sheet__backdrop" data-share-pick-action="close"></div>
+        <div class="tariff-sheet__panel" tabindex="-1">
+            <div class="tariff-sheet__grab" aria-hidden="true"></div>
+            <header class="tariff-sheet__head">
+                <div class="tariff-sheet__heading">
+                    <h2 id="sharePickTitle" class="tariff-sheet__title">Чьей сказкой поделиться?</h2>
+                    <p id="sharePickSub" class="tariff-sheet__sub"></p>
+                </div>
+                <button id="sharePickClose" class="tariff-sheet__close" type="button" data-share-pick-action="close" aria-label="Закрыть"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-close" xlink:href="#i-close"></use></svg></button>
+            </header>
+            <div id="sharePickChoices" class="first-story-choices"></div>
+        </div>
+    </div>
+
     <!-- ОКНО «ДЛЯ КОГО ПРИСЛАТЬ СКАЗКУ?» (когда в профиле несколько детей) -->
     <div id="firstStorySheet" class="tariff-sheet" role="dialog" aria-modal="true" aria-labelledby="firstStorySheetTitle" hidden>
         <div class="tariff-sheet__backdrop" data-first-story-action="close"></div>
@@ -444,6 +460,6 @@
     <!-- Основной скрипт логики Mini App -->
     <!-- Алфавиты имени ребёнка: русская сказка — кириллица, узбекская и английская — латиница (копия name_script.js из репозитория Scheherazade) -->
     <script src="name-script.js?v=2"></script>
-    <script src="app.js?v=38"></script>
+    <script src="app.js?v=39"></script>
 </body>
 </html>

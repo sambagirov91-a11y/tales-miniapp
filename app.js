@@ -265,7 +265,24 @@ async function boot() {
     }
     const params = new URLSearchParams(window.location.search);
     const storyId = params.get('story_id');
-    if (storyId && profileData && profileData.user && profileData.user.profile_complete) {
+    const profileReady = !!(profileData && profileData.user && profileData.user.profile_complete);
+    // Вечернее сообщение семье с несколькими детьми: кнопка «Поделиться» передаёт сказки вечера (share_pick=id1,id2,…),
+    // сначала спрашиваем, чьей сказкой поделиться. Сообщение «Тариф закончился» и напоминания об окончании
+    // открывают сразу окно тарифов (open=tariffs). Параметры убираем, чтобы при перезагрузке окна не открывались снова.
+    const sharePick = (params.get('share_pick') || '').split(',').map(s => s.trim()).filter(Boolean);
+    const openParam = params.get('open');
+    if (sharePick.length || openParam) {
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete('share_pick');
+        cleanUrl.searchParams.delete('open');
+        window.history.replaceState({}, '', cleanUrl.toString());
+    }
+    if (openParam === 'tariffs' && profileReady) {
+        openTariffs('bot');
+    } else if (sharePick.length && profileReady) {
+        switchAppTab('stories');
+        openSharePickSheet(sharePick);
+    } else if (storyId && profileReady) {
         switchAppTab('stories');
         // Кнопка «Поделиться» под сказкой в боте открывает читалку сразу с окном «Поделиться» (share=1).
         // Параметр убираем, чтобы при перезагрузке окно не открывалось снова.
@@ -2165,6 +2182,56 @@ async function openShareSheet() {
         if (shareState.storyId === storyId) { shareState.loading = false; updateShareButtons(); }
     }
 }
+// ---------------------------------------------------------------------
+// ОКНО «ЧЬЕЙ СКАЗКОЙ ПОДЕЛИТЬСЯ?» (вечернее сообщение семье с несколькими детьми)
+// ---------------------------------------------------------------------
+// Выбор открывает читалку этой сказки сразу с окном «Поделиться» — как кнопка под сказкой у семьи с одним ребёнком.
+let sharePickOpen = false;
+async function openSharePickSheet(storyIds) {
+    const sheet = el('sharePickSheet');
+    if (!sheet) return;
+    try {
+        const data = await api('/api/app/stories');
+        userStories = data.stories || [];
+        renderStoriesList();
+    } catch (err) {
+        console.error('Чьей сказкой поделиться: сказки не загрузились:', err);
+    }
+    const wanted = storyIds.map(String);
+    const stories = wanted.map(id => userStories.find(s => String(s.id) === id)).filter(st => st && !st.locked);
+    if (!stories.length) return;
+    if (stories.length === 1) { openReader(stories[0].id, { share: true }); return; }
+    setText('sharePickTitle', tr('share_pick_title'));
+    setText('sharePickSub', tr('share_pick_sub'));
+    const close = el('sharePickClose');
+    if (close) close.setAttribute('aria-label', tr('first_story_close'));
+    const list = el('sharePickChoices');
+    if (list) {
+        list.innerHTML = stories.map(st => `
+            <button type="button" class="first-story-choice" data-share-pick="${escapeHtml(st.id)}">
+                <span class="first-story-choice__name"><span>${escapeHtml(st.child_name || '')}</span></span>
+                <span class="first-story-choice__meta">${escapeHtml(st.title || '')}</span>
+            </button>`).join('');
+    }
+    sharePickOpen = true;
+    sheet.hidden = false;
+    document.body.classList.add('sheet-open');
+    haptic('select');
+}
+function closeSharePickSheet() {
+    sharePickOpen = false;
+    const sheet = el('sharePickSheet');
+    if (sheet) sheet.hidden = true;
+    if (!tariffSheetOpen && !shareState.open) document.body.classList.remove('sheet-open');
+}
+document.addEventListener('click', (event) => {
+    const pick = event.target.closest('[data-share-pick]');
+    if (pick) { const id = pick.getAttribute('data-share-pick'); closeSharePickSheet(); openReader(id, { share: true }); return; }
+    if (event.target.closest('[data-share-pick-action="close"]')) closeSharePickSheet();
+});
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && sharePickOpen) closeSharePickSheet();
+});
 function closeShareSheet() {
     const sheet = el('shareSheet');
     if (sheet) sheet.hidden = true;

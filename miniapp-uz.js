@@ -239,6 +239,8 @@ window.langUZ = {
     first_story_text: "Kechgacha kutib o'tirmang: ertakni darhol yuboramiz. Soat 21:00 da esa odatdagidek yana bittasi keladi.",
     first_story_btn: "Birinchi ertakni hozir olish",
     first_story_sending: "Ertak yuborilmoqda...",
+    share_pick_title: "Qaysi ertakni ulashamiz?",
+    share_pick_sub: "Ertakni tanlang — uni buvi, bobo yoki doʻstlarga yuborasiz.",
     first_story_pick_title: "Ertakni kimga yuboramiz?",
     first_story_pick_sub: "Farzandingizni tanlang — uning ismi bilan ertak darhol keladi.",
     first_story_close: "Yopish",
