@@ -776,6 +776,8 @@ function renderBanners() {
 // Цены, лимиты и дедлайн акции решает сервер — здесь только показ.
 // =====================================================================
 const TARIFF_ICONS = { start: 'sprout', baby: 'teddy', kids: 'balloon' };   // символы спрайта иконок
+const TARIFF_ORDER = ['baby', 'start', 'kids'];   // порядок карточек в окне: сначала самый популярный
+const TARIFF_POPULAR = 'baby';                    // на этой карточке бейдж «Популярный"
 let tariffSheetOpen = false;
 let tariffTimerInterval = null;
 let payingTariff = false;
@@ -923,15 +925,18 @@ function tariffCardMarkup(item, context) {
     const blocked = item.state === 'blocked_children';
     const price = priceParts(promo ? item.promo_amount : item.price_amount);
 
+    // Три короткие колонки: дети, сказка каждый вечер, озвучки (цена доп. озвучки — в подписи под карточками)
     const features = [
         ['kids', item.max_children === 1 ? tr('tariff_children_one') : tr('tariff_children_many', { n: item.max_children })],
-        ['mic', item.voiceovers === 1 ? tr('tariff_voiceovers_one') : item.voiceovers > 0 ? tr('tariff_voiceovers_n', { n: item.voiceovers }) : tr('tariff_voiceovers_none')],
-        ['card', tr('tariff_extra_voiceover', { price: formatPrice(item.extra_voiceover_amount) })]
+        ['tales', tr('tariff_daily_tale')],
+        ['headphones', item.voiceovers === 1 ? tr('tariff_voiceovers_one') : item.voiceovers > 0 ? tr('tariff_voiceovers_n', { n: item.voiceovers }) : tr('tariff_voiceovers_none')]
     ].map(([name, text]) => `
-        <li class="tariff-feature"><span class="tariff-feature__icon" aria-hidden="true">${icon(name)}</span><span>${escapeHtml(text)}</span></li>`).join('');
+        <li class="tariff-feature"><span class="tariff-feature__icon" aria-hidden="true">${icon(name)}</span><span class="tariff-feature__text">${escapeHtml(text)}</span></li>`).join('');
 
+    // Бейдж: «Ваш тариф» важнее акции, акция важнее «Популярного»
     const badge = current ? `<span class="tariff-badge tariff-badge--current">${escapeHtml(tr('tariff_badge_current'))}</span>`
-        : (promo ? `<span class="tariff-badge tariff-badge--promo">${iconText('flame', tr('tariff_badge_promo'))}</span>` : '');
+        : (promo ? `<span class="tariff-badge tariff-badge--promo">${iconText('flame', tr('tariff_badge_promo'))}</span>`
+        : (item.id === TARIFF_POPULAR ? `<span class="tariff-badge tariff-badge--popular">${iconText('crown', tr('tariff_badge_popular'))}</span>` : ''));
 
     const oldPrice = promo ? `<span class="tariff-price__old">${escapeHtml(formatPrice(item.price_amount))}</span>` : '';
     const promoLine = promo ? `
@@ -959,15 +964,15 @@ function tariffCardMarkup(item, context) {
                     <h3 class="tariff-card__name">${escapeHtml(tariffName(item.id))}</h3>
                     <p class="tariff-card__tag">${escapeHtml(tr('tariff_' + item.id + '_tag'))}</p>
                 </div>
-            </header>
-            <div class="tariff-price">
-                ${oldPrice}
-                <div class="tariff-price__row">
-                    <span class="tariff-price__num">${escapeHtml(price.number)}</span>
-                    <span class="tariff-price__cur">${escapeHtml(price.currency)}</span>
+                <div class="tariff-price">
+                    ${oldPrice}
+                    <div class="tariff-price__row">
+                        <span class="tariff-price__num">${escapeHtml(price.number)}</span>
+                        <span class="tariff-price__cur">${escapeHtml(price.currency)}</span>
+                    </div>
                     <span class="tariff-price__per">${escapeHtml(tr('tariff_per_period'))}</span>
                 </div>
-            </div>
+            </header>
             ${promoLine}
             <ul class="tariff-features">${features}</ul>
             ${action}
@@ -995,7 +1000,17 @@ function renderTariffSheet() {
     if (noteNode) { noteNode.textContent = note; noteNode.style.display = note ? 'block' : 'none'; }
 
     const cards = el('tariffCards');
-    if (cards) cards.innerHTML = t.items.map(item => tariffCardMarkup(item, { t, switching })).join('');
+    const rank = (id) => { const i = TARIFF_ORDER.indexOf(id); return i === -1 ? TARIFF_ORDER.length : i; };
+    const items = t.items.slice().sort((a, b) => rank(a.id) - rank(b.id));   // порядок не зависит от ответа сервера
+    if (cards) cards.innerHTML = items.map(item => tariffCardMarkup(item, { t, switching })).join('');
+    // Цена доп. озвучки — одной строкой под карточками, если она одинакова на всех тарифах
+    const extra = items.map(i => i.extra_voiceover_amount);
+    const foot = el('tariffFoot');
+    if (foot) {
+        const same = extra.length > 0 && extra.every(v => v !== null && v !== undefined && v === extra[0]);
+        foot.textContent = same ? tr('tariff_foot_extra', { price: formatPrice(extra[0]) }) : '';
+        foot.style.display = same ? 'block' : 'none';
+    }
 
     if (tariffTimerInterval) { clearInterval(tariffTimerInterval); tariffTimerInterval = null; }
     if (payment.promo_active && payment.promo_deadline && t.items.some(i => i.promo_amount)) {
