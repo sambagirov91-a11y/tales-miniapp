@@ -549,6 +549,24 @@ function checkCustomRole(value) {
     if (input) input.style.display = value === 'Другое' ? 'block' : 'none';
 }
 
+// Выбор роли карточкой на экране регистрации: значение хранится в скрытом поле (по-русски, для базы)
+function pickParentRole(value) {
+    const hidden = el('parentRoleSelect');
+    if (hidden) hidden.value = value;
+    document.querySelectorAll('#parentModal .reg-role').forEach(card => {
+        card.classList.toggle('is-on', card.dataset.role === value);
+    });
+    checkCustomRole(value);
+    if (value === 'Другое') { const input = el('customParentRole'); if (input) input.focus(); }
+}
+window.pickParentRole = pickParentRole;
+
+// Заголовок поля на экране регистрации: иконка остаётся, меняется только текст в span
+function setRegLabel(id, text) { const node = document.querySelector('#' + id + ' span'); if (node) node.innerText = text; }
+
+// Подпись на кнопке «Продолжить» (внутри кнопки ещё стрелка, поэтому меняем только span)
+function setParentBtnLabel(text) { setText('saveParentBtnText', text); }
+
 window.toggleParentBtn = function () {
     const privacy = el('cbPrivacy');
     const offer = el('cbOffer');
@@ -556,8 +574,6 @@ window.toggleParentBtn = function () {
     if (!privacy || !offer || !button) return;
     const enabled = privacy.checked && offer.checked;
     button.disabled = !enabled;
-    button.style.background = enabled ? '#9333ea' : '#4b5563';
-    button.style.cursor = enabled ? 'pointer' : 'not-allowed';
 };
 async function saveParentInfo() {
     const parentName = (el('parentNameInput') ? el('parentNameInput').value : '').trim();
@@ -572,7 +588,7 @@ async function saveParentInfo() {
     if (!agreedPrivacy || !agreedOffer) return showAlert(tr('alert_accept_terms'));
 
     const button = el('saveParentBtn');
-    if (button) { button.innerText = tr('saving'); button.disabled = true; }
+    if (button) { setParentBtnLabel(tr('saving')); button.disabled = true; }
 
     try {
         await api('/api/app/parent', {
@@ -585,7 +601,7 @@ async function saveParentInfo() {
         console.error(err);
         showAlert(err.message || tr('error_generic'));
     } finally {
-        if (button) { button.innerText = tr('saveParentBtn'); button.disabled = false; }
+        if (button) { setParentBtnLabel(tr('saveParentBtn')); button.disabled = false; }
         window.toggleParentBtn();
     }
 }
@@ -642,9 +658,9 @@ function applyLanguage() {
     setText('aliceSuccessPhrase', ALICE_SKILL_PHRASE);
     setText('modalTitle', tr('modalTitle'));
     setText('modalSub', tr('modalSub'));
-    setText('labelParentName', tr('labelParentName'));
+    setRegLabel('labelParentName', tr('labelParentName'));
     setPlaceholder('parentNameInput', tr('parentNamePlaceholder'));
-    setText('labelParentRole', tr('labelParentRole'));
+    setRegLabel('labelParentRole', tr('labelParentRole'));
     setText('roleMother', tr('roleMother'));
     setText('roleFather', tr('roleFather'));
     setText('roleGrandma', tr('roleGrandma'));
@@ -652,13 +668,13 @@ function applyLanguage() {
     setText('roleNanny', tr('roleNanny'));
     setText('roleOther', tr('roleOther'));
     setPlaceholder('customParentRole', tr('customRolePlaceholder'));
-    setText('labelParentAge', tr('labelParentAge'));
+    setRegLabel('labelParentAge', tr('labelParentAge'));
     setPlaceholder('parentAgeInput', tr('parentAgePlaceholder'));
     const privacyText = el('textPrivacy');
     if (privacyText) privacyText.innerHTML = tr('textPrivacy');
     const offerText = el('textOffer');
     if (offerText) offerText.innerHTML = tr('textOffer');
-    setText('saveParentBtn', tr('saveParentBtn'));
+    setParentBtnLabel(tr('saveParentBtn'));
     setIconText('lblChildren', 'kids', tr('lbl_children'));
     setIconText('lblNewStories', 'sparkles', tr('lbl_new_stories'));
     setIconText('lblArchiveStories', 'tales', tr('lbl_archive_stories'));

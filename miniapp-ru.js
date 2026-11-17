@@ -253,10 +253,10 @@ window.langRU = {
 
     // Анкета родителя
     modalTitle: "Расскажите о себе",
-    modalSub: "Это поможет нам сделать сказки еще лучше:",
+    modalSub: "Это поможет нам сделать сказки для вашего ребёнка ещё интереснее и теплее 💜",
     labelParentName: "Ваше имя",
-    parentNamePlaceholder: "Например: Искандер",
-    labelParentRole: "Кто вы для ребенка?",
+    parentNamePlaceholder: "Введите ваше имя",
+    labelParentRole: "Кто вы для ребёнка?",
     roleMother: "Мама",
     roleFather: "Папа",
     roleGrandma: "Бабушка",
@@ -265,7 +265,7 @@ window.langRU = {
     roleOther: "Другое",
     customRolePlaceholder: "Укажите кто вы...",
     labelParentAge: "Ваш возраст",
-    parentAgePlaceholder: "Например: 32",
+    parentAgePlaceholder: "Сколько вам лет",
     textPrivacy: 'Ознакомлен и согласен с <a href="#" data-config-link="privacy_url">политикой конфиденциальности</a>',
     textOffer: 'Принимаю условия <a href="#" data-config-link="offer_url">договора оферты</a>',
     saveParentBtn: "Продолжить",
