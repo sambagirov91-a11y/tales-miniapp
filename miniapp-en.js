@@ -133,7 +133,7 @@ window.langEN = {
     tariff_sheet_title_choose: "Choose a plan",
     tariff_sheet_title_change: "Change plan",
     tariff_sheet_sub: "A new tale every evening at 21:00 on any plan. Billed per 30 days.",
-    tariff_note_trial: "Your free days are kept: the subscription starts after the trial ends.",
+    tariff_note_trial: "Your free days won't be lost — they are added to the plan you choose.",
     tariff_note_legacy: "Your subscription was set up on the previous terms and is valid until {date}. Choose a plan — the days you paid for are kept.",
     tariff_note_change: "A plan change starts right away: the remaining days of your current plan are not carried over. “Renew” adds 30 days to the current period.",
     tariff_start_name: "Start",

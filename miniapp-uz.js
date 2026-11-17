@@ -133,7 +133,7 @@ window.langUZ = {
     tariff_sheet_title_choose: "Tarifni tanlang",
     tariff_sheet_title_change: "Tarifni almashtirish",
     tariff_sheet_sub: "Har kuni kechqurun soat 21:00 da yangi ertak — istalgan tarifda. To'lov 30 kun uchun.",
-    tariff_note_trial: "Bepul kunlar yo'qolmaydi: obuna sinov muddati tugagach boshlanadi.",
+    tariff_note_trial: "Bepul kunlar yonib ketmaydi, ular tanlangan tarifga qo'shiladi.",
     tariff_note_legacy: "Obunangiz avvalgi shartlar bilan rasmiylashtirilgan va {date} gacha amal qiladi. Tarifni tanlang — to'langan kunlar saqlanadi.",
     tariff_note_change: "Tarif almashtirilsa, u darhol boshlanadi: joriy tarifning qolgan kunlari o'tkazilmaydi. «Uzaytirish» joriy davrga 30 kun qo'shadi.",
     tariff_start_name: "Start",
