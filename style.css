@@ -899,7 +899,7 @@ body.light-theme .tariff-sheet__backdrop { background: rgba(69, 26, 3, 0.45); }
     border: 1px solid var(--glass-border); background: rgba(128, 128, 128, 0.15); color: var(--text-main); font-size: 15px;
 }
 .tariff-note {
-    margin: 0 0 12px; padding: 8px 12px; font-size: 12px; line-height: 1.4; color: var(--text-main);
+    margin: 10px 0 0; padding: 8px 12px; font-size: 12px; line-height: 1.4; color: var(--text-main);
     border-radius: 14px; border: 1px dashed rgba(250, 204, 21, 0.5); background: rgba(250, 204, 21, 0.08);
 }
 body.light-theme .tariff-note { border-color: rgba(180, 83, 9, 0.45); background: rgba(180, 83, 9, 0.07); }
