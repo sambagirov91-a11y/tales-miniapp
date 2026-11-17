@@ -38,6 +38,12 @@ let currentStory = null;
 // ВСПОМОГАТЕЛЬНОЕ
 // =====================================================================
 function detectInitialLang() {
+    // Язык, выбранный в боте на первом экране (кнопка мини-аппа открывается с ?lang=uz), важнее языка Telegram:
+    // у человека без аккаунта в базе языка ещё нет (17.11.2026)
+    try {
+        const fromUrl = String(new URLSearchParams(window.location.search).get('lang') || '').toLowerCase();
+        if (['ru', 'uz', 'en'].includes(fromUrl)) return fromUrl;
+    } catch (e) { /* без адреса — по языку Telegram */ }
     const code = String(tg && tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user.language_code || '' : '').toLowerCase();
     if (code.startsWith('uz')) return 'uz';
     if (code.startsWith('en')) return 'en';
