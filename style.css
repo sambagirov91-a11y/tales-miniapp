@@ -1239,3 +1239,40 @@ body.light-theme .tab-item.active .tab-icon .ic { filter: none; }
 .audio-card__icon { color: rgb(var(--audio-accent)); }
 #promoTimerTitle .ic { color: #f97316; }
 body.light-theme #promoTimerTitle .ic { color: #c2410c; }
+
+/* =====================================================================
+   ЭКРАН РЕГИСТРАЦИИ (анкета родителя) — всегда тёмный, как в референсе
+   ===================================================================== */
+.reg-overlay { position: fixed; inset: 0; z-index: 9999; overflow-y: auto; background: #1b1331; color: #fff; -webkit-overflow-scrolling: touch; }
+.reg { position: relative; max-width: 440px; min-height: 100%; margin: 0 auto; padding: 58px 22px 32px; overflow: hidden; box-sizing: border-box; background: radial-gradient(120% 55% at 85% 0%, #2b2060 0%, rgba(43, 32, 96, 0) 60%); }
+.reg-head { position: relative; min-height: 118px; margin-bottom: 8px; }
+.reg-hero { position: absolute; right: -24px; top: -8px; width: 168px; height: auto; pointer-events: none; }
+.reg-head__text { position: relative; max-width: 236px; padding-top: 6px; }
+.reg-title { margin: 0 0 9px; font-size: 20px; font-weight: 800; line-height: 1.18; letter-spacing: -0.2px; color: #fff; }
+.reg-title::after { content: ""; display: inline-block; width: 22px; height: 18px; margin-left: 6px; vertical-align: -2px; background: url("img/reg/ic-spark.webp") center / contain no-repeat; }
+.reg-sub { max-width: 196px; margin: 0; font-size: 13.5px; line-height: 1.42; color: #cfc8e6; }
+.reg-field { margin-top: 26px; }
+.reg-label { display: flex; align-items: center; gap: 10px; margin: 0 0 9px; font-size: 16px; font-weight: 800; color: #fff; }
+.reg-label img { width: 22px; height: 22px; object-fit: contain; }
+.reg .reg-input { display: block; width: 100%; height: 50px; padding: 0 16px; border-radius: 15px; border: 1.5px solid #8a5cf0; background: rgba(255, 255, 255, 0.045); color: #fff; font: inherit; font-size: 16px; outline: none; box-sizing: border-box; -webkit-appearance: none; appearance: none; }
+.reg .reg-input::placeholder { color: #a59ec0; }
+.reg .reg-input:focus { box-shadow: 0 0 0 3px rgba(138, 92, 240, 0.28); }
+.reg .reg-input--custom { margin-top: 12px; }
+.reg-roles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.reg-role { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; height: 80px; padding: 6px 4px 4px; border-radius: 16px; border: 1.5px solid rgba(255, 255, 255, 0.08); background: #2b2043; color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: box-shadow 0.2s, background 0.2s; }
+.reg-role img { height: 38px; width: auto; max-width: 48px; object-fit: contain; }
+.reg-role__dots { display: flex; gap: 4px; height: 38px; align-items: center; }
+.reg-role__dots i { width: 5px; height: 5px; border-radius: 50%; background: #e9e3fb; }
+.reg-role.is-on { background: linear-gradient(160deg, #5a3d8f, #47306f); border: 2px solid #c2a3f7; box-shadow: 0 0 0 1px rgba(194, 163, 247, 0.25), 0 0 18px rgba(155, 102, 238, 0.6); }
+.reg-role.is-on::after { content: ""; position: absolute; top: -8px; right: -7px; width: 24px; height: 24px; border-radius: 50%; background: #e7dcff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237c4dde' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E") center / 16px no-repeat; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35); }
+.reg-sep { height: 1px; margin: 30px 0 22px; background: rgba(255, 255, 255, 0.1); }
+.reg-check { display: flex; align-items: center; gap: 12px; margin: 0 0 20px; font-size: 14px; line-height: 1.35; color: #e4def5; cursor: pointer; position: relative; }
+.reg-check input { position: absolute; opacity: 0; width: 24px; height: 24px; margin: 0; pointer-events: none; }
+.reg-check__box { flex: 0 0 auto; width: 24px; height: 24px; box-sizing: border-box; border-radius: 8px; border: 2px solid #8a5cf0; display: grid; place-items: center; }
+.reg-check input:checked + .reg-check__box { background: #9b66ee; border-color: #9b66ee; }
+.reg-check input:checked + .reg-check__box::after { content: ""; width: 14px; height: 14px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7'/%3E%3C/svg%3E") center / contain no-repeat; }
+.reg-check input:focus-visible + .reg-check__box { box-shadow: 0 0 0 3px rgba(138, 92, 240, 0.4); }
+.reg-check a { color: #b894f7; font-weight: 800; text-decoration: underline; text-underline-offset: 2px; }
+.reg-btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; height: 56px; margin-top: 28px; border: 0; border-radius: 19px; background: linear-gradient(90deg, #9560e6, #a870f6); color: #fff; font: inherit; font-size: 17px; font-weight: 800; cursor: pointer; box-shadow: 0 10px 26px rgba(139, 92, 246, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.28); }
+.reg-btn .ic { width: 22px; height: 22px; }
+.reg-btn[disabled] { opacity: 0.5; box-shadow: none; cursor: not-allowed; }
