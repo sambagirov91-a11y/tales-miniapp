@@ -8,12 +8,12 @@
     <!-- Самообновление: при запуске и возврате в приложение проверяет, не вышла ли новая версия (номера ?v= ниже), и перезагружается -->
     <script src="self-update.js?v=1"></script>
     <link rel="preload" as="image" href="logo.webp" type="image/webp">
-    <link rel="stylesheet" href="style.css?v=19">
+    <link rel="stylesheet" href="style.css?v=20">
     
     <!-- Подключаем внешние файлы со словарями для 3 языков -->
-<script src="miniapp-ru.js?v=30"></script>
-<script src="miniapp-uz.js?v=30"></script>
-<script src="miniapp-en.js?v=30"></script>
+<script src="miniapp-ru.js?v=31"></script>
+<script src="miniapp-uz.js?v=31"></script>
+<script src="miniapp-en.js?v=31"></script>
 </head>
 <body>
     <!-- Иконки интерфейса «Шахерезады» (SVG-спрайт, ~11 КБ, ~2,3 КБ в сжатии): <svg class="ic"><use href="#i-имя"></use></svg>. Иконки правятся прямо здесь (viewBox 24×24, линия 1.8, цвет currentColor) -->
@@ -116,15 +116,22 @@
         <div id="tabHome" class="tab-page active">
             <h1 id="pageTitleHome" class="top-title">Главная</h1>
             
-            <!-- Слайдер баннеров -->
-            <div class="slider-container" id="sliderContainer">
-                <div class="slider-track" id="sliderTrack"></div>
-            </div>
-
             <!-- ПЕРВАЯ СКАЗКА СРАЗУ (пробный период): кнопку рисует JS -->
             <div class="first-story-slot" data-first-story-slot="home" style="display: none;"></div>
 
-            <!-- ТАЙМЕР АКЦИИ (триал, первые 48 часов) -->
+            <!-- СТАТУС: триал / активный тариф / доступ закончился (app.js → updateStatusUI) -->
+            <div id="statusSection" class="status-card home-hero">
+                <div id="statusBadge" class="status-badge">...</div>
+                <div id="homeHeroBig" class="home-hero__big"></div>
+                <div id="statusText" class="home-hero__sub"></div>
+                <div id="homeBar" class="home-bar" style="display: none;"><i id="homeBarFill"></i></div>
+                <div id="homeDates" class="home-dates" style="display: none;"></div>
+            </div>
+
+            <!-- ЧТО ВХОДИТ в пробный период / тариф и сколько осталось (app.js → renderHomeIncluded) -->
+            <div id="homeIncluded"></div>
+
+            <!-- ТАЙМЕР АКЦИИ (триал, первые 48 часов): внутри своя кнопка «Выбрать тариф» -->
             <div id="promoTimerContainer" class="promo-timer" style="display: none;">
                 <div id="promoTimerTitle" class="promo-timer__title"></div>
                 <div id="promoTimerCountdown" class="promo-timer__countdown">00:00:00</div>
@@ -132,12 +139,11 @@
                 <button id="promoTimerCta" class="promo-timer__cta" type="button" data-tariff-action="open" data-tariff-source="promo"></button>
             </div>
 
-            <!-- Статус подписки -->
-            <div id="statusSection" class="status-card">
-                <div id="statusBadge" class="status-badge">...</div>
-                <div id="statusText" class="status-text"></div>
-                <button id="renewBtn" class="primary-btn" style="display: none;" onclick="openTariffs('profile')"></button>
-            </div>
+            <!-- Кнопка «Выбрать тариф» / «Сменить тариф» (когда акции нет) -->
+            <button id="renewBtn" class="primary-btn home-cta" style="display: none;" onclick="openTariffs('profile')"></button>
+
+            <!-- Про дополнительные озвучки -->
+            <div id="homeVoiceInfo" class="glass-panel home-info" style="display: none;"></div>
 
 <!-- УМНЫЙ БЛОК ИНТЕГРАЦИИ С АЛИСОЙ -->
 <div id="aliceIntegrationContainer" class="alice-integration">
@@ -462,6 +468,6 @@
     <!-- Основной скрипт логики Mini App -->
     <!-- Алфавиты имени ребёнка: русская сказка — кириллица, узбекская и английская — латиница (копия name_script.js из репозитория Scheherazade) -->
     <script src="name-script.js?v=2"></script>
-    <script src="app.js?v=41"></script>
+    <script src="app.js?v=42"></script>
 </body>
 </html>

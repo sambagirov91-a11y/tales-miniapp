@@ -729,7 +729,7 @@ async function loadAppConfig() {
     }
 }
 // Один набор баннеров показываем в двух каруселях: на «Главной» и во вкладке «Сказки»
-const BANNER_SLIDERS = [['sliderContainer', 'sliderTrack'], ['storiesSliderContainer', 'storiesSliderTrack']];
+const BANNER_SLIDERS = [['storiesSliderContainer', 'storiesSliderTrack']];   // слайдер только на вкладке «Сказки» (с главной убран 17.11.2026)
 function renderBanners() {
     if (window.sliderIntervalId) {
         clearInterval(window.sliderIntervalId);
@@ -777,7 +777,7 @@ function renderBanners() {
 // =====================================================================
 const TARIFF_ICONS = { start: 'sprout', baby: 'teddy', kids: 'balloon' };   // символы спрайта иконок
 const TARIFF_ORDER = ['baby', 'start', 'kids'];   // порядок карточек в окне: сначала самый популярный
-const TARIFF_POPULAR = 'baby';                    // на этой карточке бейдж «Популярный"
+const TARIFF_POPULAR = 'baby';                    // на этой карточке бейдж «Популярный»
 let tariffSheetOpen = false;
 let tariffTimerInterval = null;
 let payingTariff = false;
@@ -806,6 +806,33 @@ function reloadProfileAfterPromo() {
     }
 }
 
+// Слово по числу: ключ_категория (one / few / many / other); нет такого — _other, затем _many.
+// В {n} подставляется число, остальное — в vars.
+function trPlural(base, n, vars) {
+    let category = 'other';
+    try { category = new Intl.PluralRules(currentLang === 'uz' ? 'uz' : currentLang).select(Number(n)); } catch (e) { /* остаётся other */ }
+    for (const key of [base + '_' + category, base + '_other', base + '_many']) {
+        const text = tr(key, Object.assign({ n }, vars || {}));
+        if (text) return text;
+    }
+    return '';
+}
+
+const DAY_MS = 86400000;
+// Сколько дней осталось и сколько всего — для главной. Пробный период: «всего» даёт сервер (7), у оплаченного — по датам.
+function homeDaysInfo(access) {
+    const end = access.endDate ? new Date(access.endDate).getTime() : NaN;
+    if (!Number.isFinite(end)) return null;
+    const start = access.startDate ? new Date(access.startDate).getTime() : NaN;
+    const left = Math.max(0, Math.ceil((end - serverNow()) / DAY_MS));
+    const allowances = (profileData && profileData.allowances) || {};
+    let total = null;
+    if (access.isTrial && Number(allowances.trial_days) > 0) total = Number(allowances.trial_days);
+    else if (Number.isFinite(start)) total = Math.round((end - start) / DAY_MS);
+    if (total !== null) total = Math.max(total, left, 1);
+    return { left, total, startDate: Number.isFinite(start) ? access.startDate : null, endDate: access.endDate };
+}
+
 function updateStatusUI() {
     const section = el('statusSection');
     if (!section) return;
@@ -813,49 +840,145 @@ function updateStatusUI() {
     if (promoTimerInterval) { clearInterval(promoTimerInterval); promoTimerInterval = null; }
     hide('promoTimerContainer');
 
-    if (!profileData || !profileData.user) { section.style.display = 'none'; return; }
-    section.style.display = 'block';
+    if (!profileData || !profileData.user) {
+        section.style.display = 'none';
+        hide('renewBtn'); hide('homeVoiceInfo');
+        const inc = el('homeIncluded'); if (inc) inc.innerHTML = '';
+        return;
+    }
+    section.style.display = '';
 
     const access = profileData.access || {};
     const payment = profileData.payment || {};
     const currentId = profileData.tariffs ? profileData.tariffs.current : null;
+    const days = access.hasAccess ? homeDaysInfo(access) : null;
 
     const badge = el('statusBadge');
     if (badge) {
         badge.className = `status-badge ${access.hasAccess ? (access.isTrial ? 'trial' : 'active') : 'inactive'}`;
-        if (!access.hasAccess) badge.innerHTML = iconText('cross-star', tr('status_inactive'));
+        if (!access.hasAccess) badge.innerHTML = iconText('cross-star', tr('home_badge_ended'));
         else if (access.isTrial) badge.innerHTML = iconText('hourglass', tr('status_trial'));
         else badge.innerHTML = iconText('check-star', currentId ? tr('status_active_tariff', { name: tariffName(currentId) }) : tr('status_active'));
     }
 
-    if (access.hasAccess && access.endDate) {
-        const date = formatDate(access.endDate);
-        setText('statusText', access.isTrial ? tr('status_trial_text', { date }) : tr('status_active_text', { date }));
+    // Крупная строка, пояснение под ней, полоса прогресса и две даты
+    let big = '', sub = '';
+    const bar = el('homeBar'), dates = el('homeDates');
+    if (bar) bar.style.display = 'none';
+    if (dates) dates.style.display = 'none';
+    if (access.hasAccess && days) {
+        big = trPlural('home_hero_left', days.left);
+        if (days.total) sub = trPlural(access.isTrial ? 'home_of_trial' : 'home_of_paid', days.total);
+        if (days.total && bar) {
+            const elapsed = Math.min(100, Math.max(0, Math.round(100 * (days.total - days.left) / days.total)));
+            bar.className = 'home-bar' + (access.isTrial ? '' : ' home-bar--ok');
+            el('homeBarFill').style.width = elapsed + '%';
+            bar.style.display = 'block';
+        }
+        if (dates) {
+            const startTile = days.startDate ? `<div><small>${escapeHtml(tr('home_dates_start'))}</small><b>${escapeHtml(formatDate(days.startDate))}</b></div>` : '';
+            const endTile = `<div><small>${escapeHtml(tr(access.isTrial ? 'home_dates_trial_end' : 'home_dates_paid_end'))}</small><b>${escapeHtml(formatDate(days.endDate))}</b></div>`;
+            dates.className = 'home-dates' + (startTile ? '' : ' home-dates--one');
+            dates.innerHTML = startTile + endTile;
+            dates.style.display = 'grid';
+        }
+    } else if (access.hasAccess) {
+        big = currentId ? tr('status_active_tariff', { name: tariffName(currentId) }) : tr('status_active');
     } else {
-        setText('statusText', tr('status_inactive_text'));
+        big = tr('home_paused');
+        sub = tr('home_paused_text');
     }
+    setText('homeHeroBig', big);
+    setText('statusText', sub);
 
-    // Триал и истёкший доступ — «Оформить подписку», действующий тариф — «Сменить тариф».
-    // Продление текущего тарифа — кнопка на его карточке в окне выбора.
+    renderHomeIncluded();
+    renderHomeVoiceInfo();
+
+    // Акция (триал, первые 48 часов) приносит свою кнопку; иначе — общая «Выбрать тариф» / «Сменить тариф»
+    let promoShown = false;
+    if (payment.promo_active && payment.promo_deadline) {
+        promoShown = startPromoTimer(new Date(payment.promo_deadline).getTime(), payment.keeps_trial_days);
+    }
     const button = el('renewBtn');
     if (button) {
-        button.style.display = 'block';
         button.disabled = false;
-        if (access.hasAccess && !access.isTrial) button.innerText = tr(currentId ? 'btn_change_tariff' : 'btn_pick_tariff');
-        else button.innerText = tr('btn_subscribe');
+        if (promoShown) { button.style.display = 'none'; }
+        else {
+            button.style.display = 'block';
+            button.innerText = tr(access.hasAccess && !access.isTrial && currentId ? 'btn_change_tariff' : 'btn_pick_tariff');
+        }
     }
 
     setText('paywallBtn', tr('paywall_btn'));
-
-    if (payment.promo_active && payment.promo_deadline) {
-        startPromoTimer(new Date(payment.promo_deadline).getTime(), payment.keeps_trial_days);
-    }
     if (tariffSheetOpen) renderTariffSheet();
+}
+
+// «Что входит» в пробный период / тариф и сколько осталось: дни, озвучки, дети. Пока сервер не прислал цифру — строку без неё.
+function renderHomeIncluded() {
+    const box = el('homeIncluded');
+    if (!box) return;
+    const access = (profileData && profileData.access) || {};
+    if (!profileData || !profileData.user || !access.hasAccess) { box.innerHTML = ''; return; }
+    const trial = !!access.isTrial;
+    const days = homeDaysInfo(access);
+    const allowances = profileData.allowances || {};
+    const plan = ((profileData.tariffs && profileData.tariffs.items) || []).find(i => i.id === (profileData.tariffs && profileData.tariffs.current)) || null;
+    const left = allowances.voiceovers_left;   // null / undefined — сервер не прислал
+
+    const rows = [];
+    rows.push({
+        icon: 'tales', title: tr('home_row_tales'),
+        sub: trial || !days ? tr('home_row_tales_sub') : tr('home_row_tales_until', { date: formatDate(days.endDate) }),
+        val: days ? tr('home_val_left', { n: days.left }) : '', of: days && days.total ? trPlural('home_of_days', days.total) : ''
+    });
+
+    // Озвучки: в триале — сколько даёт пробный период, на тарифе — сколько в месяц
+    const voTotal = trial ? Number(allowances.trial_voiceovers) : (plan ? Number(plan.voiceovers) : NaN);
+    let voSub;
+    if (trial) voSub = Number.isFinite(voTotal) && voTotal > 0 ? trPlural('home_vo_trial_sub', voTotal) : tr('tariff_voiceovers_none');
+    else if (plan) voSub = plan.voiceovers === 1 ? tr('tariff_voiceovers_one') : plan.voiceovers > 0 ? tr('tariff_voiceovers_n', { n: plan.voiceovers }) : tr('tariff_voiceovers_none');
+    else voSub = '';
+    const hasLeft = left !== null && left !== undefined && Number.isFinite(Number(left));
+    rows.push({
+        icon: 'headphones', title: tr(trial ? 'home_row_vo' : 'home_row_vo_paid'), sub: voSub,
+        val: hasLeft ? tr('home_val_left', { n: Number(left) }) : '',
+        of: hasLeft && Number.isFinite(voTotal) && voTotal > 0 && Number(left) <= voTotal ? tr('home_val_of', { n: voTotal }) : '',
+        zero: hasLeft && Number(left) === 0
+    });
+
+    rows.push({
+        icon: 'kids', title: tr('home_row_kids'),
+        sub: trial ? tr('home_row_kids_trial', { n: maxChildren }) : (plan ? tr('home_row_kids_plan', { name: tariffName(plan.id) }) : ''),
+        val: tr('home_val_added', { n: allChildren.length }), of: tr('home_val_of', { n: maxChildren })
+    });
+
+    const list = rows.map(r => `
+        <div class="home-row">
+            <span class="home-row__icon" aria-hidden="true">${icon(r.icon)}</span>
+            <div class="home-row__text">${escapeHtml(r.title)}${r.sub ? `<small>${escapeHtml(r.sub)}</small>` : ''}</div>
+            ${r.val ? `<div class="home-row__val${r.zero ? ' is-zero' : ''}">${escapeHtml(r.val)}${r.of ? `<small>${escapeHtml(r.of)}</small>` : ''}</div>` : ''}
+        </div>`).join('');
+    box.innerHTML = `
+        <h2 class="home-h">${iconText('sparkles', tr(trial ? 'home_inc_title_trial' : 'home_inc_title_paid'))}</h2>
+        <div class="glass-panel home-list">${list}</div>`;
+}
+
+// Про дополнительные озвучки: цена приходит с сервера
+function renderHomeVoiceInfo() {
+    const box = el('homeVoiceInfo');
+    if (!box) return;
+    const amount = profileData && profileData.tariffs ? profileData.tariffs.extra_voiceover_amount : null;
+    if (!amount) { box.style.display = 'none'; box.innerHTML = ''; return; }
+    const text = escapeHtml(tr('home_vo_info_text', { price: '\u0000' })).replace('\u0000', `<b>${escapeHtml(formatPrice(amount))}</b>`);
+    box.innerHTML = `
+        <span class="home-row__icon" aria-hidden="true">${icon('headphones')}</span>
+        <div><div class="home-info__title">${escapeHtml(tr('home_vo_info_title'))}</div><p>${text}</p></div>`;
+    box.style.display = 'flex';
 }
 // Таймер акции на странице профиля: показываем только пока акция действует (триал, первые 48 часов)
 function startPromoTimer(deadlineMs, keepsTrialDays) {
     const promoItem = ((profileData.tariffs && profileData.tariffs.items) || []).find(i => i.promo_amount);
-    if (!promoItem) return;
+    if (!promoItem) return false;
     setIconText('promoTimerTitle', 'flame', tr('timer_title', {
         name: tariffName(promoItem.id),
         promo_price: formatPrice(promoItem.promo_amount),
@@ -871,6 +994,7 @@ function startPromoTimer(deadlineMs, keepsTrialDays) {
     promoTimerInterval = runCountdown(deadlineMs,
         text => setText('promoTimerCountdown', text),
         () => { promoTimerInterval = null; hide('promoTimerContainer'); reloadProfileAfterPromo(); });
+    return true;
 }
 
 // ---------------------------------------------------------------------
@@ -1162,6 +1286,7 @@ function renderKidsSummary() {
 }
 function renderChildren() {
     renderKidsSummary();
+    renderHomeIncluded();
     const container = el('childrenList');
     if (!container) return;
 

@@ -150,6 +150,7 @@ button.cancel-edit:active { background: rgba(255,255,255,0.05); }
 .status-badge.trial { background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.3); color: #facc15; }
 .status-badge.active { background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; }
 .status-badge.inactive { background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; }
+body.light-theme .status-badge.trial { color: #b45309; }
 .status-text { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; line-height: 1.5; }
 
 /* Пейвол Архива */
@@ -1021,6 +1022,48 @@ body.light-theme .tariff-card--baby .tariff-btn { color: #fff; }
 @media (prefers-reduced-motion: reduce) {
     .tariff-sheet__panel, .tariff-sheet__backdrop { animation: none; }
 }
+
+/* =====================================================================
+   ГЛАВНАЯ: статус (триал / тариф / доступ закончился), «что входит», озвучки
+   ===================================================================== */
+.home-hero { padding: 22px 20px 20px; margin-bottom: 16px; text-align: center; }
+.home-hero .status-badge { margin: 0 auto 14px; }
+.home-hero__big { font-size: 30px; font-weight: 800; line-height: 1.15; color: var(--gold-main); }
+.home-hero__sub { margin: 4px 0 14px; font-size: 14px; line-height: 1.5; color: var(--text-muted); }
+.home-hero__sub:empty { display: none; }
+.home-hero__big:empty { display: none; }
+.home-hero > .home-bar, .home-hero > .home-dates { align-self: stretch; }
+.home-bar { height: 8px; border-radius: 8px; background: rgba(128, 128, 128, 0.22); overflow: hidden; }
+.home-bar > i { display: block; width: 0; height: 100%; border-radius: 8px; background: linear-gradient(90deg, #facc15, #f59e0b); transition: width 0.4s ease; }
+.home-bar--ok > i { background: linear-gradient(90deg, #34d399, #10b981); }
+.home-dates { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; text-align: left; }
+.home-dates--one { grid-template-columns: 1fr; }
+.home-dates > div { padding: 10px 12px; border-radius: 12px; background: rgba(128, 128, 128, 0.12); border: 1px solid var(--glass-border); }
+.home-dates small { display: block; margin-bottom: 3px; font-size: 11px; letter-spacing: 0.4px; text-transform: uppercase; color: var(--text-muted); }
+.home-dates b { font-size: 14px; }
+
+.home-h { display: flex; align-items: center; gap: 8px; margin: 20px 0 10px; font-size: 17px; font-weight: 700; color: var(--gold-main); }
+.home-list { padding: 6px 16px; margin-bottom: 16px; }
+.home-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--glass-border); }
+.home-row:last-child { border-bottom: none; }
+.home-row__icon {
+    flex: 0 0 auto; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; font-size: 20px;
+    color: var(--gold-main); background: rgba(250, 204, 21, 0.14); border: 1px solid rgba(250, 204, 21, 0.3);
+}
+body.light-theme .home-row__icon { background: rgba(180, 83, 9, 0.1); border-color: rgba(180, 83, 9, 0.3); }
+.home-row__text { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; line-height: 1.3; }
+.home-row__text small { display: block; margin-top: 2px; font-size: 12px; font-weight: 400; color: var(--text-muted); }
+.home-row__val { flex: 0 0 auto; text-align: right; font-size: 13px; font-weight: 700; line-height: 1.25; }
+.home-row__val small { display: block; font-size: 11px; font-weight: 400; color: var(--text-muted); }
+.home-row__val.is-zero { color: #f87171; }
+body.light-theme .home-row__val.is-zero { color: #b91c1c; }
+
+.home-cta { width: 100%; margin-bottom: 16px; }
+.home-info { gap: 12px; align-items: flex-start; padding: 14px 16px; margin-bottom: 16px; }
+.home-info .home-row__icon { width: 36px; height: 36px; }
+.home-info__title { margin-bottom: 4px; font-size: 14px; font-weight: 700; }
+.home-info p { margin: 0; font-size: 13px; line-height: 1.45; color: var(--text-muted); }
+.home-info p b { color: var(--text-main); }
 
 /* Раздел «Профили детей» во вкладке профиля: при прокрутке к нему оставляем воздух сверху */
 #lblChildren { scroll-margin-top: 20px; }
