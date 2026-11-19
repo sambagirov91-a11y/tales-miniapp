@@ -273,6 +273,19 @@ window.langEN = {
     alice_code_not_found: "Code not found or expired. Ask Alice for a new one.",
 
     // First tale right away (trial)
+    // Подарок за сторис
+    sg_title: "Gift for a story",
+    sg_text: "Post an Instagram story tagging our account and send a screenshot to the bot — get a tale and a free voice-over. Until 30 Nov.",
+    sg_btn: "Get the gift",
+    sg_sending: "Sending...",
+    sg_sent: "Your code card was sent to the bot chat. Post your story and send the screenshot there.",
+    sg_wait_title: "Waiting for screenshot",
+    sg_wait_text: "Open the bot chat: the code card is there. Send a screenshot of your story.",
+    sg_done_title: "Gift received",
+    sg_done_text: "Thank you! Your tale and free voice-over are yours.",
+    sg_pending_text: "Your tale is waiting in the bot chat — choose who it is for.",
+    sg_err: "Could not send the card. Please try again.",
+
     first_story_title: "Your first tale — right now",
     first_story_text: "No need to wait for the evening: we'll send a tale right away. And at 21:00 another one arrives, as usual.",
     first_story_btn: "Get the first tale now",

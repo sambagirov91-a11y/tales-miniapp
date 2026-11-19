@@ -362,6 +362,7 @@ async function loadProfile() {
     renderParentCard();
     renderTariffCard();
     renderFirstStory();
+    loadStoryGift();
     maybeShowTermsModal();
 }
 // Привязка сказки, созданной на сайте. Токен не нужен: сервер связывает pending-сессию
@@ -1919,6 +1920,66 @@ document.addEventListener('click', (event) => {
     else if (action === 'close') closeFirstStorySheet();
     else if (action === 'prompt-go') { closeFirstStoryPrompt(); startFirstStory(); }
     else if (action === 'prompt-later') { closeFirstStoryPrompt(); revealFirstStoryCard(); }
+});
+
+// =====================================================================
+// ПОДАРОК ЗА СТОРИС (до 30.11.2026)
+// Сервер говорит состояние: available / waiting / pending_tale / received (остальное — скрыто).
+// Карточку с кодом и приём скриншота делает главный бот; здесь только вход и состояние.
+// =====================================================================
+let storyGiftState = 'hidden';
+let storyGiftBusy = false;
+
+async function loadStoryGift() {
+    if (!userExists) { storyGiftState = 'hidden'; renderStoryGift(); return; }
+    try {
+        const data = await api('/api/app/story-gift');
+        storyGiftState = data && data.state ? data.state : 'hidden';
+    } catch (err) {
+        storyGiftState = 'hidden';      // акция недоступна — карточка просто не показывается
+    }
+    renderStoryGift();
+}
+function storyGiftMarkup() {
+    const st = storyGiftState;
+    if (st === 'received') {
+        return `<div class="first-story first-story--gift first-story--done"><div class="first-story__head"><span class="first-story__icon" aria-hidden="true">${icon('check-star', 'ic--ok')}</span><span class="first-story__title">${escapeHtml(tr('sg_done_title'))}</span></div><p class="first-story__text">${escapeHtml(tr('sg_done_text'))}</p></div>`;
+    }
+    if (st === 'waiting' || st === 'pending_tale') {
+        const text = st === 'pending_tale' ? tr('sg_pending_text') : tr('sg_wait_text');
+        return `<div class="first-story first-story--gift"><div class="first-story__head"><span class="first-story__icon" aria-hidden="true">${icon('moon', 'ic--gold')}</span><span class="first-story__title">${escapeHtml(tr('sg_wait_title'))}</span></div><p class="first-story__text">${escapeHtml(text)}</p></div>`;
+    }
+    const busy = storyGiftBusy;
+    return `<div class="first-story first-story--gift"><div class="first-story__head"><span class="first-story__icon" aria-hidden="true">${icon('moon', 'ic--gold')}</span><span class="first-story__title">${escapeHtml(tr('sg_title'))}</span></div><p class="first-story__text">${escapeHtml(tr('sg_text'))}</p><button type="button" class="first-story__btn" data-story-gift-action="start"${busy ? ' disabled aria-busy="true"' : ''}>${escapeHtml(busy ? tr('sg_sending') : tr('sg_btn'))}</button></div>`;
+}
+function renderStoryGift() {
+    const visible = ['available', 'waiting', 'pending_tale', 'received'].includes(storyGiftState);
+    document.querySelectorAll('[data-story-gift-slot]').forEach(slot => {
+        if (!visible) { slot.style.display = 'none'; slot.innerHTML = ''; slot.removeAttribute('data-rendered'); return; }
+        const html = storyGiftMarkup();
+        slot.style.display = 'block';
+        if (slot.getAttribute('data-rendered') !== html) { slot.innerHTML = html; slot.setAttribute('data-rendered', html); }
+    });
+}
+async function startStoryGift() {
+    if (storyGiftBusy) return;
+    storyGiftBusy = true;
+    renderStoryGift();
+    try {
+        await api('/api/app/story-gift/start', { method: 'POST', body: {} });
+        storyGiftState = 'waiting';
+        showAlert(tr('sg_sent'));
+    } catch (err) {
+        console.error(err);
+        showAlert(tr('sg_err'));
+    } finally {
+        storyGiftBusy = false;
+        renderStoryGift();
+    }
+}
+document.addEventListener('click', (event) => {
+    const node = event.target.closest('[data-story-gift-action]');
+    if (node && node.getAttribute('data-story-gift-action') === 'start') startStoryGift();
 });
 document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;

@@ -1080,6 +1080,7 @@ body.light-theme .home-row__val.is-zero { color: #b91c1c; }
 
 /* ----------------- ПЕРВАЯ СКАЗКА СРАЗУ (пробный период) ----------------- */
 .first-story-slot { margin-bottom: 20px; }
+.first-story--gift { border-color: rgba(250, 204, 21, 0.5); }
 .first-story {
     box-sizing: border-box; padding: 18px 16px 16px; border-radius: 20px;
     border: 1px solid rgba(var(--audio-accent, 129, 140, 248), 0.45);
