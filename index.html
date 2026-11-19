@@ -8,12 +8,12 @@
     <!-- Самообновление: при запуске и возврате в приложение проверяет, не вышла ли новая версия (номера ?v= ниже), и перезагружается -->
     <script src="self-update.js?v=1"></script>
     <link rel="preload" as="image" href="logo.webp" type="image/webp">
-    <link rel="stylesheet" href="style.css?v=21">
+    <link rel="stylesheet" href="style.css?v=22">
     
     <!-- Подключаем внешние файлы со словарями для 3 языков -->
-<script src="miniapp-ru.js?v=32"></script>
-<script src="miniapp-uz.js?v=32"></script>
-<script src="miniapp-en.js?v=32"></script>
+<script src="miniapp-ru.js?v=33"></script>
+<script src="miniapp-uz.js?v=33"></script>
+<script src="miniapp-en.js?v=33"></script>
 </head>
 <body>
     <!-- Иконки интерфейса «Шахерезады» (SVG-спрайт, ~11 КБ, ~2,3 КБ в сжатии): <svg class="ic"><use href="#i-имя"></use></svg>. Иконки правятся прямо здесь (viewBox 24×24, линия 1.8, цвет currentColor) -->
@@ -129,6 +129,8 @@
             
             <!-- ПЕРВАЯ СКАЗКА СРАЗУ (пробный период): кнопку рисует JS -->
             <div class="first-story-slot" data-first-story-slot="home" style="display: none;"></div>
+            <!-- ПОДАРОК ЗА СТОРИС (до 30.11.2026): карточку рисует JS -->
+            <div class="first-story-slot" data-story-gift-slot style="display: none;"></div>
 
             <!-- СТАТУС: триал / активный тариф / доступ закончился (app.js → updateStatusUI) -->
             <div id="statusSection" class="status-card home-hero">
@@ -479,6 +481,6 @@
     <!-- Основной скрипт логики Mini App -->
     <!-- Алфавиты имени ребёнка: русская сказка — кириллица, узбекская и английская — латиница (копия name_script.js из репозитория Scheherazade) -->
     <script src="name-script.js?v=2"></script>
-    <script src="app.js?v=43"></script>
+    <script src="app.js?v=44"></script>
 </body>
 </html>

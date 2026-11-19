@@ -273,6 +273,19 @@ window.langUZ = {
     alice_code_not_found: "Kod topilmadi yoki eskirgan. Alisadan yangi kod so'rang.",
 
     // Birinchi ertak darhol (sinov muddati)
+    // Подарок за сторис
+    sg_title: "Storis uchun sovg'a",
+    sg_text: "Instagram’da bizning akkauntni belgilab storis joylang va skrinshotni botga yuboring — ertak va bepul ovozli o‘qish olasiz. Aksiya 30.11 gacha.",
+    sg_btn: "Sovg'ani olish",
+    sg_sending: "Yuborilmoqda...",
+    sg_sent: "Kodingiz bilan kartochka bot chatiga yuborildi. Storis joylab, skrinshotni o‘sha yerga yuboring.",
+    sg_wait_title: "Skrinshotni kutamiz",
+    sg_wait_text: "Bot chatini oching: u yerda kodli kartochka bor. Storisingiz skrinshotini yuboring.",
+    sg_done_title: "Sovg'a olindi",
+    sg_done_text: "Rahmat! Ertak va bepul ovozli o‘qish sizda.",
+    sg_pending_text: "Ertak bot chatida sizni kutmoqda — kim uchun yuborilishini tanlang.",
+    sg_err: "Kartochkani yuborib bo‘lmadi. Qayta urinib ko‘ring.",
+
     first_story_title: "Birinchi ertak — hoziroq",
     first_story_text: "Kechgacha kutib o'tirmang: ertakni darhol yuboramiz. Soat 21:00 da esa odatdagidek yana bittasi keladi.",
     first_story_btn: "Birinchi ertakni hozir olish",
