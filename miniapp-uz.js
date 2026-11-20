@@ -280,7 +280,7 @@ window.langUZ = {
     sg_sending: "Yuborilmoqda...",
     sg_sent: "Kodingiz bilan kartochka bot chatiga yuborildi. Storis joylab, skrinshotni o‘sha yerga yuboring.",
     sg_wait_title: "Skrinshotni kutamiz",
-    sg_wait_text: "Bot chatini oching: u yerda kodli kartochka bor. Storisingiz skrinshotini yuboring.",
+    sg_wait_text: "Bot chatini oching: u yerda kodli rasm bor. Tavsifdagi ko‘rsatmaga amal qiling. Shu rasmni Instagram akkauntingizda storisga joylang va bizni belgilang — @scheherezade_uzb. Joylangan storisingiz skrinshotini yuboring — va sovg‘a sifatida 1 ta audio ertak oling.",
     sg_done_title: "Sovg'a olindi",
     sg_done_text: "Rahmat! Ertak va bepul ovozli o‘qish sizda.",
     sg_pending_text: "Ertak bot chatida sizni kutmoqda — kim uchun yuborilishini tanlang.",
