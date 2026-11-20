@@ -280,7 +280,7 @@ window.langEN = {
     sg_sending: "Sending...",
     sg_sent: "Your code card was sent to the bot chat. Post your story and send the screenshot there.",
     sg_wait_title: "Waiting for screenshot",
-    sg_wait_text: "Open the bot chat: the code card is there. Send a screenshot of your story.",
+    sg_wait_text: "Open the bot chat: the picture with your code is there. Follow the instructions in the description. Post this picture to your Instagram story and tag us — @scheherezade_rus. Send a screenshot of your published story and get 1 audio tale as a gift.",
     sg_done_title: "Gift received",
     sg_done_text: "Thank you! Your tale and free voice-over are yours.",
     sg_pending_text: "Your tale is waiting in the bot chat — choose who it is for.",
