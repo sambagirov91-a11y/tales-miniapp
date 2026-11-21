@@ -8,12 +8,12 @@
     <!-- Самообновление: при запуске и возврате в приложение проверяет, не вышла ли новая версия (номера ?v= ниже), и перезагружается -->
     <script src="self-update.js?v=1"></script>
     <link rel="preload" as="image" href="logo.webp" type="image/webp">
-    <link rel="stylesheet" href="style.css?v=23">
+    <link rel="stylesheet" href="style.css?v=24">
     
     <!-- Подключаем внешние файлы со словарями для 3 языков -->
-<script src="miniapp-ru.js?v=35"></script>
-<script src="miniapp-uz.js?v=35"></script>
-<script src="miniapp-en.js?v=35"></script>
+<script src="miniapp-ru.js?v=36"></script>
+<script src="miniapp-uz.js?v=36"></script>
+<script src="miniapp-en.js?v=36"></script>
 </head>
 <body>
     <!-- Иконки интерфейса «Шахерезады» (SVG-спрайт, ~11 КБ, ~2,3 КБ в сжатии): <svg class="ic"><use href="#i-имя"></use></svg>. Иконки правятся прямо здесь (viewBox 24×24, линия 1.8, цвет currentColor) -->
@@ -382,6 +382,8 @@
                 </div>
                 <button id="tariffSheetClose" class="tariff-sheet__close" type="button" data-tariff-action="close" aria-label="Закрыть"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-close" xlink:href="#i-close"></use></svg></button>
             </header>
+            <!-- Выбор срока оплаты (1 / 3 / 6 мес.): app.js показывает его, только когда сервер прислал сроки (включаются в админке) -->
+            <div id="tariffTerms" class="tariff-terms" role="radiogroup" style="display: none;"></div>
             <div id="tariffCards" class="tariff-cards"></div>
             <!-- Под карточками вся справочная часть: цена доп. озвучки и заметка (пробный период не сгорает, смена тарифа) -->
             <p id="tariffFoot" class="tariff-foot" style="display: none;"></p>
@@ -441,6 +443,8 @@
                 </div>
                 <button id="packSheetClose" class="tariff-sheet__close" type="button" data-pack-action="close" aria-label="Закрыть"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-close" xlink:href="#i-close"></use></svg></button>
             </header>
+            <!-- Выбор пакета: app.js показывает список, только когда пакетов несколько -->
+            <div id="packChoices" class="pack-choices" role="radiogroup" style="display: none;"></div>
             <div class="pack-sum">
                 <div class="pack-sum__row">
                     <span class="pack-sum__icon" aria-hidden="true"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-mic" xlink:href="#i-mic"></use></svg></span>
@@ -513,6 +517,6 @@
     <!-- Основной скрипт логики Mini App -->
     <!-- Алфавиты имени ребёнка: русская сказка — кириллица, узбекская и английская — латиница (копия name_script.js из репозитория Scheherazade) -->
     <script src="name-script.js?v=2"></script>
-    <script src="app.js?v=45"></script>
+    <script src="app.js?v=46"></script>
 </body>
 </html>

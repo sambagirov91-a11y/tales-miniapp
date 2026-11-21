@@ -800,7 +800,51 @@ let tariffSheetOpen = false;
 let tariffTimerInterval = null;
 let payingTariff = false;
 
-function tariffName(id) { return tr('tariff_' + id + '_name') || id; }
+// Название тарифа: как его назвал владелец в админке (приходит с сервером), запасное — словарь (старый сервер) и сам код
+function tariffName(id) {
+    const pick = (names) => (names && typeof names === 'object' ? (names[currentLang] || names.ru) : '') || '';
+    const t = profileData && profileData.tariffs;
+    if (t) {
+        const item = (t.items || []).find(i => i.id === id);
+        const fromItem = item ? pick(item.name) : '';
+        if (fromItem) return fromItem;
+        const fromMap = t.names ? pick(t.names[id]) : '';   // тариф снят с продажи, но у человека он оплачен
+        if (fromMap) return fromMap;
+    }
+    return tr('tariff_' + id + '_name') || id;
+}
+// Короткое описание под названием: из каталога, а если владелец его не заполнил — из словаря (для «Старт», «Мой малыш», «Кидс»)
+function tariffTag(item) {
+    const d = item && item.description;
+    const fromServer = d && typeof d === 'object' ? (d[currentLang] || d.ru || '') : '';
+    return fromServer || tr('tariff_' + item.id + '_tag') || '';
+}
+// Срок оплаты в окне тарифов (сервер присылает items[].terms, когда в админке включены сроки 3 / 6 месяцев)
+let tariffTermMonths = 1;
+// Сроки, которые есть у всех карточек сразу; меньше двух — выбор срока не нужен
+function tariffAvailableTerms(items) {
+    if (!items.length || !items.every(i => Array.isArray(i.terms) && i.terms.length > 1)) return [];
+    const sets = items.map(i => i.terms.map(x => Number(x.months)));
+    const common = sets[0].filter(m => sets.every(set => set.includes(m)));
+    return common.length > 1 && common.includes(1) ? common.slice().sort((a, b) => a - b) : [];
+}
+function termOf(item, months) {
+    return months > 1 && item && Array.isArray(item.terms) ? (item.terms.find(x => Number(x.months) === months) || null) : null;
+}
+function renderTariffTerms(items, monthsList) {
+    const box = el('tariffTerms');
+    if (!box) return;
+    if (!monthsList.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
+    box.setAttribute('aria-label', tr('tariff_terms_title'));
+    box.innerHTML = monthsList.map(m => {
+        const term = (items[0].terms || []).find(x => Number(x.months) === m);
+        const save = term && Number(term.discount_percent) > 0
+            ? `<span class="tariff-term__save">${escapeHtml(tr('tariff_term_save', { p: term.discount_percent }))}</span>` : '';
+        const on = m === tariffTermMonths;
+        return `<button class="tariff-term${on ? ' is-active' : ''}" type="button" role="radio" aria-checked="${on}" data-tariff-action="term" data-term-months="${m}"><span>${escapeHtml(tr('tariff_term_label', { n: m }))}</span>${save}</button>`;
+    }).join('');
+    box.style.display = 'flex';
+}
 
 // Обратный отсчёт: каждую секунду paint('чч:мм:сс'), по окончании — onEnd(). Возвращает таймер.
 function runCountdown(deadlineMs, paint, onEnd) {
@@ -1038,6 +1082,7 @@ function openTariffs(source) {
     if (!userExists || !profileData || !profileData.tariffs) return;
     trackAppEvent({ event_name: 'subscription_offer_viewed', source: typeof source === 'string' ? source : 'other', plan_state: planStateForEvent() });
     tariffSheetOpen = true;
+    tariffTermMonths = 1;
     renderTariffSheet();
     const sheet = el('tariffSheet');
     if (!sheet) return;
@@ -1062,10 +1107,11 @@ function priceParts(tiyin) {
 }
 function tariffCardMarkup(item, context) {
     const id = escapeHtml(item.id);
-    const promo = item.promo_amount !== null && item.promo_amount !== undefined;
+    const term = termOf(item, context.months || 1);                     // оплата сразу за несколько месяцев (акции на неё нет)
+    const promo = !term && item.promo_amount !== null && item.promo_amount !== undefined;
     const current = item.state === 'current';
     const blocked = item.state === 'blocked_children';
-    const price = priceParts(promo ? item.promo_amount : item.price_amount);
+    const price = priceParts(term ? term.amount : (promo ? item.promo_amount : item.price_amount));
 
     // Три короткие колонки: дети, сказка каждый вечер, озвучки (цена доп. озвучки — в подписи под карточками)
     const features = [
@@ -1080,7 +1126,11 @@ function tariffCardMarkup(item, context) {
         : (promo ? `<span class="tariff-badge tariff-badge--promo">${iconText('flame', tr('tariff_badge_promo'))}</span>`
         : (item.id === TARIFF_POPULAR ? `<span class="tariff-badge tariff-badge--popular">${iconText('crown', tr('tariff_badge_popular'))}</span>` : ''));
 
-    const oldPrice = promo ? `<span class="tariff-price__old">${escapeHtml(formatPrice(item.price_amount))}</span>` : '';
+    const oldPrice = promo ? `<span class="tariff-price__old">${escapeHtml(formatPrice(item.price_amount))}</span>`
+        : (term && Number(term.discount_percent) > 0 ? `<span class="tariff-price__old">${escapeHtml(formatPrice(item.price_amount * term.months))}</span>` : '');
+    const per = term ? tr('tariff_per_term', { n: term.months }) : tr('tariff_per_period');
+    const perMonth = term && term.monthly_amount ? `<span class="tariff-price__per">${escapeHtml(tr('tariff_per_month_equiv', { price: formatPrice(term.monthly_amount) }))}</span>` : '';
+    const tag = tariffTag(item);
     const promoLine = promo ? `
         <div class="tariff-promo">
             <span>${escapeHtml(tr('tariff_promo_first'))}</span>
@@ -1104,7 +1154,7 @@ function tariffCardMarkup(item, context) {
                 <span class="tariff-card__icon" aria-hidden="true">${icon(TARIFF_ICONS[item.id] || 'star')}</span>
                 <div class="tariff-card__title">
                     <h3 class="tariff-card__name">${escapeHtml(tariffName(item.id))}</h3>
-                    <p class="tariff-card__tag">${escapeHtml(tr('tariff_' + item.id + '_tag'))}</p>
+                    ${tag ? `<p class="tariff-card__tag">${escapeHtml(tag)}</p>` : ''}
                 </div>
                 <div class="tariff-price">
                     ${oldPrice}
@@ -1112,7 +1162,8 @@ function tariffCardMarkup(item, context) {
                         <span class="tariff-price__num">${escapeHtml(price.number)}</span>
                         <span class="tariff-price__cur">${escapeHtml(price.currency)}</span>
                     </div>
-                    <span class="tariff-price__per">${escapeHtml(tr('tariff_per_period'))}</span>
+                    <span class="tariff-price__per">${escapeHtml(per)}</span>
+                    ${perMonth}
                 </div>
             </header>
             ${promoLine}
@@ -1129,8 +1180,16 @@ function renderTariffSheet() {
     const activeSub = !!(access.hasAccess && !access.isTrial);
     const switching = activeSub && !t.legacy;       // есть действующий тариф: смена начинается сразу
 
+    const cards = el('tariffCards');
+    const rank = (id) => { const i = TARIFF_ORDER.indexOf(id); return i === -1 ? TARIFF_ORDER.length : i; };
+    // Известные тарифы идут в привычном порядке, добавленные в админке — следом, в порядке сервера
+    const items = t.items.map((item, index) => ({ item, index })).sort((a, b) => (rank(a.item.id) - rank(b.item.id)) || (a.index - b.index)).map(x => x.item);
+    const termList = tariffAvailableTerms(items);
+    if (!termList.includes(tariffTermMonths)) tariffTermMonths = 1;
+    renderTariffTerms(items, termList);
+
     setText('tariffSheetTitle', tr(activeSub ? 'tariff_sheet_title_change' : 'tariff_sheet_title_choose'));
-    setText('tariffSheetSub', tr('tariff_sheet_sub'));
+    setText('tariffSheetSub', tr(tariffTermMonths > 1 ? 'tariff_sheet_sub_term' : 'tariff_sheet_sub', { n: tariffTermMonths }));
     const closeBtn = el('tariffSheetClose');
     if (closeBtn) closeBtn.setAttribute('aria-label', tr('tariff_sheet_close'));
 
@@ -1141,10 +1200,7 @@ function renderTariffSheet() {
     const noteNode = el('tariffNote');
     if (noteNode) { noteNode.textContent = note; noteNode.style.display = note ? 'block' : 'none'; }
 
-    const cards = el('tariffCards');
-    const rank = (id) => { const i = TARIFF_ORDER.indexOf(id); return i === -1 ? TARIFF_ORDER.length : i; };
-    const items = t.items.slice().sort((a, b) => rank(a.id) - rank(b.id));   // порядок не зависит от ответа сервера
-    if (cards) cards.innerHTML = items.map(item => tariffCardMarkup(item, { t, switching })).join('');
+    if (cards) cards.innerHTML = items.map(item => tariffCardMarkup(item, { t, switching, months: tariffTermMonths })).join('');
     // Цена доп. озвучки — одной строкой под карточками, если она одинакова на всех тарифах
     const extra = items.map(i => i.extra_voiceover_amount);
     const foot = el('tariffFoot');
@@ -1155,7 +1211,7 @@ function renderTariffSheet() {
     }
 
     if (tariffTimerInterval) { clearInterval(tariffTimerInterval); tariffTimerInterval = null; }
-    if (payment.promo_active && payment.promo_deadline && t.items.some(i => i.promo_amount)) {
+    if (tariffTermMonths === 1 && payment.promo_active && payment.promo_deadline && t.items.some(i => i.promo_amount)) {
         tariffTimerInterval = runCountdown(new Date(payment.promo_deadline).getTime(),
             text => { const node = el('tariffPromoCountdown'); if (node) node.textContent = text; },
             () => { tariffTimerInterval = null; reloadProfileAfterPromo(); });
@@ -1169,6 +1225,10 @@ document.addEventListener('click', (event) => {
     if (action === 'close') closeTariffs();
     else if (action === 'open') openTariffs(node.getAttribute('data-tariff-source') || 'other');
     else if (action === 'choose') payForTariff(node.getAttribute('data-tariff-id'), node);
+    else if (action === 'term') {
+        const months = Math.floor(Number(node.getAttribute('data-term-months')));
+        if (months >= 1 && months !== tariffTermMonths) { tariffTermMonths = months; renderTariffSheet(); haptic('select'); }
+    }
     else if (action === 'children') {
         closeTariffs();
         showChildrenSection();
@@ -1184,6 +1244,7 @@ async function payForTariff(tariffId, button) {
     const t = profileData.tariffs;
     const item = t.items.find(i => i.id === tariffId);
     if (!item || item.state === 'blocked_children') return;
+    const term = termOf(item, tariffTermMonths);                 // null — оплата на месяц
     // Нажали «Выбрать / Продлить» — ещё до вопроса про смену тарифа и до ссылки Payme
     trackAppEvent({ event_name: 'subscription_cta_clicked', tariff_key: tariffId, plan_state: planStateForEvent() });
 
@@ -1198,7 +1259,12 @@ async function payForTariff(tariffId, button) {
     const label = button ? button.innerHTML : '';
     if (button) { button.disabled = true; button.innerText = tr('payment_opening'); }
     try {
-        const data = await api('/api/app/payment-link', { method: 'POST', body: { tariff: tariffId, language: currentLang } });
+        const body = { tariff: tariffId, language: currentLang };
+        if (term) body.months = term.months;
+        const data = await api('/api/app/payment-link', { method: 'POST', body });
+        // Сервер должен выставить именно выбранный срок: если сумма другая (например, сервер ещё старой версии), оплату не открываем,
+        // чтобы человек не заплатил за месяц, думая, что берёт несколько
+        if (term && (Number(data.months) !== term.months || Number(data.amount) !== Number(term.amount) || !data.url)) throw new Error(tr('tariff_term_error'));
         paymentSnapshot = {
             status: profileData.user.subscription_status,
             endDate: access.endDate || null,
@@ -2721,7 +2787,9 @@ async function submitAliceCode() {
 // =====================================================================
 let voiceoversLeft = 0;
 let voiceoverAmount = 0;              // цена одной озвучки в тийинах (приходит с сервера)
-let voiceoverPack = null;             // пакет озвучек { count, unit_amount, amount } в тийинах (с сервера); null — сервер пакета не предлагает
+let voiceoverPack = null;             // главный пакет озвучек { id, count, unit_amount, amount, main } в тийинах (с сервера); null — сервер пакета не предлагает
+let voiceoverPacks = [];              // все пакеты, которые продаются сейчас (в окне покупки их выбирают, когда пакетов несколько)
+let selectedPackId = null;            // какой пакет выбран в окне покупки
 let awaitingVoiceoverPayment = null;  // { balanceBefore } — пока пользователь платит в Payme
 let audioPlaybackRate = 1;            // скорость плеера помним, пока открыто приложение
 
@@ -2739,7 +2807,8 @@ async function refreshVoiceoverBalance() {
         const data = await api('/api/user/check-balance', { method: 'POST', body: {} });
         voiceoversLeft = Number(data.voiceovers_left || 0);
         if (data.voiceover_amount) voiceoverAmount = Number(data.voiceover_amount);
-        voiceoverPack = parseVoiceoverPack(data.voiceover_pack);
+        voiceoverPacks = parseVoiceoverPacks(data);
+        voiceoverPack = voiceoverPacks.find(p => p.main) || voiceoverPacks[0] || null;
         return true;
     } catch (err) {
         console.error('Не удалось получить баланс озвучек', err);
@@ -3157,15 +3226,43 @@ function parseVoiceoverPack(raw) {
     const unit = Number(raw.unit_amount);
     const amount = Number(raw.amount);
     if (!(count > 1) || !(unit > 0) || !(amount > 0)) return null;
-    return { count, unit_amount: unit, amount };
+    return { id: typeof raw.id === 'string' && raw.id ? raw.id : null, count, unit_amount: unit, amount, main: !!raw.main };
+}
+// Все пакеты из ответа check-balance: список voiceover_packs, а если сервер старый и присылает только главный — он один
+function parseVoiceoverPacks(data) {
+    const list = Array.isArray(data && data.voiceover_packs) ? data.voiceover_packs.map(parseVoiceoverPack).filter(Boolean) : [];
+    if (list.length) return list;
+    const single = parseVoiceoverPack(data && data.voiceover_pack);
+    return single ? [{ ...single, main: true }] : [];
+}
+// Пакет, который выбран в окне покупки (по умолчанию главный)
+function currentPack() {
+    return voiceoverPacks.find(p => p.id !== null && p.id === selectedPackId) || voiceoverPack;
 }
 function packBuyContent(label, iconName) {
     return `<span class="audio-btn__icon">${icon(iconName)}</span><span>${escapeHtml(label)}</span>`;
 }
+// Несколько пакетов: список для выбора (у каждого количество, цена одной и общая сумма); один пакет — списка нет
+function renderPackChoices() {
+    const box = el('packChoices');
+    if (!box) return;
+    if (voiceoverPacks.length < 2) { box.style.display = 'none'; box.innerHTML = ''; return; }
+    const chosen = currentPack();
+    box.setAttribute('aria-label', tr('pack_choose'));
+    box.innerHTML = voiceoverPacks.map((p, index) => {
+        const on = !!chosen && (p.id !== null ? p.id === chosen.id : p === chosen);
+        return `<button class="pack-choice${on ? ' is-active' : ''}" type="button" role="radio" aria-checked="${on}" data-pack-action="select" data-pack-index="${index}">
+            <span><span class="pack-choice__name">${escapeHtml(trPlural('pack_name', p.count))}</span><span class="pack-choice__each">${escapeHtml(tr('pack_each', { price: formatPrice(p.unit_amount) }))}</span></span>
+            <span class="pack-choice__total">${escapeHtml(formatPrice(p.amount))}</span>
+        </button>`;
+    }).join('');
+    box.style.display = 'flex';
+}
 function renderPackSheet() {
-    const pack = voiceoverPack;
+    const pack = currentPack();
     if (!pack) return;
-    setText('packSheetTitle', trPlural('pack_title', pack.count));
+    renderPackChoices();
+    setText('packSheetTitle', voiceoverPacks.length > 1 ? tr('pack_choose') : trPlural('pack_title', pack.count));
     setText('packSheetName', trPlural('pack_name', pack.count));
     setText('packSheetEach', tr('pack_each', { price: formatPrice(pack.unit_amount) }));
     setText('packSheetTotalLabel', tr('pack_total'));
@@ -3182,6 +3279,7 @@ function applyPackTexts() {
 function openPackSheet() {
     const sheet = el('packSheet');
     if (!sheet || !voiceoverPack) return;
+    selectedPackId = voiceoverPack.id;     // сначала выбран главный пакет
     renderPackSheet();
     packSheetOpen = true;
     sheet.hidden = false;
@@ -3197,7 +3295,7 @@ function closePackSheet() {
     packSheetOpen = false;
 }
 async function buyVoiceoverPack() {
-    const pack = voiceoverPack;
+    const pack = currentPack();
     const buy = el('packBuyBtn');
     const cancel = el('packCancelBtn');
     if (!pack || !buy || buy.disabled) return;
@@ -3205,7 +3303,8 @@ async function buyVoiceoverPack() {
     if (cancel) cancel.disabled = true;
     buy.innerHTML = packBuyContent(tr('audio_pay_opening'), 'hourglass');
     try {
-        const data = await api('/api/user/voiceover-payment-link', { method: 'POST', body: { language: currentLang, pack: true } });
+        // Пакет с кодом — по коду (их может быть несколько); без кода (старый сервер) — главный
+        const data = await api('/api/user/voiceover-payment-link', { method: 'POST', body: pack.id ? { language: currentLang, pack_id: pack.id } : { language: currentLang, pack: true } });
         // Сервер должен выставить именно пакет: если сумма другая (например, сервер ещё старой версии), оплату не открываем,
         // чтобы человек не заплатил за одну озвучку, думая, что берёт пять
         if (Number(data.amount) !== pack.amount || !data.url) throw new Error(tr('pack_error'));
@@ -3230,6 +3329,10 @@ document.addEventListener('click', (event) => {
     const name = node.getAttribute('data-pack-action');
     if (name === 'close') closePackSheet();
     else if (name === 'buy') buyVoiceoverPack();
+    else if (name === 'select') {
+        const chosen = voiceoverPacks[Math.floor(Number(node.getAttribute('data-pack-index')))];
+        if (chosen) { selectedPackId = chosen.id; renderPackSheet(); haptic('select'); }
+    }
 });
 document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && packSheetOpen) closePackSheet(); });
 
