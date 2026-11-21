@@ -8,12 +8,12 @@
     <!-- Самообновление: при запуске и возврате в приложение проверяет, не вышла ли новая версия (номера ?v= ниже), и перезагружается -->
     <script src="self-update.js?v=1"></script>
     <link rel="preload" as="image" href="logo.webp" type="image/webp">
-    <link rel="stylesheet" href="style.css?v=22">
+    <link rel="stylesheet" href="style.css?v=23">
     
     <!-- Подключаем внешние файлы со словарями для 3 языков -->
-<script src="miniapp-ru.js?v=34"></script>
-<script src="miniapp-uz.js?v=34"></script>
-<script src="miniapp-en.js?v=34"></script>
+<script src="miniapp-ru.js?v=35"></script>
+<script src="miniapp-uz.js?v=35"></script>
+<script src="miniapp-en.js?v=35"></script>
 </head>
 <body>
     <!-- Иконки интерфейса «Шахерезады» (SVG-спрайт, ~11 КБ, ~2,3 КБ в сжатии): <svg class="ic"><use href="#i-имя"></use></svg>. Иконки правятся прямо здесь (viewBox 24×24, линия 1.8, цвет currentColor) -->
@@ -429,6 +429,38 @@
         </div>
     </div>
 
+    <!-- ОКНО «ПАКЕТ ОЗВУЧЕК» (21.11.2026): зелёная кнопка в карточке «Озвучки закончились» → покупка 5 озвучек одним платежом.
+         Тексты и цены подставляет app.js (renderPackSheet): количество и цены приходят с сервера в ответе check-balance -->
+    <div id="packSheet" class="tariff-sheet" role="dialog" aria-modal="true" aria-labelledby="packSheetTitle" hidden>
+        <div class="tariff-sheet__backdrop" data-pack-action="close"></div>
+        <div class="tariff-sheet__panel" tabindex="-1">
+            <div class="tariff-sheet__grab" aria-hidden="true"></div>
+            <header class="tariff-sheet__head">
+                <div class="tariff-sheet__heading">
+                    <h2 id="packSheetTitle" class="tariff-sheet__title">Приобрести 5 лимитов озвучки</h2>
+                </div>
+                <button id="packSheetClose" class="tariff-sheet__close" type="button" data-pack-action="close" aria-label="Закрыть"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-close" xlink:href="#i-close"></use></svg></button>
+            </header>
+            <div class="pack-sum">
+                <div class="pack-sum__row">
+                    <span class="pack-sum__icon" aria-hidden="true"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-mic" xlink:href="#i-mic"></use></svg></span>
+                    <div>
+                        <div id="packSheetName" class="pack-sum__name">5 лимитов озвучки</div>
+                        <div id="packSheetEach" class="pack-sum__each"></div>
+                    </div>
+                </div>
+                <div class="pack-sum__total">
+                    <span id="packSheetTotalLabel" class="pack-sum__total-label">Общая сумма</span>
+                    <span id="packSheetTotal" class="pack-sum__total-value"></span>
+                </div>
+            </div>
+            <div class="pack-actions">
+                <button id="packBuyBtn" class="audio-btn audio-btn--green" type="button" data-pack-action="buy"><span class="audio-btn__icon"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-card" xlink:href="#i-card"></use></svg></span><span>Купить</span></button>
+                <button id="packCancelBtn" class="pack-cancel" type="button" data-pack-action="close">Отмена</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ОКНО «ЧЬЕЙ СКАЗКОЙ ПОДЕЛИТЬСЯ?» (кнопка «Поделиться» в вечернем сообщении семье с несколькими детьми) -->
     <div id="sharePickSheet" class="tariff-sheet" role="dialog" aria-modal="true" aria-labelledby="sharePickTitle" hidden>
         <div class="tariff-sheet__backdrop" data-share-pick-action="close"></div>
@@ -481,6 +513,6 @@
     <!-- Основной скрипт логики Mini App -->
     <!-- Алфавиты имени ребёнка: русская сказка — кириллица, узбекская и английская — латиница (копия name_script.js из репозитория Scheherazade) -->
     <script src="name-script.js?v=2"></script>
-    <script src="app.js?v=44"></script>
+    <script src="app.js?v=45"></script>
 </body>
 </html>

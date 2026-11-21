@@ -658,6 +658,42 @@ body.light-theme .audio-card__chip {
     to   { background-position: 0 0; }
 }
 
+/* Пакет озвучек (21.11.2026): две кнопки в карточке «Озвучки закончились» — оранжевая (одна озвучка) и зелёная (пакет со скидкой) */
+.audio-card__actions { display: flex; flex-direction: column; gap: 10px; }
+.audio-btn--green {
+    background: linear-gradient(90deg, #34d399 0%, #10b981 100%);
+    box-shadow: 0 8px 22px rgba(16, 185, 129, 0.32), inset 0 -2px 6px rgba(0, 0, 0, 0.1);
+}
+/* Окно покупки пакета: шторка как у тарифов, внутри — что покупаем и общая сумма, затем «Купить» (зелёная) и «Отмена» (тихая) */
+.pack-sum {
+    margin: 4px 0 18px; padding: 16px; border-radius: 18px;
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    background: linear-gradient(150deg, rgba(16, 185, 129, 0.18) 0%, rgba(16, 185, 129, 0.04) 70%), var(--glass-bg);
+}
+.pack-sum__row { display: flex; align-items: center; gap: 12px; }
+.pack-sum__icon {
+    display: grid; place-items: center; flex: 0 0 auto; width: 44px; height: 44px; border-radius: 14px; font-size: 24px;
+    color: #34d399; background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4);
+}
+body.light-theme .pack-sum__icon { color: #047857; }
+.pack-sum__name { font-size: 16px; font-weight: 800; line-height: 1.25; color: var(--text-main); }
+.pack-sum__each { margin-top: 2px; font-size: 14px; color: var(--text-muted); }
+.pack-sum__total {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+    margin-top: 14px; padding-top: 14px; border-top: 1px dashed rgba(16, 185, 129, 0.45);
+}
+.pack-sum__total-label { font-size: 15px; font-weight: 600; color: var(--text-muted); }
+.pack-sum__total-value { font-size: 26px; font-weight: 800; color: var(--text-main); white-space: nowrap; }
+.pack-actions { display: flex; flex-direction: column; gap: 10px; }
+.pack-cancel {
+    box-sizing: border-box; width: 100%; min-height: 50px; padding: 10px 18px; border-radius: 16px; cursor: pointer;
+    font: inherit; font-size: 15px; font-weight: 600; color: var(--text-muted);
+    background: rgba(128, 128, 128, 0.16); border: 1px solid rgba(128, 128, 128, 0.22);
+    -webkit-tap-highlight-color: transparent;
+}
+.pack-cancel:active { transform: scale(0.985); }
+.pack-cancel:disabled { opacity: 0.6; cursor: default; transform: none; }
+
 /* Загрузка данных об озвучке */
 .audio-card--loading {
     flex-direction: row;
