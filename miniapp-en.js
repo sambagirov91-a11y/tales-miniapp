@@ -333,6 +333,7 @@ window.langEN = {
     termsAcceptBtn: "I agree",
     termsLaterBtn: "Remind me later",
     termsError: "Couldn't save that. Please try again in a moment.",
+    termsRequiredError: "Please accept the updated documents to continue.",
 
     footer_privacy: "Privacy Policy",
     footer_offer: "Terms of Service",

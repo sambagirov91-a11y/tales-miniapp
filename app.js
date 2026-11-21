@@ -99,7 +99,9 @@ function formatDate(iso, options) {
     }
 }
 function serverNow() { return Date.now() + clockOffsetMs; }
-function showAlert(message) {
+function showAlert(message, always) {
+    // Окно обязательного принятия документов открыто: сообщения от фоновых запросов за ним не нужны (always — важное, например «не сохранилось»)
+    if (typeof termsForced !== 'undefined' && termsForced && !always) return;
     try {
         if (tg && tg.showAlert) { tg.showAlert(message); return; }
     } catch (e) { /* например, уже открыт другой попап */ }
@@ -159,6 +161,7 @@ const ERROR_TEXT_KEYS = {
     PARENT_NAME_REQUIRED: 'alert_enter_parent_name',
     PARENT_ROLE_AGE: 'alert_parent_role_age',
     TERMS_REQUIRED: 'alert_accept_terms',
+    TERMS_UPDATE_REQUIRED: 'termsRequiredError',
     LOCKED: 'paywall_text',
     ALICE_CODE_NOT_FOUND: 'alice_code_not_found',
     NO_VOICEOVERS: 'audio_no_voiceovers',
@@ -212,6 +215,7 @@ async function api(path, options) {
         const message = key ? tr(key, { max: maxChildren }) : tr('error_generic');
         const apiError = new ApiError(message, response.status, code);
         apiError.data = data || null;
+        if (code === 'TERMS_UPDATE_REQUIRED') onTermsRequired();   // включили обязательное принятие, пока приложение было открыто: показываем окно
         throw apiError;
     }
 
@@ -480,39 +484,73 @@ async function restoreAccount() {
 }
 
 // =====================================================================
-// ОБНОВЛЁННЫЕ ДОКУМЕНТЫ: мягкая просьба согласиться заново
+// ОБНОВЛЁННЫЕ ДОКУМЕНТЫ: просьба согласиться заново (мягкая или обязательная)
 // Сервер (GET /api/app/me → terms) присылает reconsent: true, когда оферту или политику обновили, а человек согласился с прежней
-// редакцией, и новые PDF уже загружены. Окно ничего не блокирует: сказки, подписка и оплата работают как раньше.
-// «Напомнить позже» прячет окно на 3 дня (в браузере; нет хранилища — до следующего открытия).
+// редакцией, и новые PDF уже загружены. Что показать, решает владелец в админке (Настройки → «Уведомление об изменении документов»):
+//   • terms.notice — тексты окна на трёх языках (с подставленными датами) и даты документов словами; пустой текст для языка — стандартный
+//     текст из словаря;
+//   • terms.required — обязательное принятие: кнопки «Напомнить позже» нет, окно закрыть нельзя, всё остальное в приложении недоступно
+//     (и закрыто на сервере: остальные запросы отвечают TERMS_UPDATE_REQUIRED), пока человек не нажмёт «Принимаю».
+// Без terms.required окно мягкое: сказки, подписка и оплата работают как раньше, «Напомнить позже» прячет окно на 3 дня
+// (в браузере; нет хранилища — до следующего открытия).
 // =====================================================================
 const TERMS_SNOOZE_MS = 3 * 24 * 60 * 60 * 1000;
+const TERMS_RECHECK_GAP_MS = 10 * 1000;
 let termsPromptShown = false;
+let termsForced = false;          // открыто окно обязательного принятия
+let termsRechecking = false;
+let termsRecheckedAt = 0;
 function termsSnoozed() {
     try {
         const until = Number(localStorage.getItem('samba_terms_snooze_until') || 0);
         return until > Date.now();
     } catch (e) { return false; /* приватный режим: просто покажем */ }
 }
+// Пока окно обязательное, всё, что за ним, недоступно и для клавиатуры, и для программ экрана
+function setTermsInert(on) {
+    const main = el('mainAppContent');
+    if (!main) return;
+    if (on) { main.setAttribute('inert', ''); main.setAttribute('aria-hidden', 'true'); }
+    else { main.removeAttribute('inert'); main.removeAttribute('aria-hidden'); }
+}
 function maybeShowTermsModal() {
     const terms = profileData && profileData.terms;
-    if (!terms || !terms.reconsent || termsPromptShown || termsSnoozed()) return;
+    if (!terms || !terms.reconsent) return;
+    const forced = terms.required === true;
+    if (termsPromptShown || (!forced && termsSnoozed())) return;   // обязательное окно отсрочкой не прячется
     const changed = Array.isArray(terms.changed) ? terms.changed : [];
     const both = changed.includes('offer') && changed.includes('privacy');
     const docsKey = both ? 'termsDocsBoth' : (changed.includes('privacy') ? 'termsDocsPrivacy' : 'termsDocsOffer');
+    // Текст, который владелец написал в админке (по языкам, с подставленными датами); пусто — стандартный текст
+    const notice = terms.notice && typeof terms.notice === 'object' ? terms.notice : null;
+    const customText = notice && notice.text && typeof notice.text[currentLang] === 'string' ? notice.text[currentLang].trim() : '';
+    const docDate = (doc) => {
+        const byLang = notice && notice.date && typeof notice.date === 'object' ? notice.date[doc] : null;
+        return byLang && typeof byLang[currentLang] === 'string' ? byLang[currentLang] : '';
+    };
     setText('termsModalTitle', tr('termsModalTitle'));
-    setText('termsModalText', tr('termsModalText', { docs: tr(docsKey) }));
+    setText('termsModalText', customText || tr('termsModalText', { docs: tr(docsKey) }));
     setText('termsAcceptBtn', tr('termsAcceptBtn'));
     setText('termsLaterBtn', tr('termsLaterBtn'));
-    // Ссылки на новые документы на языке человека (обработчик data-config-link выше берёт их из настроек)
+    // Ссылки на новые документы на языке человека, с датами (обработчик data-config-link выше берёт их из настроек)
     const links = [];
-    if (changed.includes('offer')) links.push(`<a href="#" data-config-link="offer_url" style="color:#c4b5fd;">${escapeHtml(tr('footer_offer'))}</a>`);
-    if (changed.includes('privacy')) links.push(`<a href="#" data-config-link="privacy_url" style="color:#c4b5fd;">${escapeHtml(tr('footer_privacy'))}</a>`);
+    const addLink = (doc, configKey, labelKey) => {
+        if (!changed.includes(doc)) return;
+        const date = docDate(doc);
+        links.push(`<a href="#" data-config-link="${configKey}" style="color:#c4b5fd;">${escapeHtml(tr(labelKey))}</a>${date ? `<span style="color:#94a3b8;"> · ${escapeHtml(date)}</span>` : ''}`);
+    };
+    addLink('offer', 'offer_url', 'footer_offer');
+    addLink('privacy', 'privacy_url', 'footer_privacy');
     const box = el('termsModalLinks');
     if (box) box.innerHTML = links.map(link => `<div>${link}</div>`).join('');
+    termsForced = forced;
+    if (forced) hide('termsLaterBtn'); else show('termsLaterBtn', 'block');
+    setTermsInert(forced);
     termsPromptShown = true;
     show('termsModal', 'flex');
 }
 function snoozeTerms() {
+    if (termsForced) return;      // обязательное принятие: отложить нельзя
     try { localStorage.setItem('samba_terms_snooze_until', String(Date.now() + TERMS_SNOOZE_MS)); } catch (e) { /* без хранилища — до следующего открытия */ }
     hide('termsModal');
 }
@@ -521,15 +559,29 @@ async function acceptTerms() {
     if (button) button.disabled = true;
     try {
         await api('/api/app/accept-terms', { method: 'POST', body: { accepted: true } });
+        const wasForced = termsForced;
         if (profileData) profileData.terms = { reconsent: false, changed: [] };
         try { localStorage.removeItem('samba_terms_snooze_until'); } catch (e) { /* не страшно */ }
+        termsForced = false;
+        termsPromptShown = false;        // если владелец обновит документы ещё раз, пока приложение открыто, окно покажется снова
+        setTermsInert(false);
         hide('termsModal');
+        if (wasForced) loadStoryGift();  // пока окно было открыто, этот запрос сервер не пропускал — подгружаем то, что не успело
     } catch (err) {
         console.error(err);
-        showAlert(tr('termsError'));
+        showAlert(tr('termsError'), true);
     } finally {
         if (button) button.disabled = false;
     }
+}
+// Сервер ответил «примите обновлённые документы» (TERMS_UPDATE_REQUIRED), а окна на экране нет — например, обязательное принятие
+// включили, пока приложение было открыто: заново читаем профиль, чтобы показать окно. Не чаще раза в 10 секунд.
+function onTermsRequired() {
+    if (termsForced || termsRechecking || Date.now() - termsRecheckedAt < TERMS_RECHECK_GAP_MS) return;
+    termsRechecking = true;
+    termsRecheckedAt = Date.now();
+    termsPromptShown = false;
+    loadProfile().catch(err => console.error(err)).finally(() => { termsRechecking = false; });
 }
 window.acceptTerms = acceptTerms;
 window.snoozeTerms = snoozeTerms;

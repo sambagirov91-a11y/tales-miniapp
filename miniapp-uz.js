@@ -333,6 +333,7 @@ window.langUZ = {
     termsAcceptBtn: "Roziman",
     termsLaterBtn: "Keyinroq eslatilsin",
     termsError: "Saqlab bo'lmadi. Birozdan so'ng qayta urinib ko'ring.",
+    termsRequiredError: "Davom etish uchun yangilangan hujjatlarni qabul qiling.",
 
     footer_privacy: "Maxfiylik siyosati",
     footer_offer: "Ommaviy oferta",
