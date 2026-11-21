@@ -686,6 +686,7 @@ function applyLanguage() {
     if (promoCta) promoCta.innerHTML = iconText('sparkles', tr('reader_promo_cta')) + icon('sparkles');
     applyReportTexts();
     applyShareTexts();
+    applyPackTexts();
     setIconText('readerSupportBtn', 'support', tr('support_btn'));
     setText('feedbackRatingTitle', tr('feedback_rating_title'));
     setText('feedbackCommentTitle', tr('feedback_comment_title'));
@@ -2122,6 +2123,7 @@ function closeReader() {
     stopReaderAudio(); // иначе озвучка продолжает играть за закрытой сказкой
     closeReportSheet();
     closeShareSheet();
+    closePackSheet();
     exitReportMode();
     hide('readerScreen');
     document.body.style.overflow = 'auto';
@@ -2719,6 +2721,7 @@ async function submitAliceCode() {
 // =====================================================================
 let voiceoversLeft = 0;
 let voiceoverAmount = 0;              // цена одной озвучки в тийинах (приходит с сервера)
+let voiceoverPack = null;             // пакет озвучек { count, unit_amount, amount } в тийинах (с сервера); null — сервер пакета не предлагает
 let awaitingVoiceoverPayment = null;  // { balanceBefore } — пока пользователь платит в Payme
 let audioPlaybackRate = 1;            // скорость плеера помним, пока открыто приложение
 
@@ -2736,6 +2739,7 @@ async function refreshVoiceoverBalance() {
         const data = await api('/api/user/check-balance', { method: 'POST', body: {} });
         voiceoversLeft = Number(data.voiceovers_left || 0);
         if (data.voiceover_amount) voiceoverAmount = Number(data.voiceover_amount);
+        voiceoverPack = parseVoiceoverPack(data.voiceover_pack);
         return true;
     } catch (err) {
         console.error('Не удалось получить баланс озвучек', err);
@@ -3058,10 +3062,17 @@ function updateAudioInterface(storyId, audioUrl, left) {
             ${startPlan
                 ? audioHeader(icon('mic'), tr('audio_pay_title'), tr('audio_pay_desc'))
                 : audioHeader(icon('lock'), tr('audio_limit_title'), tr('audio_limit_desc'))}
-            <button id="btn-buy-audio" class="audio-btn audio-btn--secondary" type="button" data-audio-action="buy" data-story-id="${id}">
-                <span class="audio-btn__icon">${icon('card')}</span>
-                <span>${escapeHtml(buyLabel)}</span>
-            </button>
+            <div class="audio-card__actions">
+                <button id="btn-buy-audio" class="audio-btn audio-btn--secondary" type="button" data-audio-action="buy" data-story-id="${id}">
+                    <span class="audio-btn__icon">${icon('card')}</span>
+                    <span>${escapeHtml(buyLabel)}</span>
+                </button>
+                ${voiceoverPack ? `
+                <button id="btn-buy-pack" class="audio-btn audio-btn--green" type="button" data-audio-action="pack" data-story-id="${id}">
+                    <span class="audio-btn__icon">${icon('card')}</span>
+                    <span>${escapeHtml(tr('audio_pack_btn', { price: formatPrice(voiceoverPack.unit_amount) }))}</span>
+                </button>` : ''}
+            </div>
         </div>
     `;
 }
@@ -3131,6 +3142,97 @@ async function buyAudioGeneration(storyId) {
     }
 }
 
+// ---------------------------------------------------------------------
+// ПАКЕТ ОЗВУЧЕК (21.11.2026): зелёная кнопка «Озвучить за 6 990» в карточке «Озвучки закончились» открывает окно
+// «Приобрести 5 лимитов озвучки» (каждый по 6 990, общая сумма 34 950) с кнопками «Купить» и «Отмена».
+// «Купить» просит у сервера ссылку Payme на сумму пакета (pack: true) и открывает её; после оплаты сервер начисляет все озвучки пакета,
+// а checkVoiceoverPayment() замечает новый баланс — как и при оплате одной озвучки. Количество и цены приходят с сервера.
+// ---------------------------------------------------------------------
+let packSheetOpen = false;
+
+// Пакет из ответа сервера: числа > 0, иначе пакета нет (старый сервер его не присылает — зелёной кнопки не будет)
+function parseVoiceoverPack(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    const count = Math.floor(Number(raw.count));
+    const unit = Number(raw.unit_amount);
+    const amount = Number(raw.amount);
+    if (!(count > 1) || !(unit > 0) || !(amount > 0)) return null;
+    return { count, unit_amount: unit, amount };
+}
+function packBuyContent(label, iconName) {
+    return `<span class="audio-btn__icon">${icon(iconName)}</span><span>${escapeHtml(label)}</span>`;
+}
+function renderPackSheet() {
+    const pack = voiceoverPack;
+    if (!pack) return;
+    setText('packSheetTitle', trPlural('pack_title', pack.count));
+    setText('packSheetName', trPlural('pack_name', pack.count));
+    setText('packSheetEach', tr('pack_each', { price: formatPrice(pack.unit_amount) }));
+    setText('packSheetTotalLabel', tr('pack_total'));
+    setText('packSheetTotal', formatPrice(pack.amount));
+    const buy = el('packBuyBtn');
+    if (buy && !buy.disabled) buy.innerHTML = packBuyContent(tr('pack_buy'), 'card');
+    setText('packCancelBtn', tr('pack_cancel'));
+    const close = el('packSheetClose');
+    if (close) close.setAttribute('aria-label', tr('report_close'));
+}
+function applyPackTexts() {
+    if (packSheetOpen) renderPackSheet();
+}
+function openPackSheet() {
+    const sheet = el('packSheet');
+    if (!sheet || !voiceoverPack) return;
+    renderPackSheet();
+    packSheetOpen = true;
+    sheet.hidden = false;
+    document.body.classList.add('sheet-open');
+    const panel = sheet.querySelector('.tariff-sheet__panel');
+    if (panel) { panel.scrollTop = 0; try { panel.focus({ preventScroll: true }); } catch (e) { /* не страшно */ } }
+    haptic('select');
+}
+function closePackSheet() {
+    const sheet = el('packSheet');
+    if (sheet) sheet.hidden = true;
+    if (packSheetOpen) document.body.classList.remove('sheet-open');
+    packSheetOpen = false;
+}
+async function buyVoiceoverPack() {
+    const pack = voiceoverPack;
+    const buy = el('packBuyBtn');
+    const cancel = el('packCancelBtn');
+    if (!pack || !buy || buy.disabled) return;
+    buy.disabled = true;
+    if (cancel) cancel.disabled = true;
+    buy.innerHTML = packBuyContent(tr('audio_pay_opening'), 'hourglass');
+    try {
+        const data = await api('/api/user/voiceover-payment-link', { method: 'POST', body: { language: currentLang, pack: true } });
+        // Сервер должен выставить именно пакет: если сумма другая (например, сервер ещё старой версии), оплату не открываем,
+        // чтобы человек не заплатил за одну озвучку, думая, что берёт пять
+        if (Number(data.amount) !== pack.amount || !data.url) throw new Error(tr('pack_error'));
+        awaitingVoiceoverPayment = { balanceBefore: voiceoversLeft };
+        closePackSheet();
+        openLink(data.url);
+    } catch (err) {
+        console.error(err);
+        showAlert(err.message || tr('error_generic'));
+    } finally {
+        if (buy.isConnected) {
+            buy.disabled = false;
+            buy.innerHTML = packBuyContent(tr('pack_buy'), 'card');
+        }
+        if (cancel && cancel.isConnected) cancel.disabled = false;
+    }
+}
+// Кнопки окна: закрыть (крестик, подложка, «Отмена») и «Купить»
+document.addEventListener('click', (event) => {
+    const node = event.target.closest('[data-pack-action]');
+    if (!node) return;
+    const name = node.getAttribute('data-pack-action');
+    if (name === 'close') closePackSheet();
+    else if (name === 'buy') buyVoiceoverPack();
+});
+document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && packSheetOpen) closePackSheet(); });
+
 async function checkVoiceoverPayment(retryOnce) {
     const pending = awaitingVoiceoverPayment;
     if (!pending) return;
@@ -3157,6 +3259,7 @@ document.addEventListener('click', (event) => {
     const action = button.getAttribute('data-audio-action');
     if (action === 'generate') requestAudioGeneration(storyId);
     else if (action === 'buy') buyAudioGeneration(storyId);
+    else if (action === 'pack') openPackSheet();
     else if (action === 'retry') { setAudioLoading(); loadAudioInterface(); }
 });
 
