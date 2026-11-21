@@ -483,6 +483,8 @@ async function restoreAccount() {
 // ОБНОВЛЁННЫЕ ДОКУМЕНТЫ: мягкая просьба согласиться заново
 // Сервер (GET /api/app/me → terms) присылает reconsent: true, когда оферту или политику обновили, а человек согласился с прежней
 // редакцией, и новые PDF уже загружены. Окно ничего не блокирует: сказки, подписка и оплата работают как раньше.
+// Про оферту сервер присылает ещё и terms.notice: текст окна на трёх языках (его пишет владелец в админке) и дату оферты словами.
+// Пустой текст для языка — окно со стандартным текстом из словаря.
 // «Напомнить позже» прячет окно на 3 дня (в браузере; нет хранилища — до следующего открытия).
 // =====================================================================
 const TERMS_SNOOZE_MS = 3 * 24 * 60 * 60 * 1000;
@@ -499,13 +501,17 @@ function maybeShowTermsModal() {
     const changed = Array.isArray(terms.changed) ? terms.changed : [];
     const both = changed.includes('offer') && changed.includes('privacy');
     const docsKey = both ? 'termsDocsBoth' : (changed.includes('privacy') ? 'termsDocsPrivacy' : 'termsDocsOffer');
+    // Текст, который владелец написал в админке (по языкам, с подставленной датой), есть только про оферту; пусто — стандартный текст
+    const notice = changed.includes('offer') && terms.notice && typeof terms.notice === 'object' ? terms.notice : null;
+    const customText = notice && notice.text && typeof notice.text[currentLang] === 'string' ? notice.text[currentLang].trim() : '';
+    const offerDate = notice && notice.date && typeof notice.date[currentLang] === 'string' ? notice.date[currentLang] : '';
     setText('termsModalTitle', tr('termsModalTitle'));
-    setText('termsModalText', tr('termsModalText', { docs: tr(docsKey) }));
+    setText('termsModalText', customText || tr('termsModalText', { docs: tr(docsKey) }));
     setText('termsAcceptBtn', tr('termsAcceptBtn'));
     setText('termsLaterBtn', tr('termsLaterBtn'));
     // Ссылки на новые документы на языке человека (обработчик data-config-link выше берёт их из настроек)
     const links = [];
-    if (changed.includes('offer')) links.push(`<a href="#" data-config-link="offer_url" style="color:#c4b5fd;">${escapeHtml(tr('footer_offer'))}</a>`);
+    if (changed.includes('offer')) links.push(`<a href="#" data-config-link="offer_url" style="color:#c4b5fd;">${escapeHtml(tr('footer_offer'))}</a>${offerDate ? `<span style="color:#94a3b8;"> · ${escapeHtml(offerDate)}</span>` : ''}`);
     if (changed.includes('privacy')) links.push(`<a href="#" data-config-link="privacy_url" style="color:#c4b5fd;">${escapeHtml(tr('footer_privacy'))}</a>`);
     const box = el('termsModalLinks');
     if (box) box.innerHTML = links.map(link => `<div>${link}</div>`).join('');
