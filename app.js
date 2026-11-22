@@ -176,6 +176,11 @@ const ERROR_TEXT_KEYS = {
     TOO_MANY: 'report_too_many',
     TOO_LONG: 'report_too_long',
     EMPTY_FRAGMENT: 'report_hint',
+    NO_PLOT: 'gift_err_noplot',
+    NO_TEMPLATE: 'gift_err_noplot',
+    LANGUAGE_UNAVAILABLE: 'gift_err_lang',
+    BAD_STATUS: 'gift_err_status',
+    NAME_PURGED: 'gift_err_purged',
     NETWORK: 'error_network'
 };
 async function api(path, options) {
@@ -289,6 +294,9 @@ async function boot() {
     }
     if (openParam === 'tariffs' && profileReady) {
         openTariffs('bot');
+    } else if (openParam === 'gifts' && profileReady) {
+        switchAppTab('stories');
+        setGiftView('gifts');
     } else if (sharePick.length && profileReady) {
         switchAppTab('stories');
         openSharePickSheet(sharePick);
@@ -644,12 +652,19 @@ async function saveParentInfo() {
     if (button) { setParentBtnLabel(tr('saving')); button.disabled = true; }
 
     try {
-        await api('/api/app/parent', {
+        const saved = await api('/api/app/parent', {
             method: 'POST',
             body: { parentName, role, age, agreedPrivacy, agreedOffer, language: currentLang }
         });
         await loadProfile();
-        openChildrenIfEmpty();
+        // Человек пришёл по ссылке подарка: сервер уже создал ребёнка и положил сказку — показываем её, а не просим «добавьте ребёнка»
+        if (saved && Array.isArray(saved.gifts) && saved.gifts.length) {
+            switchAppTab('stories');
+            giftState.part = 'received';
+            setGiftView('gifts');
+        } else {
+            openChildrenIfEmpty();
+        }
     } catch (err) {
         console.error(err);
         showAlert(err.message || tr('error_generic'));
@@ -739,6 +754,7 @@ function applyLanguage() {
     applyReportTexts();
     applyShareTexts();
     applyPackTexts();
+    applyGiftTexts();
     setIconText('readerSupportBtn', 'support', tr('support_btn'));
     setText('feedbackRatingTitle', tr('feedback_rating_title'));
     setText('feedbackCommentTitle', tr('feedback_comment_title'));
@@ -1337,6 +1353,7 @@ function subscribeReturnFromPayment() {
     const onReturn = () => {
         if (awaitingPayment) checkPaymentResult(true);
         if (awaitingVoiceoverPayment) checkVoiceoverPayment(true);
+        checkGiftPaymentReturn();
     };
     try { if (tg && tg.onEvent) tg.onEvent('activated', onReturn); } catch (e) { /* старые клиенты */ }
     document.addEventListener('visibilitychange', () => {
@@ -2119,7 +2136,7 @@ function switchAppTab(tabId) {
     document.querySelectorAll('.tab-item').forEach(node => node.classList.remove('active'));
     if (el(pageId)) el(pageId).classList.add('active');
     if (el(buttonId)) el(buttonId).classList.add('active');
-    if (tabId === 'stories') loadUserStories();
+    if (tabId === 'stories') { loadUserStories(); if (giftState.view === 'gifts') loadGifts(); }
     window.scrollTo(0, 0);
 }
 // Профили детей живут во вкладке «Дети»: открываем её
@@ -2153,6 +2170,7 @@ function renderStoriesList() {
 
     const today = userStories.filter(st => st.is_today);
     const archive = userStories.filter(st => !st.is_today);
+    updateGiftPromo();
 
     todayContainer.innerHTML = today.length
         ? today.map(createStoryCard).join('')
@@ -2173,7 +2191,8 @@ function createStoryCard(st) {
         <div class="story-card${st.locked ? ' locked' : ''}" data-id="${escapeHtml(st.id)}" onclick="openReader(this.dataset.id)">
             <div>
                 <div class="story-title">${escapeHtml(st.title)}${childName}</div>
-                <div class="story-date">${escapeHtml(date)}${st.locked ? ' · ' + escapeHtml(tr('story_locked')) : ''}</div>
+                <div class="story-date">${escapeHtml(date)}${st.locked ? ' · ' + escapeHtml(tr('story_locked')) : ''}${st.gift ? `<span class="gift-badge">${escapeHtml(st.gift.from ? tr('gift_card_badge', { from: st.gift.from }) : tr('gift_card_badge_anon'))}</span>` : ''}</div>
+                ${st.locked ? '' : `<button type="button" class="gift-inline gift-more" onclick="event.stopPropagation(); openGiftSheet(this.closest('.story-card').dataset.id)">${iconText('gift', tr('gift_more'))}</button>`}
             </div>
             <div class="story-icon">${icon(st.locked ? 'lock' : 'tales')}</div>
         </div>`;
@@ -2231,7 +2250,8 @@ async function openReader(storyId, options) {
     } catch (e) { /* старые клиенты */ }
 
     renderFeedbackBlocks(story);
-    if (opts.share) openShareSheet();
+    applyGiftReader(story);
+    if (opts.share && !(story.gift && !story.gift.placed)) openShareSheet();
     setAudioLoading();
     await loadAudioInterface();
 }
@@ -2240,6 +2260,8 @@ function closeReader() {
     closeReportSheet();
     closeShareSheet();
     closePackSheet();
+    closeGiftSheet();
+    closeGiftSend();
     exitReportMode();
     hide('readerScreen');
     document.body.style.overflow = 'auto';
@@ -2713,7 +2735,8 @@ function renderFeedbackBlocks(story) {
         if (stars) stars.style.display = 'none';
         if (ratingThanks) {
             ratingThanks.style.display = 'block';
-            ratingThanks.innerHTML = `${escapeHtml(tr('feedback_your_rating'))} <span class="rating-thanks__stars">${icon('star-fill', 'ic--gold').repeat(Math.min(5, Number(story.rating) || 0))}</span>`;
+            ratingThanks.innerHTML = `${escapeHtml(tr('feedback_your_rating'))} <span class="rating-thanks__stars">${icon('star-fill', 'ic--gold').repeat(Math.min(5, Number(story.rating) || 0))}</span>`
+                + `<br><button type="button" class="gift-inline" data-gift-action="open">${iconText('gift', tr('gift_btn_after_rating'))}</button>`;
         }
     } else {
         if (stars) stars.style.display = 'flex';
@@ -2793,6 +2816,545 @@ window.sendComment = async function () {
     rememberFeedback(storyId, { user_comment: comment });
     if (currentStory && String(currentStory.id) === String(storyId)) renderFeedbackBlocks(currentStory);
 };
+// =====================================================================
+// ПОДАРИТЬ СКАЗКУ (22.11.2026)
+// Отправитель: в читалке «Подарить эту сказку другому ребёнку» → форма (имя, пол, язык, «От кого», пожелание) →
+// «Всё верно?» с ценой → оплата Payme → в «Подарки → Я подарил» подарок «готовится» → «готов» → «Отправить подарок»
+// (Telegram или ссылка). Получатель: «Подарки → Подарили мне» — читать сказку и, если места в профилях не нашлось,
+// «Добавить <имя> в дети». Всё считает и хранит сервер (/api/app/gifts*, tale_gifts_api.js); здесь — только экраны.
+// Цена приходит с сервера (в тийинах), в тексты и код не вписывается.
+// =====================================================================
+const GIFT_POLL_MS = 5000;                   // пока подарок готовится, раз в 5 секунд спрашиваем статус
+const GIFT_POLL_MAX_MS = 20 * 60 * 1000;     // оплату ждём не дольше 20 минут (дальше подарок виден в списке сам)
+const GIFT_MESSAGE_MAX = 120;
+const giftState = { sent: [], received: [], loaded: false, loading: false, view: 'archive', part: null, seen: {} };
+const giftSheetState = { open: false, step: 'form', storyId: null, languages: [], price: 0, busy: false, draft: null };
+const giftSendState = { open: false, giftId: null, busy: false };
+const giftPickState = { open: false };
+let giftPending = null;                      // { id, name, since } — оплата открыта, подарок ещё не оплачен
+let giftPollTimer = null;
+let awaitingGiftPayment = false;             // Payme открыт, ждём возвращения в приложение
+let giftNameRow = null;                      // защита поля имени (name-script.js), навешивается один раз
+
+// Текст на языке подарка (получатель читает его на языке сказки, а не интерфейса отправителя)
+function trIn(lang, key, vars) {
+    const dict = i18n_app[lang] || i18n_app.ru;
+    let text = dict[key] !== undefined ? dict[key] : (i18n_app.ru[key] !== undefined ? i18n_app.ru[key] : '');
+    if (vars) Object.keys(vars).forEach(name => { text = text.split('{' + name + '}').join(vars[name]); });
+    return text;
+}
+function taleLangTitle(code) {
+    const found = TALE_LANGS.find(item => item[0] === code);
+    return found ? found[1] : code;
+}
+function giftDaysLeft(iso) {
+    const left = Math.ceil((new Date(iso).getTime() - serverNow()) / DAY_MS);
+    return Math.max(1, left || 1);
+}
+function giftTabActive() {
+    const page = el('tabStories');
+    return !!page && page.classList.contains('active');
+}
+
+// ---------- Тексты ----------
+function applyGiftTexts() {
+    setText('giftSegArchive', tr('gift_seg_archive'));
+    setIconText('giftSegGifts', 'gift', tr('gift_seg_gifts'));
+    setText('giftPartReceived', tr('gift_part_received'));
+    setText('giftPartSent', tr('gift_part_sent'));
+    setIconText('readerGiftBtn', 'gift', tr('gift_btn'));
+    setText('giftSheetTitle', tr('gift_title'));
+    setText('giftPromoTitle', tr('gift_promo_title'));
+    setText('giftPromoSub', tr('gift_promo_sub'));
+    setText('giftPickTitle', tr('gift_pick_title'));
+    setText('giftPickSub', tr('gift_pick_sub'));
+    updateGiftPromo();
+    setText('giftLblName', tr('gift_lbl_name'));
+    setText('giftLblGender', tr('label_gender'));
+    setIconText('giftGenderF', 'girl', tr('btn_girl'));
+    setIconText('giftGenderM', 'boy', tr('btn_boy'));
+    setText('giftLblLang', tr('gift_lbl_lang'));
+    setText('giftLblFrom', tr('gift_lbl_from'));
+    setText('giftLblMsg', tr('gift_lbl_msg'));
+    setPlaceholder('giftName', tr('placeholder_name'));
+    setPlaceholder('giftFrom', tr('gift_ph_from'));
+    setPlaceholder('giftMsg', tr('gift_ph_msg'));
+    setText('giftNextBtn', tr('gift_next'));
+    setText('giftConfirmTotalLabel', tr('gift_confirm_total'));
+    setText('giftConfirmNote', tr('gift_confirm_note'));
+    setText('giftEditBtn', tr('gift_edit'));
+    setText('giftSendTitle', tr('gift_send_title'));
+    setText('giftSendNote', tr('gift_send_note'));
+    ['giftSheetClose', 'giftSendClose', 'giftPickClose'].forEach(id => { const node = el(id); if (node) node.setAttribute('aria-label', tr('report_close')); });
+    updateGiftSheetTexts();
+    updateGiftSendButtons();
+    if (giftState.loaded) renderGifts();
+}
+function updateGiftSheetTexts() {
+    const confirm = giftSheetState.step === 'confirm';
+    setText('giftSheetTitle', tr(confirm ? 'gift_confirm_title' : 'gift_title'));
+    setText('giftSheetSub', tr(confirm ? 'gift_confirm_sub' : 'gift_sub'));
+    const pay = el('giftPayBtn');
+    if (pay && !giftSheetState.busy) pay.innerHTML = `<span class="audio-btn__icon">${icon('card')}</span><span>${escapeHtml(tr('gift_pay'))}</span>`;
+}
+function updateGiftSendButtons() {
+    const telegram = el('giftSendTelegramBtn');
+    const link = el('giftSendLinkBtn');
+    if (telegram) telegram.innerHTML = iconText('send', tr('gift_send_telegram'));
+    if (link) link.innerHTML = iconText('link', canNativeShare() ? tr('gift_send_link') : tr('gift_send_copy'));
+}
+
+// ---------- Переключатели «Архив | Подарки» и «Подарили мне | Я подарил» ----------
+function setGiftView(view) {
+    giftState.view = view === 'gifts' ? 'gifts' : 'archive';
+    const gifts = giftState.view === 'gifts';
+    const archive = el('storiesArchiveView');
+    if (archive) archive.style.display = gifts ? 'none' : '';
+    if (el('giftsView')) el('giftsView').style.display = gifts ? 'block' : 'none';
+    [['giftSegArchive', !gifts], ['giftSegGifts', gifts]].forEach(([id, on]) => {
+        const node = el(id);
+        if (!node) return;
+        node.classList.toggle('active', on);
+        node.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    if (gifts) loadGifts();
+    else stopGiftPoll();
+}
+function setGiftPart(part) {
+    giftState.part = part === 'sent' ? 'sent' : 'received';
+    const sent = giftState.part === 'sent';
+    if (el('giftsReceivedList')) el('giftsReceivedList').style.display = sent ? 'none' : '';
+    if (el('giftsSentList')) el('giftsSentList').style.display = sent ? '' : 'none';
+    [['giftPartReceived', !sent], ['giftPartSent', sent]].forEach(([id, on]) => {
+        const node = el(id);
+        if (!node) return;
+        node.classList.toggle('active', on);
+        node.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+}
+
+// ---------- Список подарков ----------
+async function loadGifts() {
+    if (!userExists || giftState.loading) return;
+    giftState.loading = true;
+    try {
+        await checkGiftPending();
+        const data = await api('/api/app/gifts');
+        const sent = data.sent || [];
+        // Подарок был «готовится», стал «готов» — говорим об этом, пока человек смотрит на экран
+        const ready = sent.filter(g => g.status === 'ready' && giftState.seen[g.id] === 'preparing');
+        giftState.seen = {};
+        sent.forEach(g => { giftState.seen[g.id] = g.status; });
+        giftState.sent = sent;
+        giftState.received = data.received || [];
+        giftState.loaded = true;
+        if (giftState.part === null) giftState.part = giftState.received.length || !sent.length ? 'received' : 'sent';
+        renderGifts();
+        if (ready.length) { haptic('success'); showAlert(tr('gift_ready_alert', { name: ready[0].child_name || '' })); }
+    } catch (err) {
+        console.error('Ошибка загрузки подарков:', err);
+    } finally {
+        giftState.loading = false;
+        scheduleGiftPoll();
+    }
+}
+// Оплату подарка ждём по самому подарку: «ждёт оплату» → «готовится» (тогда он уже в общем списке)
+async function checkGiftPending() {
+    if (!giftPending) return;
+    if (Date.now() - giftPending.since > GIFT_POLL_MAX_MS) { giftPending = null; return; }
+    try {
+        const info = await api('/api/app/gifts/' + encodeURIComponent(giftPending.id));
+        if (info.status !== 'awaiting_payment') giftPending = null;
+    } catch (err) {
+        if (err && (err.status === 404 || err.status === 410)) giftPending = null;
+    }
+}
+function giftNeedsPoll() {
+    return !!giftPending || giftState.sent.some(g => g.status === 'preparing');
+}
+function stopGiftPoll() {
+    if (giftPollTimer) { clearTimeout(giftPollTimer); giftPollTimer = null; }
+}
+function scheduleGiftPoll() {
+    stopGiftPoll();
+    if (giftState.view !== 'gifts' || !giftTabActive() || !giftNeedsPoll()) return;
+    giftPollTimer = setTimeout(() => { giftPollTimer = null; loadGifts(); }, GIFT_POLL_MS);
+}
+function giftReceivedCard(g) {
+    const from = g.sender_label ? tr('gift_recv_from', { from: g.sender_label }) : tr('gift_recv_anon');
+    const date = g.claimed_at ? formatDate(g.claimed_at, { day: 'numeric', month: 'short' }) : '';
+    const forLine = g.child_name ? tr('gift_for', { name: g.child_name }) : '';
+    const read = g.story_id
+        ? `<button type="button" class="gift-card__btn gift-card__btn--main" data-gift-action="read" data-story-id="${escapeHtml(g.story_id)}">${iconText('tales', tr('gift_read'))}</button>`
+        : '';
+    const more = g.story_id
+        ? `<button type="button" class="gift-card__btn" data-gift-action="more" data-story-id="${escapeHtml(g.story_id)}">${iconText('gift', tr('gift_more'))}</button>`
+        : '';
+    const add = g.needs_child
+        ? `<button type="button" class="gift-card__btn" data-gift-action="add-child" data-gift-id="${escapeHtml(g.id)}">${iconText('plus', tr('gift_add_child', { name: g.child_name || '' }))}</button>`
+        : '';
+    const note = g.needs_child ? `<p class="gift-card__note">${escapeHtml(tr('gift_recv_noplace'))}</p>` : '';
+    return `<div class="story-card gift-card glass-panel">
+        <p class="gift-card__title">${escapeHtml(g.title || tr('gift_recv_anon'))}</p>
+        <p class="gift-card__meta">${escapeHtml([from, date].filter(Boolean).join(' · '))}</p>
+        ${forLine ? `<p class="gift-card__meta">${escapeHtml(forLine)}</p>` : ''}
+        ${note}
+        <div class="gift-card__actions">${read}${add}${more}</div>
+    </div>`;
+}
+function giftMoreButton(storyId) {
+    return storyId
+        ? `<button type="button" class="gift-card__btn" data-gift-action="more" data-story-id="${escapeHtml(storyId)}">${iconText('gift', tr('gift_more'))}</button>`
+        : '';
+}
+function giftSentCard(g) {
+    const date = g.created_at ? formatDate(g.created_at, { day: 'numeric', month: 'short' }) : '';
+    const meta = [taleLangTitle(g.language), date].filter(Boolean).join(' · ');
+    let status = '';
+    let actions = '';
+    if (g.status === 'preparing') {
+        status = `<p class="gift-card__status gift-card__status--wait">${escapeHtml(tr('gift_st_preparing'))}</p>`;
+    } else if (g.status === 'ready') {
+        status = `<p class="gift-card__status">${escapeHtml(tr('gift_st_ready'))}</p>`;
+        if (g.expires_at) status += `<p class="gift-card__note">${escapeHtml(trPlural('gift_days_left', giftDaysLeft(g.expires_at)))}</p>`;
+        actions = `<button type="button" class="gift-card__btn gift-card__btn--main" data-gift-action="send" data-gift-id="${escapeHtml(g.id)}">${iconText('gift', tr('gift_send_btn'))}</button>`;
+    } else if (g.status === 'claimed') {
+        status = `<p class="gift-card__status">${escapeHtml(tr('gift_st_claimed', { date: g.claimed_at ? formatDate(g.claimed_at) : '' }))}</p>`;
+        actions = giftMoreButton(g.source_story_id);
+    } else if (g.status === 'expired') {
+        status = `<p class="gift-card__status">${escapeHtml(tr('gift_st_expired'))}</p>`;
+        actions = giftMoreButton(g.source_story_id);
+    } else if (g.status === 'refunded') {
+        status = `<p class="gift-card__status">${escapeHtml(tr('gift_st_refunded'))}</p>`;
+    }
+    return `<div class="story-card gift-card glass-panel">
+        <p class="gift-card__title">${escapeHtml(g.child_name ? tr('gift_for', { name: g.child_name }) : (g.title || ''))}</p>
+        <p class="gift-card__meta">${escapeHtml(meta)}</p>
+        ${status}
+        ${actions ? `<div class="gift-card__actions">${actions}</div>` : ''}
+    </div>`;
+}
+function renderGifts() {
+    const received = el('giftsReceivedList');
+    const sent = el('giftsSentList');
+    if (!received || !sent) return;
+    received.innerHTML = giftState.received.length
+        ? giftState.received.map(giftReceivedCard).join('')
+        : `<p class="empty-note">${escapeHtml(tr('gift_empty_received'))}</p>`;
+    const pending = giftPending
+        ? `<div class="story-card gift-card glass-panel">
+            <p class="gift-card__title">${escapeHtml(tr('gift_for', { name: giftPending.name }))}</p>
+            <p class="gift-card__status gift-card__status--wait">${escapeHtml(tr('gift_wait_title'))}</p>
+            <p class="gift-card__note">${escapeHtml(tr('gift_wait_text', { name: giftPending.name }))}</p>
+        </div>`
+        : '';
+    sent.innerHTML = pending + (giftState.sent.length
+        ? giftState.sent.map(giftSentCard).join('')
+        : (pending ? '' : `<p class="empty-note">${escapeHtml(tr('gift_empty_sent'))}</p>`));
+    setGiftPart(giftState.part || 'received');
+}
+
+// ---------- Получатель: «Читать» и «Добавить <имя> в дети» ----------
+async function addGiftChild(giftId, button) {
+    if (!giftId || (button && button.disabled)) return;
+    const gift = giftState.received.find(g => String(g.id) === String(giftId));
+    if (button) button.disabled = true;
+    try {
+        await api(`/api/app/gifts/${encodeURIComponent(giftId)}/add-child`, { method: 'POST', body: {} });
+        await loadProfile();
+        await loadUserStories();
+        await loadGifts();
+        showAlert(tr('gift_added', { name: gift && gift.child_name ? gift.child_name : '' }));
+    } catch (err) {
+        console.error(err);
+        showAlert(err.message || tr('error_generic'));
+    } finally {
+        if (button && button.isConnected) button.disabled = false;
+    }
+}
+
+// ---------- Отправитель: форма и подтверждение ----------
+function giftBindNameRow() {
+    if (giftNameRow || !el('giftStepForm')) return;
+    giftNameRow = bindKidRow(el('giftStepForm'), null);
+}
+function setGiftStep(step) {
+    giftSheetState.step = step;
+    if (el('giftStepForm')) el('giftStepForm').hidden = step !== 'form';
+    if (el('giftStepConfirm')) el('giftStepConfirm').hidden = step !== 'confirm';
+    updateGiftSheetTexts();
+    const panel = document.querySelector('#giftSheet .tariff-sheet__panel');
+    if (panel) panel.scrollTop = 0;
+}
+// Читалка → «Подарить…»: спрашиваем сервер, можно ли подарить эту сказку и на каких языках
+// Без аргумента — сказка, открытая в читалке; со сказкой — из списка («Подарить ещё», выбор сказки). Подаренную сказку тоже можно подарить дальше.
+async function openGiftSheet(forStoryId) {
+    const fromReader = !forStoryId;
+    const storyId = forStoryId || (currentStory && currentStory.id);
+    if (!storyId || giftSheetState.open || giftSheetState.busy) return;
+    giftSheetState.busy = true;
+    const buttons = document.querySelectorAll('#readerGiftBtn, .gift-inline');
+    buttons.forEach(node => { node.disabled = true; });
+    let options;
+    try {
+        options = await api(`/api/app/gifts/options?story_id=${encodeURIComponent(storyId)}`);
+    } catch (err) {
+        console.error(err);
+        showAlert(err.message || tr('gift_err_options'));
+        return;
+    } finally {
+        giftSheetState.busy = false;
+        buttons.forEach(node => { if (node.isConnected) node.disabled = false; });
+    }
+    if (fromReader && (!currentStory || String(currentStory.id) !== String(storyId))) return;   // пока ждали, сказку закрыли
+    const languages = TALE_LANGS.filter(item => (options.languages || []).includes(item[0]));
+    if (!languages.length) { showAlert(tr('gift_err_lang')); return; }
+    giftSheetState.storyId = storyId;
+    giftSheetState.languages = languages.map(item => item[0]);
+    giftSheetState.price = Number(options.price) || 0;
+    giftSheetState.draft = null;
+
+    giftBindNameRow();
+    const select = el('giftLang');
+    if (select) {
+        select.innerHTML = languages.map(([code, title]) => `<option value="${code}">${escapeHtml(title)}</option>`).join('');
+        select.value = giftSheetState.languages.includes(currentLang) ? currentLang : giftSheetState.languages[0];
+        select.dispatchEvent(new Event('change'));
+    }
+    if (el('giftName')) el('giftName').value = '';
+    if (el('giftNameWarn')) el('giftNameWarn').hidden = true;
+    if (giftNameRow) giftNameRow.sepTyped = false;
+    document.querySelectorAll('#giftGender [data-kid-gender]').forEach(node => node.classList.remove('selected'));
+    if (el('giftFrom')) el('giftFrom').value = (profileData && profileData.user && profileData.user.parent_name) || '';
+    if (el('giftMsg')) el('giftMsg').value = '';
+    giftSheetState.open = true;
+    setGiftStep('form');
+    el('giftSheet').hidden = false;
+    document.body.classList.add('sheet-open');
+    haptic('select');
+}
+function closeGiftSheet() {
+    const sheet = el('giftSheet');
+    if (sheet) sheet.hidden = true;
+    if (giftSheetState.open) document.body.classList.remove('sheet-open');
+    giftSheetState.open = false;
+    giftSheetState.busy = false;
+    giftSheetState.draft = null;
+}
+// Шаг 1 → шаг 2: проверяем имя так же, как при добавлении ребёнка, и показываем «Всё верно?»
+function giftToConfirm() {
+    if (!giftSheetState.open) return;
+    const input = el('giftName');
+    const select = el('giftLang');
+    const picked = document.querySelector('#giftGender [data-kid-gender].selected');
+    const language = select ? select.value : currentLang;
+    let name = input ? input.value.trim() : '';
+    if (!name) return showAlert(tr('alert_enter_child_name'));
+    if (!picked) return showAlert(tr('gift_err_gender'));
+    if (window.NameScript) {
+        if (giftNameRow && kidRowSeveral(giftNameRow)) { updateKidRowWarn(giftNameRow); return showAlert(oneNameText()); }
+        const checked = NameScript.check(name, language);
+        if (checked.foreign) { if (giftNameRow && giftNameRow.guard) giftNameRow.guard.recheck(); return showAlert(nameHintText(language)); }
+        if (!checked.text) return showAlert(tr('alert_enter_child_name'));
+        name = checked.text;
+    }
+    const gender = picked.getAttribute('data-kid-gender');
+    const from = (el('giftFrom') ? el('giftFrom').value : '').trim()
+        || (profileData && profileData.user && profileData.user.parent_name) || '';
+    const message = (el('giftMsg') ? el('giftMsg').value : '').trim().slice(0, GIFT_MESSAGE_MAX);
+    giftSheetState.draft = { name, gender, language, from, message };
+
+    setText('giftConfirmWho', tr('gift_confirm_who', { name, gender: tr(gender === 'F' ? 'gift_g_f' : 'gift_g_m'), lang: taleLangTitle(language) }));
+    setText('giftConfirmFrom', from ? tr('gift_confirm_from', { from }) : '');
+    if (el('giftConfirmFrom')) el('giftConfirmFrom').hidden = !from;
+    setText('giftConfirmMsg', message ? tr('gift_confirm_msg', { msg: message }) : '');
+    if (el('giftConfirmMsg')) el('giftConfirmMsg').hidden = !message;
+    setText('giftConfirmTotal', formatPrice(giftSheetState.price));
+    setGiftStep('confirm');
+}
+// «Оформить подарок»: сервер создаёт подарок и выдаёт ссылку Payme; сумма должна совпасть с показанной
+async function payForGift() {
+    const draft = giftSheetState.draft;
+    const pay = el('giftPayBtn');
+    if (!draft || giftSheetState.busy) return;
+    giftSheetState.busy = true;
+    if (pay) { pay.disabled = true; pay.innerHTML = `<span class="audio-btn__icon">${icon('hourglass')}</span><span>${escapeHtml(tr('gift_opening'))}</span>`; }
+    try {
+        const data = await api('/api/app/gifts', {
+            method: 'POST',
+            body: {
+                storyId: giftSheetState.storyId, childName: draft.name, gender: draft.gender, language: draft.language,
+                senderLabel: draft.from, message: draft.message, uiLanguage: currentLang
+            }
+        });
+        if (!data.url || Number(data.amount) !== giftSheetState.price) throw new Error(tr('gift_err_options'));
+        giftPending = { id: data.gift_id, name: draft.name, since: Date.now() };
+        awaitingGiftPayment = true;
+        closeGiftSheet();
+        closeReader();
+        switchAppTab('stories');
+        giftState.part = 'sent';
+        setGiftView('gifts');
+        renderGifts();
+        openLink(data.url);
+    } catch (err) {
+        console.error(err);
+        giftSheetState.busy = false;
+        if (err && err.code === 'CHILD_NAME_SEVERAL') showAlert(oneNameText());
+        else if (err && err.code === 'CHILD_NAME_SCRIPT') showAlert(nameHintText(draft.language));
+        else showAlert(err.message || tr('error_generic'));
+    } finally {
+        giftSheetState.busy = false;
+        if (pay && pay.isConnected) { pay.disabled = false; updateGiftSheetTexts(); }
+    }
+}
+// Вернулись из Payme: смотрим, оплачен ли подарок
+function checkGiftPaymentReturn() {
+    if (!awaitingGiftPayment && !giftPending) return;
+    awaitingGiftPayment = false;
+    if (giftState.view === 'gifts') loadGifts();
+}
+
+// ---------- «Подарить сказку другому ребёнку» на вкладке «Сказки»: выбор сказки ----------
+function updateGiftPromo() {
+    const box = el('giftPromo');
+    if (box) box.hidden = !userExists;
+}
+function giftPickable() {
+    return userStories.filter(st => !st.locked);
+}
+function openGiftPick() {
+    if (giftPickState.open || giftSheetState.open) return;
+    const stories = giftPickable();
+    if (!stories.length) { showAlert(tr('gift_pick_empty')); return; }
+    const list = el('giftPickList');
+    if (list) {
+        list.innerHTML = stories.map(st => {
+            const date = formatDate(st.created_at, { day: 'numeric', month: 'short' });
+            const meta = [st.child_name, date].filter(Boolean).join(' · ');
+            return `<button type="button" class="gift-pick-item" data-gift-action="pick-story" data-story-id="${escapeHtml(st.id)}">
+                <span class="gift-pick-item__title">${escapeHtml(st.title)}</span>
+                <span class="gift-pick-item__meta">${escapeHtml(meta)}</span>
+            </button>`;
+        }).join('');
+    }
+    giftPickState.open = true;
+    el('giftPickSheet').hidden = false;
+    document.body.classList.add('sheet-open');
+    haptic('select');
+}
+function closeGiftPick() {
+    const sheet = el('giftPickSheet');
+    if (sheet) sheet.hidden = true;
+    if (giftPickState.open) document.body.classList.remove('sheet-open');
+    giftPickState.open = false;
+}
+// Выбрали сказку: закрываем список и открываем форму подарка для неё
+function giftPickStory(storyId) {
+    closeGiftPick();
+    openGiftSheet(storyId);
+}
+
+// ---------- Отправитель: «Отправить подарок» ----------
+function openGiftSend(giftId) {
+    const gift = giftState.sent.find(g => String(g.id) === String(giftId));
+    if (!gift || !gift.link) return;
+    giftSendState.open = true;
+    giftSendState.giftId = gift.id;
+    giftSendState.busy = false;
+    setText('giftSendSub', tr('gift_send_sub', { name: gift.child_name || '' }));
+    updateGiftSendButtons();
+    el('giftSendSheet').hidden = false;
+    document.body.classList.add('sheet-open');
+    haptic('select');
+}
+function closeGiftSend() {
+    const sheet = el('giftSendSheet');
+    if (sheet) sheet.hidden = true;
+    if (giftSendState.open) document.body.classList.remove('sheet-open');
+    giftSendState.open = false;
+    giftSendState.giftId = null;
+}
+function giftShare(mode) {
+    const gift = giftState.sent.find(g => String(g.id) === String(giftSendState.giftId));
+    if (!gift || !gift.link) return;
+    // Для аналитики: «Отправить» нажато. Ссылка уже у нас, ответ ждать не нужно
+    api(`/api/app/gifts/${encodeURIComponent(gift.id)}/shared`, { method: 'POST', body: {} }).catch(() => {});
+    const text = trIn(gift.language, 'gift_share_text', { name: gift.child_name || '' });
+    if (mode === 'telegram') {
+        const link = 'https://t.me/share/url?url=' + encodeURIComponent(gift.link) + '&text=' + encodeURIComponent(text);
+        try {
+            if (tg && tg.openTelegramLink) tg.openTelegramLink(link);
+            else window.open(link, '_blank');
+        } catch (e) { window.open(link, '_blank'); }
+        closeGiftSend();
+        return;
+    }
+    if (canNativeShare()) {
+        navigator.share({ text, url: gift.link })
+            .then(() => { haptic('success'); closeGiftSend(); })
+            .catch((err) => { if (!err || err.name !== 'AbortError') giftCopyLink(gift.link); });
+        return;
+    }
+    giftCopyLink(gift.link);
+}
+function giftCopyLink(url) {
+    copyText(url).then((ok) => {
+        closeGiftSend();
+        showAlert(ok ? tr('gift_link_copied') : tr('share_copy_manual') + '\n' + url);
+    });
+}
+
+// ---------- Читалка: подарок или обычная сказка ----------
+// Подаренная сказка ещё не в профиле ребёнка («Подарили мне»): оценить, поделиться и пожаловаться на неё пока нельзя —
+// эти действия сервер принимает только для сказок своих детей. Подарить её дальше («Подарить ещё») можно в любом случае.
+function applyGiftReader(story) {
+    const gift = story && story.gift ? story.gift : null;
+    const unplaced = !!(gift && !gift.placed);
+    const from = el('readerGiftFrom');
+    if (from) {
+        from.hidden = !gift;
+        if (gift) from.innerText = gift.from ? tr('gift_reader_from', { from: gift.from }) : tr('gift_reader_anon');
+    }
+    ['readerShareBtn', 'readerReportEndBtn', 'readerReportBtn'].forEach(id => {
+        const node = el(id);
+        if (node) node.style.display = unplaced ? 'none' : '';
+    });
+    if (unplaced) { hide('rating-block'); hide('comment-block'); }
+}
+document.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!target || !target.closest) return;
+    const view = target.closest('[data-gift-view]');
+    if (view) { setGiftView(view.getAttribute('data-gift-view')); haptic('select'); return; }
+    const part = target.closest('[data-gift-part]');
+    if (part) { setGiftPart(part.getAttribute('data-gift-part')); haptic('select'); return; }
+    const node = target.closest('[data-gift-action]');
+    if (!node) return;
+    const action = node.getAttribute('data-gift-action');
+    if (action === 'open') openGiftSheet();
+    else if (action === 'more') { const id = node.getAttribute('data-story-id'); if (id) openGiftSheet(id); }
+    else if (action === 'pick') openGiftPick();
+    else if (action === 'pick-close') closeGiftPick();
+    else if (action === 'pick-story') giftPickStory(node.getAttribute('data-story-id'));
+    else if (action === 'close') closeGiftSheet();
+    else if (action === 'next') giftToConfirm();
+    else if (action === 'back') setGiftStep('form');
+    else if (action === 'pay') payForGift();
+    else if (action === 'read') { const id = node.getAttribute('data-story-id'); if (id) openReader(id); }
+    else if (action === 'add-child') addGiftChild(node.getAttribute('data-gift-id'), node);
+    else if (action === 'send') openGiftSend(node.getAttribute('data-gift-id'));
+    else if (action === 'send-close') closeGiftSend();
+    else if (action === 'send-telegram') giftShare('telegram');
+    else if (action === 'send-link') giftShare('link');
+});
+document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    if (giftSendState.open) closeGiftSend();
+    else if (giftSheetState.open) closeGiftSheet();
+    else if (giftPickState.open) closeGiftPick();
+});
+
 // =====================================================================
 // ЯНДЕКС АЛИСА
 // =====================================================================
