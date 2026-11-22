@@ -2170,6 +2170,7 @@ function renderStoriesList() {
 
     const today = userStories.filter(st => st.is_today);
     const archive = userStories.filter(st => !st.is_today);
+    updateGiftPromo();
 
     todayContainer.innerHTML = today.length
         ? today.map(createStoryCard).join('')
@@ -2191,6 +2192,7 @@ function createStoryCard(st) {
             <div>
                 <div class="story-title">${escapeHtml(st.title)}${childName}</div>
                 <div class="story-date">${escapeHtml(date)}${st.locked ? ' · ' + escapeHtml(tr('story_locked')) : ''}${st.gift ? `<span class="gift-badge">${escapeHtml(st.gift.from ? tr('gift_card_badge', { from: st.gift.from }) : tr('gift_card_badge_anon'))}</span>` : ''}</div>
+                ${st.locked ? '' : `<button type="button" class="gift-inline gift-more" onclick="event.stopPropagation(); openGiftSheet(this.closest('.story-card').dataset.id)">${iconText('gift', tr('gift_more'))}</button>`}
             </div>
             <div class="story-icon">${icon(st.locked ? 'lock' : 'tales')}</div>
         </div>`;
@@ -2734,7 +2736,7 @@ function renderFeedbackBlocks(story) {
         if (ratingThanks) {
             ratingThanks.style.display = 'block';
             ratingThanks.innerHTML = `${escapeHtml(tr('feedback_your_rating'))} <span class="rating-thanks__stars">${icon('star-fill', 'ic--gold').repeat(Math.min(5, Number(story.rating) || 0))}</span>`
-                + (story.gift ? '' : `<br><button type="button" class="gift-inline" data-gift-action="open">${iconText('gift', tr('gift_btn_after_rating'))}</button>`);
+                + `<br><button type="button" class="gift-inline" data-gift-action="open">${iconText('gift', tr('gift_btn_after_rating'))}</button>`;
         }
     } else {
         if (stars) stars.style.display = 'flex';
@@ -2828,6 +2830,7 @@ const GIFT_MESSAGE_MAX = 120;
 const giftState = { sent: [], received: [], loaded: false, loading: false, view: 'archive', part: null, seen: {} };
 const giftSheetState = { open: false, step: 'form', storyId: null, languages: [], price: 0, busy: false, draft: null };
 const giftSendState = { open: false, giftId: null, busy: false };
+const giftPickState = { open: false };
 let giftPending = null;                      // { id, name, since } — оплата открыта, подарок ещё не оплачен
 let giftPollTimer = null;
 let awaitingGiftPayment = false;             // Payme открыт, ждём возвращения в приложение
@@ -2861,6 +2864,11 @@ function applyGiftTexts() {
     setText('giftPartSent', tr('gift_part_sent'));
     setIconText('readerGiftBtn', 'gift', tr('gift_btn'));
     setText('giftSheetTitle', tr('gift_title'));
+    setText('giftPromoTitle', tr('gift_promo_title'));
+    setText('giftPromoSub', tr('gift_promo_sub'));
+    setText('giftPickTitle', tr('gift_pick_title'));
+    setText('giftPickSub', tr('gift_pick_sub'));
+    updateGiftPromo();
     setText('giftLblName', tr('gift_lbl_name'));
     setText('giftLblGender', tr('label_gender'));
     setIconText('giftGenderF', 'girl', tr('btn_girl'));
@@ -2877,7 +2885,7 @@ function applyGiftTexts() {
     setText('giftEditBtn', tr('gift_edit'));
     setText('giftSendTitle', tr('gift_send_title'));
     setText('giftSendNote', tr('gift_send_note'));
-    ['giftSheetClose', 'giftSendClose'].forEach(id => { const node = el(id); if (node) node.setAttribute('aria-label', tr('report_close')); });
+    ['giftSheetClose', 'giftSendClose', 'giftPickClose'].forEach(id => { const node = el(id); if (node) node.setAttribute('aria-label', tr('report_close')); });
     updateGiftSheetTexts();
     updateGiftSendButtons();
     if (giftState.loaded) renderGifts();
@@ -2979,6 +2987,9 @@ function giftReceivedCard(g) {
     const read = g.story_id
         ? `<button type="button" class="gift-card__btn gift-card__btn--main" data-gift-action="read" data-story-id="${escapeHtml(g.story_id)}">${iconText('tales', tr('gift_read'))}</button>`
         : '';
+    const more = g.story_id
+        ? `<button type="button" class="gift-card__btn" data-gift-action="more" data-story-id="${escapeHtml(g.story_id)}">${iconText('gift', tr('gift_more'))}</button>`
+        : '';
     const add = g.needs_child
         ? `<button type="button" class="gift-card__btn" data-gift-action="add-child" data-gift-id="${escapeHtml(g.id)}">${iconText('plus', tr('gift_add_child', { name: g.child_name || '' }))}</button>`
         : '';
@@ -2988,8 +2999,13 @@ function giftReceivedCard(g) {
         <p class="gift-card__meta">${escapeHtml([from, date].filter(Boolean).join(' · '))}</p>
         ${forLine ? `<p class="gift-card__meta">${escapeHtml(forLine)}</p>` : ''}
         ${note}
-        <div class="gift-card__actions">${read}${add}</div>
+        <div class="gift-card__actions">${read}${add}${more}</div>
     </div>`;
+}
+function giftMoreButton(storyId) {
+    return storyId
+        ? `<button type="button" class="gift-card__btn" data-gift-action="more" data-story-id="${escapeHtml(storyId)}">${iconText('gift', tr('gift_more'))}</button>`
+        : '';
 }
 function giftSentCard(g) {
     const date = g.created_at ? formatDate(g.created_at, { day: 'numeric', month: 'short' }) : '';
@@ -3004,8 +3020,10 @@ function giftSentCard(g) {
         actions = `<button type="button" class="gift-card__btn gift-card__btn--main" data-gift-action="send" data-gift-id="${escapeHtml(g.id)}">${iconText('gift', tr('gift_send_btn'))}</button>`;
     } else if (g.status === 'claimed') {
         status = `<p class="gift-card__status">${escapeHtml(tr('gift_st_claimed', { date: g.claimed_at ? formatDate(g.claimed_at) : '' }))}</p>`;
+        actions = giftMoreButton(g.source_story_id);
     } else if (g.status === 'expired') {
         status = `<p class="gift-card__status">${escapeHtml(tr('gift_st_expired'))}</p>`;
+        actions = giftMoreButton(g.source_story_id);
     } else if (g.status === 'refunded') {
         status = `<p class="gift-card__status">${escapeHtml(tr('gift_st_refunded'))}</p>`;
     }
@@ -3069,10 +3087,11 @@ function setGiftStep(step) {
     if (panel) panel.scrollTop = 0;
 }
 // Читалка → «Подарить…»: спрашиваем сервер, можно ли подарить эту сказку и на каких языках
-async function openGiftSheet() {
-    if (!currentStory || giftSheetState.open || giftSheetState.busy) return;
-    if (currentStory.gift) return;                  // подаренную сказку дальше не дарим
-    const storyId = currentStory.id;
+// Без аргумента — сказка, открытая в читалке; со сказкой — из списка («Подарить ещё», выбор сказки). Подаренную сказку тоже можно подарить дальше.
+async function openGiftSheet(forStoryId) {
+    const fromReader = !forStoryId;
+    const storyId = forStoryId || (currentStory && currentStory.id);
+    if (!storyId || giftSheetState.open || giftSheetState.busy) return;
     giftSheetState.busy = true;
     const buttons = document.querySelectorAll('#readerGiftBtn, .gift-inline');
     buttons.forEach(node => { node.disabled = true; });
@@ -3087,7 +3106,7 @@ async function openGiftSheet() {
         giftSheetState.busy = false;
         buttons.forEach(node => { if (node.isConnected) node.disabled = false; });
     }
-    if (!currentStory || String(currentStory.id) !== String(storyId)) return;   // пока ждали, сказку закрыли
+    if (fromReader && (!currentStory || String(currentStory.id) !== String(storyId))) return;   // пока ждали, сказку закрыли
     const languages = TALE_LANGS.filter(item => (options.languages || []).includes(item[0]));
     if (!languages.length) { showAlert(tr('gift_err_lang')); return; }
     giftSheetState.storyId = storyId;
@@ -3196,6 +3215,46 @@ function checkGiftPaymentReturn() {
     if (giftState.view === 'gifts') loadGifts();
 }
 
+// ---------- «Подарить сказку другому ребёнку» на вкладке «Сказки»: выбор сказки ----------
+function updateGiftPromo() {
+    const box = el('giftPromo');
+    if (box) box.hidden = !userExists;
+}
+function giftPickable() {
+    return userStories.filter(st => !st.locked);
+}
+function openGiftPick() {
+    if (giftPickState.open || giftSheetState.open) return;
+    const stories = giftPickable();
+    if (!stories.length) { showAlert(tr('gift_pick_empty')); return; }
+    const list = el('giftPickList');
+    if (list) {
+        list.innerHTML = stories.map(st => {
+            const date = formatDate(st.created_at, { day: 'numeric', month: 'short' });
+            const meta = [st.child_name, date].filter(Boolean).join(' · ');
+            return `<button type="button" class="gift-pick-item" data-gift-action="pick-story" data-story-id="${escapeHtml(st.id)}">
+                <span class="gift-pick-item__title">${escapeHtml(st.title)}</span>
+                <span class="gift-pick-item__meta">${escapeHtml(meta)}</span>
+            </button>`;
+        }).join('');
+    }
+    giftPickState.open = true;
+    el('giftPickSheet').hidden = false;
+    document.body.classList.add('sheet-open');
+    haptic('select');
+}
+function closeGiftPick() {
+    const sheet = el('giftPickSheet');
+    if (sheet) sheet.hidden = true;
+    if (giftPickState.open) document.body.classList.remove('sheet-open');
+    giftPickState.open = false;
+}
+// Выбрали сказку: закрываем список и открываем форму подарка для неё
+function giftPickStory(storyId) {
+    closeGiftPick();
+    openGiftSheet(storyId);
+}
+
 // ---------- Отправитель: «Отправить подарок» ----------
 function openGiftSend(giftId) {
     const gift = giftState.sent.find(g => String(g.id) === String(giftId));
@@ -3248,7 +3307,7 @@ function giftCopyLink(url) {
 
 // ---------- Читалка: подарок или обычная сказка ----------
 // Подаренная сказка ещё не в профиле ребёнка («Подарили мне»): оценить, поделиться и пожаловаться на неё пока нельзя —
-// эти действия сервер принимает только для сказок своих детей. Подаренную сказку дальше не дарим.
+// эти действия сервер принимает только для сказок своих детей. Подарить её дальше («Подарить ещё») можно в любом случае.
 function applyGiftReader(story) {
     const gift = story && story.gift ? story.gift : null;
     const unplaced = !!(gift && !gift.placed);
@@ -3261,8 +3320,6 @@ function applyGiftReader(story) {
         const node = el(id);
         if (node) node.style.display = unplaced ? 'none' : '';
     });
-    const giftBtn = el('readerGiftBtn');
-    if (giftBtn) giftBtn.style.display = gift ? 'none' : '';
     if (unplaced) { hide('rating-block'); hide('comment-block'); }
 }
 document.addEventListener('click', (event) => {
@@ -3276,6 +3333,10 @@ document.addEventListener('click', (event) => {
     if (!node) return;
     const action = node.getAttribute('data-gift-action');
     if (action === 'open') openGiftSheet();
+    else if (action === 'more') { const id = node.getAttribute('data-story-id'); if (id) openGiftSheet(id); }
+    else if (action === 'pick') openGiftPick();
+    else if (action === 'pick-close') closeGiftPick();
+    else if (action === 'pick-story') giftPickStory(node.getAttribute('data-story-id'));
     else if (action === 'close') closeGiftSheet();
     else if (action === 'next') giftToConfirm();
     else if (action === 'back') setGiftStep('form');
@@ -3291,6 +3352,7 @@ document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
     if (giftSendState.open) closeGiftSend();
     else if (giftSheetState.open) closeGiftSheet();
+    else if (giftPickState.open) closeGiftPick();
 });
 
 // =====================================================================

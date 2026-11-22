@@ -8,12 +8,12 @@
     <!-- Самообновление: при запуске и возврате в приложение проверяет, не вышла ли новая версия (номера ?v= ниже), и перезагружается -->
     <script src="self-update.js?v=1"></script>
     <link rel="preload" as="image" href="logo.webp" type="image/webp">
-    <link rel="stylesheet" href="style.css?v=25">
+    <link rel="stylesheet" href="style.css?v=26">
     
     <!-- Подключаем внешние файлы со словарями для 3 языков -->
-<script src="miniapp-ru.js?v=38"></script>
-<script src="miniapp-uz.js?v=38"></script>
-<script src="miniapp-en.js?v=38"></script>
+<script src="miniapp-ru.js?v=39"></script>
+<script src="miniapp-uz.js?v=39"></script>
+<script src="miniapp-en.js?v=39"></script>
 </head>
 <body>
     <!-- Иконки интерфейса «Шахерезады» (SVG-спрайт, ~11 КБ, ~2,3 КБ в сжатии): <svg class="ic"><use href="#i-имя"></use></svg>. Иконки правятся прямо здесь (viewBox 24×24, линия 1.8, цвет currentColor) -->
@@ -190,6 +190,15 @@
             <div class="slider-container" id="storiesSliderContainer">
                 <div class="slider-track" id="storiesSliderTrack"></div>
             </div>
+
+            <!-- Блок «Подарить сказку другому ребёнку» под баннером: открывает выбор сказки (app.js → openGiftPick) -->
+            <button id="giftPromo" class="gift-promo glass-panel" type="button" data-gift-action="pick" hidden>
+                <span class="gift-promo__icon"><svg class="ic ic--gold" aria-hidden="true" focusable="false"><use href="#i-gift" xlink:href="#i-gift"></use></svg></span>
+                <span class="gift-promo__text">
+                    <span id="giftPromoTitle" class="gift-promo__title">Подарить сказку другому ребёнку</span>
+                    <span id="giftPromoSub" class="gift-promo__sub"></span>
+                </span>
+            </button>
 
             <!-- «Архив | Подарки» (22.11.2026, app.js → ПОДАРИТЬ СКАЗКУ) -->
             <div id="giftViewSwitch" class="gift-seg" role="tablist">
@@ -534,6 +543,22 @@
         </div>
     </div>
 
+    <!-- ОКНО «КАКУЮ СКАЗКУ ПОДАРИТЬ?»: список своих сказок, дальше обычная форма подарка -->
+    <div id="giftPickSheet" class="tariff-sheet" role="dialog" aria-modal="true" aria-labelledby="giftPickTitle" hidden>
+        <div class="tariff-sheet__backdrop" data-gift-action="pick-close"></div>
+        <div class="tariff-sheet__panel" tabindex="-1">
+            <div class="tariff-sheet__grab" aria-hidden="true"></div>
+            <header class="tariff-sheet__head">
+                <div class="tariff-sheet__heading">
+                    <h2 id="giftPickTitle" class="tariff-sheet__title">Какую сказку подарить?</h2>
+                    <p id="giftPickSub" class="tariff-sheet__sub"></p>
+                </div>
+                <button id="giftPickClose" class="tariff-sheet__close" type="button" data-gift-action="pick-close" aria-label="Закрыть"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-close" xlink:href="#i-close"></use></svg></button>
+            </header>
+            <div id="giftPickList" class="gift-pick-list"></div>
+        </div>
+    </div>
+
     <!-- ОКНО «ОТПРАВИТЬ ПОДАРОК»: готовый подарок — в Telegram (выбор чата) или ссылкой -->
     <div id="giftSendSheet" class="tariff-sheet" role="dialog" aria-modal="true" aria-labelledby="giftSendTitle" hidden>
         <div class="tariff-sheet__backdrop" data-gift-action="send-close"></div>
@@ -604,6 +629,6 @@
     <!-- Основной скрипт логики Mini App -->
     <!-- Алфавиты имени ребёнка: русская сказка — кириллица, узбекская и английская — латиница (копия name_script.js из репозитория Scheherazade) -->
     <script src="name-script.js?v=2"></script>
-    <script src="app.js?v=50"></script>
+    <script src="app.js?v=51"></script>
 </body>
 </html>
