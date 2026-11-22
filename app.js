@@ -846,7 +846,6 @@ function renderBanners() {
 // Цены, лимиты и дедлайн акции решает сервер — здесь только показ.
 // =====================================================================
 const TARIFF_ICONS = { start: 'sprout', baby: 'teddy', kids: 'balloon' };   // символы спрайта иконок
-const TARIFF_ORDER = ['baby', 'start', 'kids'];   // порядок карточек в окне: сначала самый популярный
 const TARIFF_POPULAR = 'baby';                    // на этой карточке бейдж «Популярный»
 let tariffSheetOpen = false;
 let tariffTimerInterval = null;
@@ -1233,9 +1232,8 @@ function renderTariffSheet() {
     const switching = activeSub && !t.legacy;       // есть действующий тариф: смена начинается сразу
 
     const cards = el('tariffCards');
-    const rank = (id) => { const i = TARIFF_ORDER.indexOf(id); return i === -1 ? TARIFF_ORDER.length : i; };
-    // Известные тарифы идут в привычном порядке, добавленные в админке — следом, в порядке сервера
-    const items = t.items.map((item, index) => ({ item, index })).sort((a, b) => (rank(a.item.id) - rank(b.item.id)) || (a.index - b.index)).map(x => x.item);
+    // Порядок карточек задаёт админка (вкладка «Тарифы», поле «Порядок»): сервер присылает тарифы уже по нему, здесь ничего не переставляем
+    const items = t.items;
     const termList = tariffAvailableTerms(items);
     if (!termList.includes(tariffTermMonths)) tariffTermMonths = 1;
     renderTariffTerms(items, termList);
